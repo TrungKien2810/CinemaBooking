@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-CinemaBooking.Worker-2db073e1-ce1c-441c-91d1-1e21a9797fd2</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CinemaBooking.Domain\CinemaBooking.Domain.csproj" />
+    <ProjectReference Include="..\CinemaBooking.Infrastructure\CinemaBooking.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

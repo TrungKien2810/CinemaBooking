@@ -1,0 +1,46 @@
+## .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+
+## Build / test output
+TestResults/
+[Cc]overage*/
+*.coverage
+*.trx
+
+## Local config & secrets — không commit chuỗi kết nối thật
+appsettings.Development.json
+appsettings.Local.json
+*.env
+
+## SQL LocalDB
+*.mdf
+*.ldf
+
+## OS
+Thumbs.db
+.DS_Store
+
+## Governance (state cục bộ của máy — không đẩy lên GitHub)
+.govern/
+docs/
+config/
+.claude/
+.agents/
+.codex/
+.opencode/
+AGENTS.md
+CLAUDE.md
