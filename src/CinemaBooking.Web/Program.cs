@@ -1,8 +1,9 @@
-using CinemaBooking.Domain.Entities;
+﻿using CinemaBooking.Domain.Entities;
 using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Hubs;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,16 @@ builder.Services.AddSession(o =>
 });
 
 var app = builder.Build();
+
+// --- Dev A: khởi tạo dữ liệu ---
+// Áp migration rồi seed catalog ngay lúc khởi động: cả nhóm chỉ cần `git pull` + `dotnet run`
+// là có schema và dữ liệu mẫu giống nhau, không phải nhớ chạy `dotnet ef database update`.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<CinemaDbContext>();
+    await db.Database.MigrateAsync();
+    await CatalogSeeder.SeedAsync(db);
+}
 
 if (!app.Environment.IsDevelopment())
 {
