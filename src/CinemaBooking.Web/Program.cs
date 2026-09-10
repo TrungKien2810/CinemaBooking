@@ -20,6 +20,7 @@ builder.Services.Configure<DisplayTimeZone>(
 builder.Services.TryAddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IShowtimeQueryService, ShowtimeQueryService>();
 builder.Services.AddScoped<IMovieCatalogService, MovieCatalogService>();
+builder.Services.AddScoped<IShowtimeScheduler, ShowtimeScheduler>();
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(o =>
