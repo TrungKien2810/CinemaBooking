@@ -1,4 +1,4 @@
-using CinemaBooking.Domain.Entities;
+﻿using CinemaBooking.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CinemaBooking.Infrastructure.Persistence;
@@ -96,7 +96,11 @@ public static class CatalogSeeder
         db.Theaters.AddRange(theaters);
         await db.SaveChangesAsync(ct);
 
-        db.Showtimes.AddRange(BuildShowtimes(movies, theaters.SelectMany(t => t.Rooms).ToList()));
+        var rooms = theaters.SelectMany(t => t.Rooms).ToList();
+        db.Seats.AddRange(rooms.SelectMany(SeatGenerator.Generate));
+        await db.SaveChangesAsync(ct);
+
+        db.Showtimes.AddRange(BuildShowtimes(movies, rooms));
         await db.SaveChangesAsync(ct);
     }
 
