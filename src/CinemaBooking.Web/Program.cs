@@ -19,6 +19,7 @@ builder.Services.Configure<DisplayTimeZone>(
     builder.Configuration.GetSection(DisplayTimeZone.SectionName));
 builder.Services.TryAddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IShowtimeQueryService, ShowtimeQueryService>();
+builder.Services.AddScoped<IMovieCatalogService, MovieCatalogService>();
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(o =>
