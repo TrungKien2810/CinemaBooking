@@ -2,6 +2,7 @@ using CinemaBooking.Domain.Entities;
 using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Hubs;
+using CinemaBooking.Web.Middleware;
 using CinemaBooking.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -43,9 +44,11 @@ builder.Services.AddSession(o =>
 
 var app = builder.Build();
 
+// Đặt đầu pipeline: middleware chỉ bắt được exception của những middleware nằm sau nó.
+app.UseCinemaExceptionHandling();
+
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 

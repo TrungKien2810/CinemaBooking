@@ -23,9 +23,13 @@ public class HomeController : Controller
         return View();
     }
 
+    /// <param name="traceId">Do ExceptionHandlingMiddleware truyền sang khi chạy lại pipeline.</param>
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
+    public IActionResult Error(string? traceId)
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        return View(new ErrorViewModel
+        {
+            RequestId = traceId ?? Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+        });
     }
 }
