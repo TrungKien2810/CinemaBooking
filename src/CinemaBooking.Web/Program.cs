@@ -2,7 +2,9 @@ using CinemaBooking.Domain.Entities;
 using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Hubs;
+using CinemaBooking.Web.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,12 @@ builder.Services.AddSignalR();
 
 // DbContext + SeatLockManager + PaymentService + EmailSender
 builder.Services.AddCinemaInfrastructure(builder.Configuration);
+
+// ── Dev B: truy vấn catalog & lịch chiếu ──
+builder.Services.Configure<DisplayTimeZone>(
+    builder.Configuration.GetSection(DisplayTimeZone.SectionName));
+builder.Services.TryAddSingleton(TimeProvider.System);
+builder.Services.AddScoped<IShowtimeQueryService, ShowtimeQueryService>();
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(o =>
