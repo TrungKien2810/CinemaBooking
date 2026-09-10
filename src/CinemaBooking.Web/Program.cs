@@ -1,5 +1,6 @@
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Infrastructure;
+using CinemaBooking.Infrastructure.Logging;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Hubs;
 using CinemaBooking.Web.Middleware;
@@ -11,6 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
+
+// ── Dev B: log có cấu trúc, dùng chung cấu hình với Worker ──
+builder.Logging.AddCinemaLogging(builder.Environment.IsDevelopment());
 
 // DbContext + SeatLockManager + PaymentService + EmailSender
 builder.Services.AddCinemaInfrastructure(builder.Configuration);
@@ -58,6 +62,7 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseCinemaRequestLogScope();
 
 app.MapStaticAssets();
 
