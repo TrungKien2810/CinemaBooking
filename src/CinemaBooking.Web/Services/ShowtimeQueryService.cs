@@ -20,14 +20,15 @@ public sealed class ShowtimeQueryService : IShowtimeQueryService
     public async Task<IReadOnlyList<ShowtimeListItem>> GetForMovieOnDateAsync(
         int movieId, DateOnly localDate, CancellationToken ct = default)
     {
-        var all = await _db.Showtimes
-            .Include(s => s.Movie)
-            .Include(s => s.Room)!.ThenInclude(r => r!.Theater)
-            .Where(s => s.MovieId == movieId)
-            .ToListAsync(ct);
+        // Đổi "một ngày ở giờ rạp" thành nửa khoảng UTC trước khi truy vấn: so sánh trở thành
+        // một range scan chạy được trên index (RoomId, StartTimeUtc), thay vì phải đọc cả bảng
+        // rồi cộng offset từng dòng trong RAM.
+        var (fromUtc, toUtc) = _tz.DayRangeUtc(localDate);
 
-        return all
-            .Where(s => _tz.ToLocalDate(s.StartTimeUtc) == localDate)
+        return await _db.Showtimes.AsNoTracking()
+            .Where(s => s.MovieId == movieId
+                && s.StartTimeUtc >= fromUtc
+                && s.StartTimeUtc < toUtc)
             .OrderBy(s => s.StartTimeUtc)
             .Select(s => new ShowtimeListItem(
                 s.Id,
@@ -39,24 +40,30 @@ public sealed class ShowtimeQueryService : IShowtimeQueryService
                 s.StartTimeUtc,
                 s.EndTimeUtc,
                 s.BasePrice))
-            .ToList();
+            .ToListAsync(ct);
     }
 
     public async Task<IReadOnlyList<DateOnly>> GetAvailableDatesAsync(
         int movieId, DateOnly fromLocalDate, int dayCount = 7, CancellationToken ct = default)
     {
-        var all = await _db.Showtimes
-            .Where(s => s.MovieId == movieId)
+        var (windowFromUtc, _) = _tz.DayRangeUtc(fromLocalDate);
+        var (_, windowToUtc) = _tz.DayRangeUtc(fromLocalDate.AddDays(dayCount - 1));
+
+        // Suất đã bắt đầu thì không bán được nữa — cắt luôn ở DB.
+        var lowerBoundUtc = _clock.GetUtcNow().UtcDateTime;
+        if (windowFromUtc > lowerBoundUtc) lowerBoundUtc = windowFromUtc;
+
+        var startTimes = await _db.Showtimes.AsNoTracking()
+            .Where(s => s.MovieId == movieId
+                && s.StartTimeUtc > lowerBoundUtc
+                && s.StartTimeUtc < windowToUtc)
+            .Select(s => s.StartTimeUtc)
+            .Distinct()
             .ToListAsync(ct);
 
-        // Suất đã bắt đầu thì không còn bán được nữa.
-        var nowUtc = _clock.GetUtcNow().UtcDateTime;
-        var lastDate = fromLocalDate.AddDays(dayCount - 1);
-
-        return all
-            .Where(s => s.StartTimeUtc > nowUtc)
-            .Select(s => _tz.ToLocalDate(s.StartTimeUtc))
-            .Where(d => d >= fromLocalDate && d <= lastDate)
+        // Chỉ phần đổi UTC → ngày địa phương ở lại RAM, và chỉ trên tập đã lọc sẵn.
+        return startTimes
+            .Select(_tz.ToLocalDate)
             .Distinct()
             .OrderBy(d => d)
             .ToList();
