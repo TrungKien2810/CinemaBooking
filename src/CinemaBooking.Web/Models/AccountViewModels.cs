@@ -11,7 +11,7 @@ public class RegisterViewModel
 
     [Required(ErrorMessage = "Vui lòng nhập email.")]
     [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
-    [StringLength(256)]
+    [StringLength(256, ErrorMessage = "Email tối đa {1} ký tự.")]
     [Display(Name = "Email")]
     public string Email { get; set; } = string.Empty;
 
@@ -23,6 +23,9 @@ public class RegisterViewModel
     [Display(Name = "Mật khẩu")]
     public string Password { get; set; } = string.Empty;
 
+    // [Compare] không bao hàm [Required]; thiếu nó thì MVC tự coi string non-nullable là
+    // bắt buộc và bắn ra thông báo tiếng Anh mặc định giữa một form toàn tiếng Việt.
+    [Required(ErrorMessage = "Vui lòng nhập lại mật khẩu.")]
     [DataType(DataType.Password)]
     [Compare(nameof(Password), ErrorMessage = "Mật khẩu nhập lại không khớp.")]
     [Display(Name = "Nhập lại mật khẩu")]
