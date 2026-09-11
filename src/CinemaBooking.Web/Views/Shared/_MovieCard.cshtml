@@ -1,0 +1,26 @@
+﻿@model MovieCardViewModel
+
+@*
+    Thẻ phim dùng lại ở trang chủ; Sprint 2 dùng tiếp cho kết quả tìm kiếm và lọc thể loại.
+    data-poster-fallback: nếu file poster không tải được thì site.js đổi sang ảnh mặc định.
+*@
+
+<article class="cb-card movie-card">
+    <div class="movie-poster">
+        <img src="@Model.PosterOrPlaceholder"
+             data-poster-fallback="@MovieCardViewModel.PlaceholderPoster"
+             alt="Poster phim @Model.Title"
+             loading="lazy" width="200" height="300" />
+    </div>
+    <div class="movie-card-body">
+        <h2 class="movie-title">@Model.Title</h2>
+        <p class="cb-muted movie-meta">
+            <span class="movie-genre">@Model.GenreOrDefault</span>
+            <span aria-hidden="true">·</span>
+            <span>@Model.DurationMinutes phút</span>
+        </p>
+        <p class="cb-muted movie-release">
+            Khởi chiếu @Model.ReleaseDate.ToString("dd/MM/yyyy")
+        </p>
+    </div>
+</article>

@@ -23,14 +23,8 @@ else
     <ul class="movie-list">
         @foreach (var movie in Model.Movies)
         {
-            <li class="cb-card movie-row">
-                <div class="movie-row-main">
-                    <h2 class="movie-title">@movie.Title</h2>
-                    <p class="cb-muted movie-meta">
-                        @(movie.Genre ?? "Chưa phân loại") · @movie.DurationMinutes phút ·
-                        Khởi chiếu @movie.ReleaseDate.ToString("dd/MM/yyyy")
-                    </p>
-                </div>
+            <li>
+                <partial name="_MovieCard" model="movie" />
             </li>
         }
     </ul>
