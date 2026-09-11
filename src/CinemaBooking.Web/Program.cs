@@ -51,6 +51,14 @@ builder.Services.AddSession(o =>
 
 var app = builder.Build();
 
+// Vai trò và tài khoản admin phải có sẵn trước request đầu tiên, nếu không trang admin
+// khóa cứng chính mình. Scope riêng vì RoleManager/UserManager là Scoped.
+// Lưu ý khi merge: khối này phải chạy SAU bước áp migration của Dev A.
+using (var scope = app.Services.CreateScope())
+{
+    await IdentitySeeder.SeedAsync(scope.ServiceProvider);
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");

@@ -1,3 +1,4 @@
+using CinemaBooking.Domain;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Web.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -51,6 +52,9 @@ public class AccountController : Controller
             AddErrors(result);
             return View(model);
         }
+
+        // Mọi người đăng ký qua form đều là khách. Tài khoản Admin chỉ do IdentitySeeder tạo.
+        await _users.AddToRoleAsync(user, AppRoles.Customer);
 
         _logger.LogInformation("Tài khoản mới đã được tạo: {Email}", model.Email);
         await _signIn.SignInAsync(user, isPersistent: false);
