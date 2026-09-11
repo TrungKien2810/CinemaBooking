@@ -404,3 +404,28 @@ body {
     font-size: 0.925rem;
     color: var(--cb-text-muted);
 }
+
+/* --- Trang chữ dài (chính sách, hướng dẫn) --------------------------------- */
+
+.prose-card {
+    padding: 2rem;
+    max-width: 52rem;
+}
+
+.prose-card p {
+    color: var(--cb-text-muted);
+}
+
+.prose-card p:last-child {
+    margin-bottom: 0;
+}
+
+.prose-heading {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    margin-bottom: 0.375rem;
+}
+
+.prose-heading:not(:first-child) {
+    margin-top: 1.5rem;
+}
