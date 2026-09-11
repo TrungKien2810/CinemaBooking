@@ -206,3 +206,57 @@ body {
 .cb-muted {
     color: var(--cb-text-muted);
 }
+
+/* --- Validation summary ---------------------------------------------------- */
+
+/* Tag helper luôn render thẻ div dù không có lỗi; nó gắn sẵn class -valid nên
+   ẩn theo class thay vì phải bọc điều kiện trong từng view. */
+.validation-summary-valid {
+    display: none;
+}
+
+.validation-summary-errors {
+    background-color: var(--cb-accent-soft);
+    border: 1px solid var(--cb-accent);
+    border-radius: var(--cb-radius-sm);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.validation-summary-errors ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- Trang đăng nhập / đăng ký --------------------------------------------- */
+
+.auth-shell {
+    display: flex;
+    justify-content: center;
+    padding-block: 1.5rem;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 27rem;
+    padding: 2rem;
+}
+
+.auth-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.auth-subtitle {
+    font-size: 0.925rem;
+    margin-bottom: 1.5rem;
+}
+
+.auth-switch {
+    margin: 1.25rem 0 0;
+    text-align: center;
+    font-size: 0.925rem;
+    color: var(--cb-text-muted);
+}
