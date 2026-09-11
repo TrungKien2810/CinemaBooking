@@ -237,6 +237,58 @@ body {
     color: var(--cb-text-muted);
 }
 
+/* --- Đầu trang và trạng thái rỗng ------------------------------------------ */
+
+.page-head {
+    margin-bottom: 1.75rem;
+}
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.page-subtitle {
+    margin: 0;
+}
+
+.empty-state {
+    padding: 2.5rem;
+    text-align: center;
+}
+
+.empty-title {
+    font-weight: 600;
+    margin-bottom: 0.375rem;
+}
+
+/* --- Danh sách phim -------------------------------------------------------- */
+
+.movie-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--cb-gap);
+}
+
+.movie-row {
+    padding: 1.25rem;
+}
+
+.movie-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.movie-meta {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
 /* --- Validation summary ---------------------------------------------------- */
 
 /* Tag helper luôn render thẻ div dù không có lỗi; nó gắn sẵn class -valid nên
