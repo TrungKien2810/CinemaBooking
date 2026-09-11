@@ -1,8 +1,37 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model HomeIndexViewModel
+@{
+    ViewData["Title"] = "Phim đang chiếu";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="page-head">
+    <h1 class="page-title">Phim đang chiếu</h1>
+    <p class="cb-muted page-subtitle">Chọn phim, chọn suất, rồi giữ ghế ngay trên sơ đồ phòng chiếu.</p>
+</section>
+
+@if (!Model.HasMovies)
+{
+    <div class="cb-card empty-state">
+        <p class="empty-title">Chưa có phim nào</p>
+        <p class="cb-muted">
+            Danh sách phim lấy trực tiếp từ database. Nếu bạn vừa tạo database mới,
+            hãy chạy lại ứng dụng để phần seed dữ liệu mẫu chạy.
+        </p>
+    </div>
+}
+else
+{
+    <ul class="movie-list">
+        @foreach (var movie in Model.Movies)
+        {
+            <li class="cb-card movie-row">
+                <div class="movie-row-main">
+                    <h2 class="movie-title">@movie.Title</h2>
+                    <p class="cb-muted movie-meta">
+                        @(movie.Genre ?? "Chưa phân loại") · @movie.DurationMinutes phút ·
+                        Khởi chiếu @movie.ReleaseDate.ToString("dd/MM/yyyy")
+                    </p>
+                </div>
+            </li>
+        }
+    </ul>
+}
