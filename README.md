@@ -30,16 +30,6 @@ dotnet run --project src/CinemaBooking.Worker
 dotnet test
 ```
 
-> **Nhánh `feat/s1-c-ui-auth-foundation`:** file migration do Dev A sở hữu và còn nằm ở nhánh
-> `feat/s1-a-data-migration-seed`, chưa merge vào `dev`. Muốn chạy thử nhánh này thì tự sinh
-> migration ở máy mình bằng lệnh ở bước 2; sau khi nhánh của A merge vào `dev` thì bỏ bước đó,
-> web tự áp migration lúc khởi động. Trang chủ đọc phim thẳng từ DB nên khi chưa có
-> `CatalogSeeder` của A, nó hiện đúng trạng thái "Chưa có phim nào".
-
-Web **tự tạo vai trò và tài khoản admin** lúc khởi động (`IdentitySeeder`). Nếu database chưa có
-migration nào được áp, ứng dụng dừng ngay với thông báo chỉ thẳng câu lệnh cần chạy, thay vì để
-EF ném `Invalid object name 'AspNetRoles'` khó đoán.
-
 Chuỗi kết nối nằm ở `ConnectionStrings:Default` trong `src/CinemaBooking.Web/appsettings.json`.
 Muốn đổi cho riêng máy mình thì tạo `appsettings.Development.json` — file này đã bị `.gitignore`
 bỏ qua, không commit chuỗi kết nối thật.
@@ -55,6 +45,44 @@ bỏ qua, không commit chuỗi kết nối thật.
 | `src/CinemaBooking.Web`            | MVC controllers, Razor views, `SeatHub` tại `/hubs/seat`                       |
 | `src/CinemaBooking.Worker`         | `ExpiredSeatCleaner`, `EmailOutboxWorker`, `DailyReportWorker`                 |
 | `tests/CinemaBooking.Tests`        | xUnit                                                                          |
+
+---
+
+## Trạng thái nhánh `feat/s1-c-ui-auth-foundation`
+
+Nhánh này tách từ `master` và **chỉ chứa phần việc của Dev C** (layout, theme, Identity UI,
+trang chủ). File migration do Dev A sở hữu, còn nằm ở `feat/s1-a-data-migration-seed` và
+chưa merge vào `dev`.
+
+Muốn chạy thử riêng nhánh này thì tự sinh migration ở máy mình:
+
+```bash
+dotnet ef migrations add Initial -p src/CinemaBooking.Infrastructure -s src/CinemaBooking.Web -o Persistence/Migrations
+dotnet ef database update -p src/CinemaBooking.Infrastructure -s src/CinemaBooking.Web
+```
+
+Chưa có `CatalogSeeder` của Dev A thì trang chủ hiện đúng trạng thái "Chưa có phim nào" —
+đó là hành vi mong đợi, không phải lỗi view.
+
+### Khi merge vào `dev`
+
+Có đúng **một** chỗ đụng nhau với nhánh Dev A: khối khởi tạo dữ liệu ngay sau
+`var app = builder.Build();` trong `Program.cs`. Cả hai bên đều chèn vào cùng vị trí đó.
+Gộp lại thành một scope, **thứ tự bắt buộc là migration → catalog → identity**:
+
+```csharp
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<CinemaDbContext>();
+    await db.Database.MigrateAsync();
+    await CatalogSeeder.SeedAsync(db);
+    await IdentitySeeder.SeedAsync(scope.ServiceProvider);
+}
+```
+
+`IdentitySeeder` phải chạy sau `MigrateAsync` — nó kiểm tra đã có migration nào được áp
+chưa và dừng ngay nếu chưa. Sau khi merge xong thì bỏ bước sinh migration thủ công ở trên,
+web tự áp migration lúc khởi động.
 
 ---
 
