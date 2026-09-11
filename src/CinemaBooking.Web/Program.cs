@@ -16,11 +16,29 @@ builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(o =>
     {
         o.Password.RequiredLength = 8;
+        o.Password.RequireNonAlphanumeric = false;
         o.User.RequireUniqueEmail = true;
         o.SignIn.RequireConfirmedAccount = false;
+
+        // Khóa tài khoản 5 phút sau 5 lần sai mật khẩu — chặn dò mật khẩu.
+        o.Lockout.MaxFailedAccessAttempts = 5;
+        o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
     })
     .AddEntityFrameworkStores<CinemaDbContext>()
     .AddDefaultTokenProviders();
+
+// Cookie đăng nhập: trỏ về AccountController (MVC), không dùng Razor Pages Identity UI.
+builder.Services.ConfigureApplicationCookie(o =>
+{
+    o.LoginPath = "/Account/Login";
+    o.LogoutPath = "/Account/Logout";
+    o.AccessDeniedPath = "/Account/AccessDenied";
+    o.ReturnUrlParameter = "returnUrl";
+    o.ExpireTimeSpan = TimeSpan.FromDays(7);
+    o.SlidingExpiration = true;
+    o.Cookie.HttpOnly = true;
+    o.Cookie.SameSite = SameSiteMode.Lax;
+});
 
 // Giỏ ghế tạm giữa trang chọn ghế và trang thanh toán.
 builder.Services.AddDistributedMemoryCache();
