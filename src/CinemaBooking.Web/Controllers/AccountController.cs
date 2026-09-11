@@ -120,11 +120,15 @@ public class AccountController : Controller
     [HttpGet]
     public IActionResult AccessDenied() => View();
 
+    /// <summary>
+    /// Distinct vì Identity trả cả DuplicateUserName lẫn DuplicateEmail khi đăng ký trùng
+    /// (UserName = Email nên một lỗi hóa hai) — sau khi Việt hóa thì hai dòng y hệt nhau.
+    /// </summary>
     private void AddErrors(IdentityResult result)
     {
-        foreach (var error in result.Errors)
+        foreach (var message in result.Errors.Select(Translate).Distinct())
         {
-            ModelState.AddModelError(string.Empty, Translate(error));
+            ModelState.AddModelError(string.Empty, message);
         }
     }
 

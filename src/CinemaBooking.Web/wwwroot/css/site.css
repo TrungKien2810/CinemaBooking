@@ -345,8 +345,9 @@ body {
 
 /* --- Validation summary ---------------------------------------------------- */
 
-/* Tag helper luôn render thẻ div dù không có lỗi; nó gắn sẵn class -valid nên
-   ẩn theo class thay vì phải bọc điều kiện trong từng view. */
+/* Với asp-validation-summary="ModelOnly", tag helper không render gì khi không có lỗi
+   cấp model. Nhưng nếu ai đó đổi sang "All" thì nó render div rỗng kèm class -valid,
+   nên giữ luật này để không lòi ra một khung đỏ trống. */
 .validation-summary-valid {
     display: none;
 }
