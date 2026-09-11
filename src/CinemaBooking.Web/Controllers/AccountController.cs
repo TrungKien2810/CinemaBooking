@@ -54,7 +54,15 @@ public class AccountController : Controller
         }
 
         // Mọi người đăng ký qua form đều là khách. Tài khoản Admin chỉ do IdentitySeeder tạo.
-        await _users.AddToRoleAsync(user, AppRoles.Customer);
+        // Không chặn đăng ký nếu bước này hỏng — tài khoản đã tạo xong rồi, nhưng phải ghi log
+        // vì thiếu vai trò là lỗi âm thầm: chỉ lộ ra khi Sprint 4 lọc "vé của tôi" theo vai trò.
+        var roleResult = await _users.AddToRoleAsync(user, AppRoles.Customer);
+        if (!roleResult.Succeeded)
+        {
+            _logger.LogError("Không gán được vai trò {Role} cho {Email}: {Errors}",
+                AppRoles.Customer, model.Email,
+                string.Join("; ", roleResult.Errors.Select(e => e.Description)));
+        }
 
         _logger.LogInformation("Tài khoản mới đã được tạo: {Email}", model.Email);
         await _signIn.SignInAsync(user, isPersistent: false);

@@ -73,8 +73,10 @@ public static class IdentitySeeder
         var config = sp.GetRequiredService<IConfiguration>();
         var users = sp.GetRequiredService<UserManager<ApplicationUser>>();
 
-        var email = config["SeedAdmin:Email"] ?? DefaultAdminEmail;
-        var password = config["SeedAdmin:Password"] ?? DefaultAdminPassword;
+        // Không dùng ?? : khóa config để rỗng ("SeedAdmin:Password": "") vẫn khác null,
+        // sẽ lọt xuống CreateAsync rồi mới hỏng với lỗi mật khẩu khó hiểu.
+        var email = Setting(config, "SeedAdmin:Email", DefaultAdminEmail);
+        var password = Setting(config, "SeedAdmin:Password", DefaultAdminPassword);
 
         var admin = await users.FindByEmailAsync(email);
         if (admin is null)
@@ -84,7 +86,7 @@ public static class IdentitySeeder
                 UserName = email,
                 Email = email,
                 EmailConfirmed = true,
-                FullName = config["SeedAdmin:FullName"] ?? "Quản trị viên",
+                FullName = Setting(config, "SeedAdmin:FullName", "Quản trị viên"),
             };
 
             var result = await users.CreateAsync(admin, password);
@@ -106,6 +108,12 @@ public static class IdentitySeeder
                 "Tài khoản admin đang dùng mật khẩu mặc định trong mã nguồn. " +
                 "Đặt SeedAdmin:Password trong appsettings.Development.json hoặc user-secrets.");
         }
+    }
+
+    private static string Setting(IConfiguration config, string key, string fallback)
+    {
+        var value = config[key];
+        return string.IsNullOrWhiteSpace(value) ? fallback : value;
     }
 
     private static InvalidOperationException Failed(string what, IdentityResult result) =>
