@@ -1,31 +1,208 @@
+/* ---------------------------------------------------------------------------
+   CinemaBooking.Smart — token dùng chung cho toàn site.
+   Mọi màu/khoảng cách/bo góc khai báo một lần ở đây; view chỉ dùng var(),
+   không hardcode mã màu. Sprint 3 (sơ đồ ghế) sẽ thêm token trạng thái ghế
+   vào cùng khối :root này.
+   --------------------------------------------------------------------------- */
+
+:root {
+    /* Nền tối kiểu phòng chiếu: poster và sơ đồ ghế nổi hơn trên nền này. */
+    --cb-bg: #0f1115;
+    --cb-surface: #171a21;
+    --cb-surface-2: #1f232c;
+    --cb-border: #2b313c;
+
+    --cb-text: #e8eaf0;
+    --cb-text-muted: #9aa3b2;
+
+    --cb-accent: #e11d48;
+    --cb-accent-hover: #be123c;
+    --cb-accent-soft: rgba(225, 29, 72, 0.14);
+
+    --cb-radius: 0.625rem;
+    --cb-radius-sm: 0.375rem;
+    --cb-gap: 1.25rem;
+    --cb-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.35);
+
+    /* Nối token của site vào biến Bootstrap để component có sẵn ăn theme. */
+    --bs-body-bg: var(--cb-bg);
+    --bs-body-color: var(--cb-text);
+    --bs-border-color: var(--cb-border);
+    --bs-link-color: var(--cb-accent);
+    --bs-link-hover-color: var(--cb-accent-hover);
+}
+
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
+/* Footer luôn nằm đáy màn hình kể cả khi trang ngắn. */
 body {
-  margin-bottom: 60px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--cb-bg);
+    color: var(--cb-text);
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+.site-main {
+    flex: 1 0 auto;
+    padding-block: 2rem;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+/* --- Navbar ---------------------------------------------------------------- */
+
+.site-navbar {
+    background-color: var(--cb-surface);
+    border-bottom: 1px solid var(--cb-border);
+}
+
+.site-navbar .navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--cb-text);
+}
+
+.site-navbar .navbar-brand:hover {
+    color: var(--cb-text);
+}
+
+.brand-mark {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.brand-accent {
+    color: var(--cb-accent);
+}
+
+.site-navbar .nav-link {
+    color: var(--cb-text-muted);
+    font-weight: 500;
+}
+
+.site-navbar .nav-link:hover,
+.site-navbar .nav-link:focus {
+    color: var(--cb-text);
+}
+
+/* --- Footer ---------------------------------------------------------------- */
+
+.site-footer {
+    flex-shrink: 0;
+    background-color: var(--cb-surface);
+    border-top: 1px solid var(--cb-border);
+    padding-block: 2rem 1rem;
+    color: var(--cb-text-muted);
+    font-size: 0.9rem;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: var(--cb-gap);
+}
+
+@media (max-width: 575.98px) {
+    .footer-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.footer-brand {
+    font-weight: 700;
+    color: var(--cb-text);
+    margin-bottom: 0.375rem;
+}
+
+.footer-heading {
+    font-weight: 600;
+    color: var(--cb-text);
+    margin-bottom: 0.375rem;
+}
+
+.footer-note {
+    margin: 0;
+    max-width: 42ch;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links a {
+    color: var(--cb-text-muted);
+    text-decoration: none;
+}
+
+.footer-links a:hover {
+    color: var(--cb-accent);
+}
+
+.footer-bottom {
+    border-top: 1px solid var(--cb-border);
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+}
+
+/* --- Nút và form ----------------------------------------------------------- */
+
+.btn-primary {
+    --bs-btn-bg: var(--cb-accent);
+    --bs-btn-border-color: var(--cb-accent);
+    --bs-btn-hover-bg: var(--cb-accent-hover);
+    --bs-btn-hover-border-color: var(--cb-accent-hover);
+    --bs-btn-active-bg: var(--cb-accent-hover);
+    --bs-btn-active-border-color: var(--cb-accent-hover);
+    --bs-btn-disabled-bg: var(--cb-accent);
+    --bs-btn-disabled-border-color: var(--cb-accent);
+}
+
+.btn:focus-visible,
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.2rem var(--cb-accent-soft);
+    border-color: var(--cb-accent);
+}
+
+.form-control,
+.form-select {
+    background-color: var(--cb-surface-2);
+    border-color: var(--cb-border);
+    color: var(--cb-text);
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--cb-surface-2);
+    color: var(--cb-text);
+}
+
+.form-control::placeholder {
+    color: var(--cb-text-muted);
+}
+
+/* --- Khối nội dung dùng lại ------------------------------------------------ */
+
+.cb-card {
+    background-color: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius);
+    box-shadow: var(--cb-shadow);
+}
+
+.cb-muted {
+    color: var(--cb-text-muted);
 }
