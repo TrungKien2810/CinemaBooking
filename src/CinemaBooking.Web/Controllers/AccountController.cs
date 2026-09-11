@@ -100,6 +100,19 @@ public class AccountController : Controller
         return RedirectToLocal(returnUrl);
     }
 
+    /// <summary>
+    /// POST chứ không phải GET: link đăng xuất dạng GET có thể bị nhúng vào thẻ img trên
+    /// trang khác để đá người dùng ra ngoài. Không gắn [Authorize] vì [AllowAnonymous] ở
+    /// cấp class sẽ vô hiệu nó, và SignOutAsync khi chưa đăng nhập vốn là no-op.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Logout(string? returnUrl = null)
+    {
+        await _signIn.SignOutAsync();
+        return RedirectToLocal(returnUrl);
+    }
+
     [HttpGet]
     public IActionResult AccessDenied() => View();
 

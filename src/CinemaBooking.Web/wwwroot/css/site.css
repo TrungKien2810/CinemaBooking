@@ -95,6 +95,36 @@ body {
     color: var(--cb-text);
 }
 
+.account-nav {
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Email dài không được đẩy vỡ navbar. */
+.account-name {
+    max-width: 16rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nav-cta {
+    color: #fff;
+}
+
+/* Ở mobile navbar xổ dọc, nút Đăng ký kéo full width trông cân hơn. */
+@media (max-width: 767.98px) {
+    .account-nav {
+        align-items: stretch;
+        margin-top: 0.5rem;
+    }
+
+    .nav-cta {
+        display: block;
+        text-align: center;
+    }
+}
+
 /* --- Footer ---------------------------------------------------------------- */
 
 .site-footer {

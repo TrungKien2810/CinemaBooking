@@ -1,0 +1,35 @@
+﻿@inject SignInManager<ApplicationUser> SignInManager
+
+@*
+    Hiển thị tên đăng nhập lấy từ cookie (User.Identity.Name), KHÔNG gọi
+    UserManager.GetUserAsync — partial này nằm trong layout nên chạy ở mọi trang,
+    một lần query DB ở đây là một lần query thừa trên toàn site.
+*@
+
+<ul class="navbar-nav account-nav">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle account-name" href="#" role="button"
+               data-bs-toggle="dropdown" aria-expanded="false">
+                @User.Identity?.Name
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        <button type="submit" class="dropdown-item">Đăng xuất</button>
+                    </form>
+                </li>
+            </ul>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+        </li>
+        <li class="nav-item">
+            <a class="btn btn-primary btn-sm nav-cta" asp-controller="Account" asp-action="Register">Đăng ký</a>
+        </li>
+    }
+</ul>
