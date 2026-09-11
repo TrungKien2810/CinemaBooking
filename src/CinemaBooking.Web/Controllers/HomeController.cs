@@ -26,15 +26,8 @@ public class HomeController : Controller
             .Where(m => m.IsActive)
             .OrderByDescending(m => m.ReleaseDate)
             .ThenBy(m => m.Title)
-            .Select(m => new MovieCardViewModel
-            {
-                Id = m.Id,
-                Title = m.Title,
-                Genre = m.Genre,
-                DurationMinutes = m.DurationMinutes,
-                PosterUrl = m.PosterUrl,
-                ReleaseDate = m.ReleaseDate,
-            })
+            .Select(m => new MovieCardViewModel(
+                m.Id, m.Title, m.Genre, m.DurationMinutes, m.ReleaseDate, m.PosterUrl))
             .ToListAsync(ct);
 
         if (movies.Count == 0)
@@ -43,7 +36,7 @@ public class HomeController : Controller
             _logger.LogWarning("Không có phim nào đang hoạt động — kiểm tra seed catalog đã chạy chưa.");
         }
 
-        return View(new HomeIndexViewModel { Movies = movies });
+        return View(new HomeIndexViewModel(movies));
     }
 
     public IActionResult Privacy()

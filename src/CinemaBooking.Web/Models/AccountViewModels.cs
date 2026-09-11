@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CinemaBooking.Web.Models;
 
-public class RegisterViewModel
+public sealed class RegisterViewModel
 {
     [Required(ErrorMessage = "Vui lòng nhập họ tên.")]
     [StringLength(200, ErrorMessage = "Họ tên tối đa {1} ký tự.")]
@@ -32,7 +32,7 @@ public class RegisterViewModel
     public string ConfirmPassword { get; set; } = string.Empty;
 }
 
-public class LoginViewModel
+public sealed class LoginViewModel
 {
     [Required(ErrorMessage = "Vui lòng nhập email.")]
     [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
