@@ -66,9 +66,12 @@ Chưa có `CatalogSeeder` của Dev A thì trang chủ hiện đúng trạng th�
 
 ### Khi merge vào `dev`
 
-Có đúng **một** chỗ đụng nhau với nhánh Dev A: khối khởi tạo dữ liệu ngay sau
-`var app = builder.Build();` trong `Program.cs`. Cả hai bên đều chèn vào cùng vị trí đó.
-Gộp lại thành một scope, **thứ tự bắt buộc là migration → catalog → identity**:
+Mọi file khác đều tự merge sạch. Chỉ còn **một** điểm phải gỡ tay, và nó giống nhau với
+cả hai nhánh kia: dòng ngay sau `var app = builder.Build();` trong `Program.cs` — cả ba
+người đều chèn vào đúng chỗ đó.
+
+**Với nhánh Dev A** (`feat/s1-a-data-migration-seed`) — cùng một việc, gộp lại thành một
+scope, **thứ tự bắt buộc là migration → catalog → identity**:
 
 ```csharp
 using (var scope = app.Services.CreateScope())
@@ -83,6 +86,11 @@ using (var scope = app.Services.CreateScope())
 `IdentitySeeder` phải chạy sau `MigrateAsync` — nó kiểm tra đã có migration nào được áp
 chưa và dừng ngay nếu chưa. Sau khi merge xong thì bỏ bước sinh migration thủ công ở trên,
 web tự áp migration lúc khởi động.
+
+**Với nhánh Dev B** (`feat/s2-b-catalog-query`) — hai việc không liên quan nhau tình cờ nằm
+cùng dòng, giữ cả hai. `UseCinemaExceptionHandling()` phải đứng **trước** vì middleware chỉ
+bắt được exception của những middleware nằm sau nó; khối seed đặt sau, thứ tự giữa chúng
+không ảnh hưởng gì vì seed chạy xong trước khi `app.Run()` mở cổng.
 
 ---
 
