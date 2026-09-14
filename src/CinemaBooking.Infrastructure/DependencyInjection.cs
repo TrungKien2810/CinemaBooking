@@ -27,6 +27,9 @@ public static class DependencyInjection
 
         services.AddScoped<IEmailSender, LoggingEmailSender>();
 
+        // Singleton: không giữ trạng thái, chỉ gọi RNG mật mã.
+        services.AddSingleton<IBookingCodeGenerator, BookingCodeGenerator>();
+
         return services;
     }
 }

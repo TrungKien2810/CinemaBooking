@@ -1,17 +1,32 @@
 ﻿using CinemaBooking.Domain.Entities;
 using CinemaBooking.Infrastructure;
+using CinemaBooking.Infrastructure.Logging;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Hubs;
+using CinemaBooking.Web.Middleware;
+using CinemaBooking.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
 
+// ── Dev B: log có cấu trúc, dùng chung cấu hình với Worker ──
+builder.Logging.AddCinemaLogging(builder.Environment.IsDevelopment());
+
 // DbContext + SeatLockManager + PaymentService + EmailSender
 builder.Services.AddCinemaInfrastructure(builder.Configuration);
+
+// ── Dev B: truy vấn catalog & lịch chiếu ──
+builder.Services.Configure<DisplayTimeZone>(
+    builder.Configuration.GetSection(DisplayTimeZone.SectionName));
+builder.Services.TryAddSingleton(TimeProvider.System);
+builder.Services.AddScoped<IShowtimeQueryService, ShowtimeQueryService>();
+builder.Services.AddScoped<IMovieCatalogService, MovieCatalogService>();
+builder.Services.AddScoped<IShowtimeScheduler, ShowtimeScheduler>();
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(o =>
@@ -34,6 +49,9 @@ builder.Services.AddSession(o =>
 
 var app = builder.Build();
 
+// Đặt đầu pipeline: middleware chỉ bắt được exception của những middleware nằm sau nó.
+app.UseCinemaExceptionHandling();
+
 // --- Dev A: khởi tạo dữ liệu ---
 // Áp migration rồi seed catalog ngay lúc khởi động: cả nhóm chỉ cần `git pull` + `dotnet run`
 // là có schema và dữ liệu mẫu giống nhau, không phải nhớ chạy `dotnet ef database update`.
@@ -46,7 +64,6 @@ using (var scope = app.Services.CreateScope())
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
@@ -56,6 +73,7 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseCinemaRequestLogScope();
 
 app.MapStaticAssets();
 
