@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" role="img" aria-label="Chưa có poster">
+  <rect width="200" height="300" fill="#1f232c"/>
+  <g fill="none" stroke="#4b5364" stroke-width="4" stroke-linejoin="round">
+    <rect x="58" y="112" width="84" height="60" rx="6"/>
+    <path d="M58 130h84M58 154h84M76 112v60M124 112v60"/>
+  </g>
+  <text x="100" y="206" fill="#6b7484" font-family="Segoe UI, Arial, sans-serif" font-size="13"
+        text-anchor="middle">Chưa có poster</text>
+</svg>

@@ -1,21 +1,42 @@
 using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
+using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace CinemaBooking.Web.Controllers;
 
 public class HomeController : Controller
 {
+    private readonly CinemaDbContext _db;
     private readonly ILogger<HomeController> _logger;
 
-    public HomeController(ILogger<HomeController> logger)
+    public HomeController(CinemaDbContext db, ILogger<HomeController> logger)
     {
+        _db = db;
         _logger = logger;
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index(CancellationToken ct)
     {
-        return View();
+        // AsNoTracking: trang chỉ đọc, không cần change tracker giữ lại entity.
+        // Select trước ToListAsync để SQL chỉ kéo về đúng cột cần vẽ.
+        var movies = await _db.Movies
+            .AsNoTracking()
+            .Where(m => m.IsActive)
+            .OrderByDescending(m => m.ReleaseDate)
+            .ThenBy(m => m.Title)
+            .Select(m => new MovieCardViewModel(
+                m.Id, m.Title, m.Genre, m.DurationMinutes, m.ReleaseDate, m.PosterUrl))
+            .ToListAsync(ct);
+
+        if (movies.Count == 0)
+        {
+            // Trang chủ trắng trơn gần như luôn là do chưa seed, không phải lỗi view.
+            _logger.LogWarning("Không có phim nào đang hoạt động — kiểm tra seed catalog đã chạy chưa.");
+        }
+
+        return View(new HomeIndexViewModel(movies));
     }
 
     public IActionResult Privacy()

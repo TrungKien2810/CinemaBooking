@@ -32,11 +32,29 @@ builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(o =>
     {
         o.Password.RequiredLength = 8;
+        o.Password.RequireNonAlphanumeric = false;
         o.User.RequireUniqueEmail = true;
         o.SignIn.RequireConfirmedAccount = false;
+
+        // Khóa tài khoản 5 phút sau 5 lần sai mật khẩu — chặn dò mật khẩu.
+        o.Lockout.MaxFailedAccessAttempts = 5;
+        o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
     })
     .AddEntityFrameworkStores<CinemaDbContext>()
     .AddDefaultTokenProviders();
+
+// ── Dev C: cookie đăng nhập trỏ về AccountController (MVC), không dùng Razor Pages Identity UI ──
+builder.Services.ConfigureApplicationCookie(o =>
+{
+    o.LoginPath = "/Account/Login";
+    o.LogoutPath = "/Account/Logout";
+    o.AccessDeniedPath = "/Account/AccessDenied";
+    o.ReturnUrlParameter = "returnUrl";
+    o.ExpireTimeSpan = TimeSpan.FromDays(7);
+    o.SlidingExpiration = true;
+    o.Cookie.HttpOnly = true;
+    o.Cookie.SameSite = SameSiteMode.Lax;
+});
 
 // Giỏ ghế tạm giữa trang chọn ghế và trang thanh toán.
 builder.Services.AddDistributedMemoryCache();
@@ -52,7 +70,7 @@ var app = builder.Build();
 // Đặt đầu pipeline: middleware chỉ bắt được exception của những middleware nằm sau nó.
 app.UseCinemaExceptionHandling();
 
-// --- Dev A: khởi tạo dữ liệu ---
+// --- Dev A + Dev C: khởi tạo dữ liệu (thứ tự bắt buộc: migration → catalog → identity) ---
 // Áp migration rồi seed catalog ngay lúc khởi động: cả nhóm chỉ cần `git pull` + `dotnet run`
 // là có schema và dữ liệu mẫu giống nhau, không phải nhớ chạy `dotnet ef database update`.
 using (var scope = app.Services.CreateScope())
@@ -60,6 +78,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<CinemaDbContext>();
     await db.Database.MigrateAsync();
     await CatalogSeeder.SeedAsync(db);
+    await IdentitySeeder.SeedAsync(scope.ServiceProvider);
 }
 
 if (!app.Environment.IsDevelopment())
