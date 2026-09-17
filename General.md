@@ -12,6 +12,7 @@
 | **Tên** | `CinemaBooking.Smart` |
 | **Loại** | Web application (ASP.NET Core MVC) có tương tác real-time |
 | **Nền tảng** | .NET 9 · EF Core 9 · SQL Server (LocalDB khi dev) · SignalR |
+| **Mô hình** | Nền tảng tổng hợp **nhiều chuỗi rạp** (CGV, Starlight…), mỗi chuỗi có **nhiều chi nhánh** (CGV Vincom Bà Triệu, CGV Aeon Tân Phú…): mỗi chuỗi tự quản chi nhánh, phòng, lịch chiếu bằng tài khoản riêng; khách tìm một phim và thấy suất chiếu ở mọi chi nhánh của mọi chuỗi đang chiếu phim đó |
 | **Điểm nhấn** | Giữ ghế real-time: khi một khách đang chọn ghế, khách khác thấy ghế bị khóa tạm thời (5 phút) |
 | **Nhóm** | 3 người · ~8 tuần (xem [SPRINT-PLAN.md](docs/project-state/SPRINT-PLAN.md)) |
 
@@ -41,20 +42,34 @@ xem §12.
 ### 3.1 Khách hàng
 
 - Xem danh sách phim đang chiếu (tên, thể loại, thời lượng, poster), tìm kiếm & lọc theo thể loại.
-- Xem lịch chiếu theo ngày / rạp / phòng.
+- Tìm theo tên phim → trang chi tiết phim liệt kê suất chiếu của **mọi chuỗi rạp** đang chiếu phim đó,
+  gom theo ngày → chuỗi rạp → chi nhánh, lọc được theo chuỗi và thành phố. Khách tự chọn suất, không bị
+  gắn vào một chuỗi.
 - Chọn ghế trên sơ đồ phòng chiếu, chọn nhiều ghế.
 - **Giữ ghế** ngay khi click — ghế đổi màu ở mọi máy khác trong cùng suất chiếu, khóa 5 phút.
 - Đặt vé (guest checkout hoặc đã đăng nhập), thanh toán giả lập.
 - Nhận email xác nhận kèm mã đặt vé.
 - Bỏ chọn ghế thủ công; hoặc ghế tự trả về trống sau 5 phút.
 
-### 3.2 Quản trị viên
+### 3.2 Quản trị nền tảng (vai trò `Admin`)
 
-- CRUD phim, rạp, phòng chiếu (cấu hình số hàng × số cột → sinh ghế tự động), suất chiếu.
-- Quản lý đơn: xem, tìm theo mã, hủy vé.
-- Thống kê doanh thu theo ngày / phim / suất chiếu.
+- CRUD **phim** — danh mục phim dùng chung cho mọi chuỗi rạp; soft delete bằng `IsActive`. Cùng một phim
+  chiếu ở nhiều chuỗi chỉ có **một** bản ghi (§5.1 mục 4).
+- CRUD **chuỗi rạp** và cấp tài khoản quản lý (`ChainManager`) cho từng chuỗi.
+- Xem đơn và doanh thu toàn hệ thống, lọc theo chuỗi.
 
-### 3.3 Tác vụ nền (Worker Service)
+### 3.3 Quản lý chuỗi rạp (vai trò `ChainManager`)
+
+Mỗi tài khoản gắn với **đúng một** chuỗi rạp, quản lý **mọi chi nhánh** của chuỗi đó và chỉ thấy/sửa
+dữ liệu của chuỗi mình (§7.7):
+
+- CRUD chi nhánh (tên, thành phố, địa chỉ) và phòng chiếu (cấu hình số hàng × số cột → sinh ghế tự động).
+- CRUD suất chiếu: chọn phim từ danh mục chung (không gõ tên phim tự do) + phòng thuộc chi nhánh của
+  chuỗi mình, tự đặt giá. Phim chưa có trong danh mục thì báo Admin nền tảng thêm.
+- Quản lý đơn thuộc suất chiếu của chuỗi: xem, tìm theo mã, hủy vé.
+- Thống kê doanh thu của chuỗi theo ngày / phim / suất chiếu.
+
+### 3.4 Tác vụ nền (Worker Service)
 
 - `ExpiredSeatCleaner` — mỗi **10 giây**, xóa lock hết hạn và báo ghế trống qua SignalR.
 - `EmailOutboxWorker` — mỗi 15 giây, gửi email đang chờ trong bảng `OutboxEmails`, retry tối đa 5 lần.
@@ -133,7 +148,8 @@ EF Core Code-First. Kiểu tiền tệ dùng `decimal(18,2)`, mọi mốc thời
 | Bảng | Cột chính |
 |---|---|
 | `Movies` | Id, Title, Description, Genre, **DurationMinutes**, ReleaseDate, PosterUrl, IsActive |
-| `Theaters` | Id, Name, Address |
+| `CinemaChains` | Id, Name *(unique)*, LogoUrl, IsActive |
+| `Theaters` *(chi nhánh)* | Id, **CinemaChainId**, Name, **City**, Address · *unique (CinemaChainId, Name)* |
 | `Rooms` | Id, TheaterId, RoomName, TotalRows, TotalColumns |
 | `Seats` | Id, RoomId, RowNumber, ColumnNumber, SeatType · *unique (RoomId, Row, Column)* |
 | `Showtimes` | Id, MovieId, RoomId, StartTimeUtc, EndTimeUtc, BasePrice |
@@ -141,10 +157,10 @@ EF Core Code-First. Kiểu tiền tệ dùng `decimal(18,2)`, mọi mốc thời
 | `BookingSeats` | Id, BookingId, SeatId, **ShowtimeId**, PriceAtBooking · **unique (ShowtimeId, SeatId)** |
 | `Payments` | Id, BookingId, Amount, PaymentMethod, Status, TransactionId, CreatedUtc |
 | `OutboxEmails` | Id, ToAddress, Subject, Body, Status, AttemptCount, LastError, CreatedUtc, SentUtc |
-| `DailyRevenueReports` | Id, ReportDate, MovieId, TicketsSold, Revenue, GeneratedUtc |
-| *(Identity)* | `AspNetUsers` / `AspNetRoles` / … — sinh bởi `IdentityDbContext<ApplicationUser>` |
+| `DailyRevenueReports` | Id, ReportDate, **CinemaChainId**, MovieId, TicketsSold, Revenue, GeneratedUtc |
+| *(Identity)* | `AspNetUsers` / `AspNetRoles` / … — sinh bởi `IdentityDbContext<ApplicationUser>`; `ApplicationUser` thêm FullName, **CinemaChainId?** (chỉ có giá trị với `ChainManager`) |
 
-### 5.1 Ba ràng buộc quan trọng
+### 5.1 Bốn ràng buộc quan trọng
 
 1. **Không lưu trạng thái "đang giữ" xuống DB.** Lock sống trong RAM (`SeatLockManager`) —
    ghi/xóa liên tục xuống DB vừa chậm vừa để lại rác khi process chết.
@@ -153,6 +169,13 @@ EF Core Code-First. Kiểu tiền tệ dùng `decimal(18,2)`, mọi mốc thời
    xuống `BookingSeats` dù đã có ở `Bookings`.
 3. **Không có cột `Theaters.TotalRooms`.** Đó là dữ liệu dẫn xuất — đọc bằng `Rooms.Count`,
    tránh lệch dữ liệu.
+4. **Quyền sở hữu của chuỗi rạp chỉ lưu ở `Theaters.CinemaChainId`.** Phòng, suất chiếu, đơn suy ra
+   chuỗi qua `Room → Theater`, không lặp `CinemaChainId` xuống `Showtimes`/`Bookings` (cùng lý do bỏ
+   `TotalRooms`). Ngoại lệ: `DailyRevenueReports` là bảng tổng hợp nên lưu sẵn. `Movies` **không** có
+   `CinemaChainId` — phim giữa các chuỗi gần như luôn trùng nhau nên dùng **một danh mục chuẩn chung**;
+   chuỗi chọn phim theo `MovieId` khi tạo suất. Không để mỗi chuỗi tự tạo phim rồi ghép theo tên: tên
+   hay lệch ("Avatar 3" / "Avatar: Lửa và Tro Tàn"), phim làm lại trùng tên, và tìm "Avatar" sẽ ra
+   mỗi chuỗi một bản.
 
 ---
 
@@ -226,6 +249,20 @@ lock RAM.
 sẽ ném `InvalidOperationException`. Cần DB thì inject `IServiceScopeFactory` và tự tạo scope
 (xem `EmailOutboxWorker`).
 
+### 7.7 Cách ly dữ liệu giữa các chuỗi rạp
+
+Ẩn nút trên giao diện **không** phải là phân quyền: quản lý CGV sửa `id` trên URL vẫn mở được suất
+chiếu của Starlight nếu controller không kiểm tra.
+
+- `CinemaChainId` lấy từ **tài khoản đang đăng nhập** (server-side), không bao giờ nhận từ form/query string.
+- Load theo id mà bản ghi không thuộc chuỗi mình → trả **404** (không 403, để không lộ id có tồn tại).
+- Tạo/sửa suất chiếu phải kiểm tra `RoomId` thuộc chuỗi mình — form có thể bị sửa để gửi phòng chuỗi khác.
+- **Không** dùng EF global query filter: trang khách, `SeatHub` và Worker cần đọc xuyên chuỗi, filter
+  toàn cục buộc rải `IgnoreQueryFilters()` khắp nơi. Lọc tường minh ở service quản trị + test
+  "quản lý chuỗi A không đọc/sửa được dữ liệu chuỗi B".
+- Khóa ghế, `SeatHub`, unique index `(ShowtimeId, SeatId)` **không đổi**: `ShowtimeId` vốn đã duy nhất
+  toàn hệ thống.
+
 ---
 
 ## 8. Giao diện
@@ -233,23 +270,24 @@ sẽ ném `InvalidOperationException`. Cần DB thì inject `IServiceScopeFactor
 | Trang | Nội dung |
 |---|---|
 | Trang chủ | Phim nổi bật, tìm kiếm, lọc theo thể loại |
-| Chi tiết phim | Thông tin phim + suất chiếu theo ngày |
+| Chi tiết phim | Thông tin phim + suất chiếu theo ngày, gom theo chuỗi rạp → chi nhánh; lọc theo chuỗi và thành phố |
 | Chọn ghế | Sơ đồ dạng lưới CSS Grid; 4 trạng thái: trống / mình đang giữ / người khác giữ / đã đặt. Đồng hồ đếm ngược 5 phút |
 | Thanh toán | Form thông tin khách + tóm tắt ghế, validate bằng Data Annotations + jQuery Unobtrusive |
 | Xác nhận | Mã đặt vé, thông báo email đang được gửi |
-| Admin | CRUD phim/rạp/phòng/suất chiếu, danh sách đơn, dashboard doanh thu |
+| Admin nền tảng | CRUD phim, chuỗi rạp + tài khoản quản lý; đơn & doanh thu toàn hệ thống |
+| Quản lý chuỗi | CRUD chi nhánh/phòng/suất chiếu của chuỗi mình, danh sách đơn, dashboard doanh thu của chuỗi (lọc theo chi nhánh) |
 
 ---
 
 ## 9. Kế hoạch phát triển
 
 3 người · 8 tuần · 4 sprint × 2 tuần. Chi tiết đầu việc, phân công và lịch commit:
-**[docs/project-state/SPRINT-PLAN.md](docs/project-state/SPRINT-PLAN.md)**.
+**[SPRINT-PLAN.md](docs/project-state/SPRINT-PLAN.md)**.
 
 | Sprint | Tuần | Mục tiêu | Kết quả bàn giao |
 |---|---|---|---|
 | 1 | 1–2 | Nền tảng | Solution, Domain, EF Core + migration, seed, Identity, CI |
-| 2 | 3–4 | Catalog & Admin | CRUD phim/rạp/phòng/suất chiếu, trang chủ, chi tiết phim |
+| 2 | 3–4 | Catalog & Admin | Chuỗi rạp + vai trò `ChainManager`, CRUD phim/rạp/phòng/suất chiếu, chi tiết phim đa chuỗi |
 | 3 | 5–6 | Real-time | `SeatHub`, `SeatLockManager`, sơ đồ ghế live |
 | 4 | 7–8 | Đặt vé & Worker | Booking + thanh toán, 3 worker, thống kê, test & tài liệu |
 
@@ -261,6 +299,7 @@ sẽ ném `InvalidOperationException`. Cần DB thì inject `IServiceScopeFactor
 |---|---|
 | Nhiều người click cùng một ghế | `ConcurrentDictionary.TryAdd` (atomic) + unique index ở DB làm chốt chặn cuối |
 | Client mất kết nối giữa chừng | `OnDisconnectedAsync` nhả lock; giai đoạn thanh toán dựa vào `Booking` `Pending` |
+| Quản lý chuỗi này sửa dữ liệu chuỗi khác (đổi id trên URL) | Lọc theo `CinemaChainId` của tài khoản ở server, 404 khi không thuộc chuỗi, test cách ly (§7.7) |
 | Ghế bị treo sau khi hết hạn | `ExpiredSeatCleaner` mỗi 10 giây + `TryLock` tự cướp lock đã quá hạn |
 | Ghế đã đặt không hiển thị khi tải trang | Controller trả kèm danh sách `Confirmed` từ DB, không dựa vào SignalR |
 | Email mất khi web process chết | Bảng `OutboxEmails` + Worker gửi, retry 5 lần — không fire-and-forget |

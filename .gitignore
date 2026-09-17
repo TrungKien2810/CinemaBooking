@@ -36,7 +36,11 @@ Thumbs.db
 
 ## Governance (state cục bộ của máy — không đẩy lên GitHub)
 .govern/
-docs/
+# docs/ là state cục bộ, riêng SPRINT-PLAN.md được đẩy lên cho cả nhóm đọc
+docs/*
+!docs/project-state/
+docs/project-state/*
+!docs/project-state/SPRINT-PLAN.md
 config/
 .claude/
 .agents/

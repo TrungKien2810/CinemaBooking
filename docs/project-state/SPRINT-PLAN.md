@@ -10,7 +10,7 @@ Tài liệu đặc tả: [`General.md`](../../General.md)
 
 | Ký hiệu | Vai trò | Sở hữu chính |
 |---|---|---|
-| **A** | Backend / Data | Domain, EF Core, migration, seed, Admin CRUD, thống kê |
+| **A** | Backend / Data | Domain, EF Core, migration, seed, Admin CRUD, cách ly dữ liệu theo chuỗi rạp, thống kê |
 | **B** | Real-time / Worker | `SeatHub`, `SeatLockManager`, Booking service, thanh toán, 3 Worker, unit test |
 | **C** | Frontend / UX | Razor Views, layout, sơ đồ ghế, SignalR JS client, Identity UI, form đặt vé |
 
@@ -54,6 +54,7 @@ Ví dụ: `feat/s3-b-seat-hub`, `fix/s2-a-showtime-overlap`.
 | `Program.cs` (Web) | C1.3, B1.6, B2.8, B2.9, B3.7 | Mỗi người chỉ thêm dòng vào block DI của mình, không reorder block người khác |
 | Seed dữ liệu | A1.7, A1.8 vs C1.6 | Tách `CatalogSeeder` (A) và `IdentitySeeder` (C); merge A trước |
 | EF Core migration | A1.6, A3.5, A4.6 | **Chỉ Dev A** tạo migration; ai cần đổi schema thì báo A |
+| Chuỗi rạp & vai trò | A2.1, A2.2 vs C2.10 | A merge entity `CinemaChain` + migration trước; C chỉ thêm role/tài khoản vào `IdentitySeeder` |
 | Luồng seat map | A3.1, A3.3 · B3.1 · C3.1 | Merge A3.1 + A3.3 vào `dev` sớm trong tuần 1 để B và C có contract |
 
 **Thông điệp commit** — Conventional Commits, mô tả bằng tiếng Anh, ngắn gọn:
@@ -140,23 +141,28 @@ chạy thử trên trình duyệt · PR được review · migration chạy đư
 
 ## 6. Sprint 2 — Catalog & Admin · 21/09 → 04/10
 
-**Mục tiêu sprint:** admin quản trị được toàn bộ dữ liệu; khách xem được lịch chiếu.
-**Demo:** admin tạo phim mới + suất chiếu → khách thấy ngay ở trang chi tiết phim.
+**Mục tiêu sprint:** nền tảng nhiều chuỗi rạp — admin quản lý phim + chuỗi rạp; mỗi chuỗi tự quản
+chi nhánh/phòng/suất chiếu; khách thấy suất chiếu ở mọi chi nhánh của mọi chuỗi cho cùng một phim.
+**Demo:** quản lý CGV tạo suất phim X ở 2 chi nhánh, quản lý Starlight tạo suất ở 1 chi nhánh → khách mở
+phim X thấy cả ba, lọc theo thành phố được; quản lý CGV sửa id trên URL để mở suất của Starlight → 404.
+
+> 🔄 **Đổi mô hình 17/09:** từ "một rạp, một admin" sang "nhiều chuỗi rạp, mỗi chuỗi một tài khoản
+> quản lý chung cho mọi chi nhánh" ([`General.md` §3, §7.7](../../General.md)). Khóa ghế / SignalR / đặt vé không đổi.
 
 ### Dev A (10 commit)
 
 | # | Commit |
 |---|---|
-| A2.1 | `feat(admin): add MoviesController with list and search` |
-| A2.2 | `feat(admin): add create and edit movie with validation` |
-| A2.3 | `feat(admin): soft delete movie via IsActive flag` |
-| A2.4 | `feat(admin): add TheatersController crud` |
-| A2.5 | `feat(admin): add RoomsController with seat map config` |
-| A2.6 | `feat(admin): regenerate seats when room layout changes` |
-| A2.7 | `feat(admin): add ShowtimesController crud` |
-| A2.8 | `feat(admin): reject overlapping showtimes in the same room` |
+| A2.1 | `feat(domain): add CinemaChain and link theaters and managers to a chain` — merge sớm nhất sprint |
+| A2.2 | `feat(data): add cinema chain migration and seed two chains with branches` — 2 chuỗi × 2 chi nhánh ở 2 thành phố, ≥ 2 phim có suất ở cả hai chuỗi; migration mới → mỗi dev drop DB local |
+| A2.3 | `feat(admin): add movie crud with validation and soft delete for platform admin` |
+| A2.4 | `feat(admin): add chain crud and manager account creation for platform admin` |
+| A2.5 | `feat(admin): resolve current chain from the signed in manager` |
+| A2.6 | `feat(admin): add branch (Theater) and room crud scoped to the chain` |
+| A2.7 | `feat(admin): regenerate seats when room layout changes` |
+| A2.8 | `feat(admin): add ShowtimesController scoped to chain rooms and reject overlaps` |
 | A2.9 | `test(admin): cover showtime overlap and soft delete rules` |
-| A2.10 | `refactor(data): extract query helpers for catalog reads` |
+| A2.10 | `test(admin): cover a manager cannot read or edit another chain's data` |
 
 ### Dev B (10 commit)
 
@@ -172,21 +178,23 @@ chạy thử trên trình duyệt · PR được review · migration chạy đư
 | B2.8 | `feat(infra): add global exception handling middleware` |
 | B2.9 | `feat(infra): add structured logging configuration` |
 | B2.10 | `docs(arch): record the PLINQ versus SQL decision` |
+| B2.11 | `feat(web): include chain, branch and city in showtime list items` — bổ sung do đổi mô hình |
+| B2.12 | `feat(web): filter movie showtimes by cinema chain and city` — bổ sung do đổi mô hình |
 
 ### Dev C (10 commit)
 
 | # | Commit |
 |---|---|
-| C2.1 | `feat(admin): add admin layout with sidebar navigation` |
+| C2.1 | `feat(admin): add admin layout with sidebar navigation per role` |
 | C2.2 | `feat(admin): add movie list and form views` |
-| C2.3 | `feat(admin): add theater and room views` |
+| C2.3 | `feat(admin): add chain, branch and room views` |
 | C2.4 | `feat(admin): add room seat map preview` |
 | C2.5 | `feat(admin): add showtime list and form views` |
-| C2.6 | `feat(web): add movie detail page with showtimes by date` |
-| C2.7 | `feat(web): add date tab strip for showtime selection` |
+| C2.6 | `feat(web): add movie detail page with showtimes grouped by chain and branch` |
+| C2.7 | `feat(web): add date tab strip with chain and city filters for showtime selection` |
 | C2.8 | `feat(web): add search bar and genre filter to home page` |
 | C2.9 | `feat(web): wire client side validation with unobtrusive jquery` |
-| C2.10 | `fix(web): make admin tables scroll on small screens` |
+| C2.10 | `feat(auth): seed ChainManager role and one manager account per chain` — việc cũ "admin tables scroll" gộp vào C4.8 |
 
 ---
 
@@ -257,13 +265,13 @@ chạy thử trên trình duyệt · PR được review · migration chạy đư
 
 | # | Commit |
 |---|---|
-| A4.1 | `feat(admin): add booking list with code and status filter` |
+| A4.1 | `feat(admin): add booking list scoped to chain with code and status filter` |
 | A4.2 | `feat(admin): add booking detail with seat breakdown` |
 | A4.3 | `feat(admin): cancel a booking and free its seats` |
-| A4.4 | `feat(admin): add revenue dashboard by day` |
+| A4.4 | `feat(admin): add revenue dashboard by day per chain` |
 | A4.5 | `feat(admin): add revenue breakdown by movie and showtime` |
-| A4.6 | `feat(data): add DailyRevenueReport migration` |
-| A4.7 | `test(admin): cover cancellation and revenue aggregation` |
+| A4.6 | `feat(data): add DailyRevenueReport migration with CinemaChainId` |
+| A4.7 | `test(admin): cover cancellation, chain scoping and revenue aggregation` |
 | A4.8 | `docs(project): write user guide with screenshots` |
 | A4.9 | `docs(project): write slide mapping report for submission` |
 | A4.10 | `chore(data): add reset and reseed script for demo` |
@@ -279,7 +287,7 @@ chạy thử trên trình duyệt · PR được review · migration chạy đư
 | B4.5 | `feat(web): enqueue confirmation email into the outbox` |
 | B4.6 | `feat(worker): implement ExpiredSeatCleaner on a ten second timer` |
 | B4.7 | `feat(worker): implement EmailOutboxWorker with retry limit` |
-| B4.8 | `feat(worker): implement DailyReportWorker aggregation` |
+| B4.8 | `feat(worker): implement DailyReportWorker aggregation per chain and movie` |
 | B4.9 | `feat(worker): broadcast SeatUnlocked from worker via hub client` |
 | B4.10 | `test(web): cover the full booking flow end to end` |
 
@@ -294,7 +302,7 @@ chạy thử trên trình duyệt · PR được review · migration chạy đư
 | C4.5 | `feat(ui): add booking lookup page by code` |
 | C4.6 | `feat(ui): add my bookings page for signed in users` |
 | C4.7 | `feat(ui): add empty and error states across pages` |
-| C4.8 | `fix(ui): make the seat map usable on mobile` |
+| C4.8 | `fix(ui): make the seat map and admin tables usable on mobile` |
 | C4.9 | `style(ui): unify spacing colors and typography` |
 | C4.10 | `docs(ui): add screenshots to README` |
 
@@ -305,7 +313,7 @@ chạy thử trên trình duyệt · PR được review · migration chạy đư
 | Ngày | Mốc | Tiêu chí đạt |
 |---|---|---|
 | 20/09 | Kết thúc Sprint 1 | `dotnet run` lên trang chủ có phim từ DB; login được; CI xanh |
-| 04/10 | Kết thúc Sprint 2 | Admin CRUD đủ 4 thực thể; khách xem được lịch chiếu theo ngày |
+| 04/10 | Kết thúc Sprint 2 | Admin CRUD phim + chuỗi rạp; quản lý chuỗi CRUD chi nhánh/phòng/suất của mình; khách thấy suất của nhiều chuỗi, nhiều chi nhánh theo ngày; test cách ly chuỗi xanh |
 | 11/10 | **Giữa Sprint 3** | Hub gửi/nhận được tin nhắn giữa 2 client, dù UI còn thô |
 | 18/10 | Kết thúc Sprint 3 | 2 trình duyệt thấy ghế nhau đổi màu dưới 1 giây |
 | 25/10 | **Chốt tính năng** | Đặt vé end-to-end chạy được; từ đây chỉ sửa lỗi |
@@ -322,5 +330,6 @@ Nếu đến **11/10** SignalR vẫn chưa chạy giữa 2 client, cắt theo th
 3. Bỏ `EmailOutboxWorker`, giữ `LoggingEmailSender` ghi log thay vì gửi thật.
 4. Bỏ soft delete / lịch sử — chỉ giữ CRUD cơ bản.
 
-**Không bao giờ cắt:** `SeatHub` + `SeatLockManager` + luồng đặt vé + unique index chống đặt trùng.
+**Không bao giờ cắt:** `SeatHub` + `SeatLockManager` + luồng đặt vé + unique index chống đặt trùng
++ kiểm tra cách ly dữ liệu giữa các chuỗi rạp.
 Đó là toàn bộ giá trị của đề tài.
