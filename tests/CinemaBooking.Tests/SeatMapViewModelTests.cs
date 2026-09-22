@@ -2,6 +2,7 @@ using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Models;
+using CinemaBooking.Web.Services;
 
 namespace CinemaBooking.Tests;
 
@@ -32,7 +33,7 @@ public class SeatMapViewModelTests
     }
 
     private static SeatMapViewModel Build(Showtime showtime, params int[] booked) =>
-        SeatMapViewModel.Build(showtime, booked.ToHashSet(), StartLocal, holdSeconds: 300);
+        SeatMapViewModel.Build(showtime, booked.ToHashSet(), new SeatPricingService(), StartLocal, holdSeconds: 300);
 
     [Fact]
     public void Grid_has_one_row_per_room_row_and_one_cell_per_column()
