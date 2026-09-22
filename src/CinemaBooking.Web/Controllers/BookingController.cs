@@ -19,6 +19,7 @@ public class BookingController : Controller
     private readonly CinemaDbContext _db;
     private readonly IBookedSeatQuery _bookedSeats;
     private readonly ISeatLockManager _locks;
+    private readonly ISeatPricingService _pricing;
     private readonly DisplayTimeZone _tz;
     private readonly TimeProvider _clock;
 
@@ -26,12 +27,14 @@ public class BookingController : Controller
         CinemaDbContext db,
         IBookedSeatQuery bookedSeats,
         ISeatLockManager locks,
+        ISeatPricingService pricing,
         IOptions<DisplayTimeZone> tz,
         TimeProvider clock)
     {
         _db = db;
         _bookedSeats = bookedSeats;
         _locks = locks;
+        _pricing = pricing;
         _tz = tz.Value;
         _clock = clock;
     }
@@ -45,7 +48,7 @@ public class BookingController : Controller
         var booked = await _bookedSeats.GetBookedSeatIdsAsync(showtime.Id, ct);
 
         return View(SeatMapViewModel.Build(
-            showtime, booked, _tz.ToLocalTime(showtime.StartTimeUtc), (int)SeatHub.HoldDuration.TotalSeconds));
+            showtime, booked, _pricing, _tz.ToLocalTime(showtime.StartTimeUtc), (int)SeatHub.HoldDuration.TotalSeconds));
     }
 
     /// <summary>
