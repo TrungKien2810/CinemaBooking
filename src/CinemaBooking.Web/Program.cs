@@ -28,6 +28,9 @@ builder.Services.AddScoped<IShowtimeQueryService, ShowtimeQueryService>();
 builder.Services.AddScoped<IMovieCatalogService, MovieCatalogService>();
 builder.Services.AddScoped<IShowtimeScheduler, ShowtimeScheduler>();
 
+// ── Dev A: sơ đồ ghế & đặt vé ──
+builder.Services.AddScoped<IBookedSeatQuery, BookedSeatQuery>();
+
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(o =>
     {
