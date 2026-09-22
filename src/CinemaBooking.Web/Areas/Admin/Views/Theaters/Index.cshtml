@@ -29,6 +29,7 @@
                 <td>@t.RoomCount</td>
                 <td>@(t.IsActive ? "Đang hoạt động" : "Đã đóng")</td>
                 <td class="text-end">
+                    <a asp-controller="Rooms" asp-action="Index" asp-route-theaterId="@t.Id" class="btn btn-sm btn-outline-primary">Phòng</a>
                     <a asp-action="Edit" asp-route-id="@t.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
                     @if (t.IsActive)
                     {
