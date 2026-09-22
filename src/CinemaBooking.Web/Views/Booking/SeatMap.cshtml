@@ -29,3 +29,19 @@
         </div>
     }
 </div>
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger mt-3">@error</div>
+}
+
+@*
+    Contract cho JS của Dev C: sau khi SignalR kết nối, ghi connection id vào input connectionId;
+    với mỗi ghế đang giữ, thêm một <input type="hidden" name="seatIds" value="{seatId}"> vào form.
+    Server kiểm tra lại toàn bộ bằng SeatLockManager trước khi lưu Session.
+*@
+<form asp-action="SelectSeats" method="post" id="seat-selection-form" class="mt-3">
+    <input type="hidden" name="showtimeId" value="@Model.ShowtimeId" />
+    <input type="hidden" name="connectionId" id="seat-connection-id" />
+    <button type="submit" class="btn btn-primary">Tiếp tục</button>
+</form>
