@@ -1,0 +1,50 @@
+@model RoomsIndexViewModel
+@{
+    ViewData["Title"] = $"Phòng chiếu — {Model.TheaterName}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Phòng chiếu · @Model.TheaterName</h1>
+    <div>
+        <a asp-controller="Theaters" asp-action="Index" class="btn btn-link">Chi nhánh</a>
+        <a asp-action="Create" asp-route-theaterId="@Model.TheaterId" class="btn btn-primary">Thêm phòng</a>
+    </div>
+</div>
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<table class="table table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Tên phòng</th>
+            <th>Hàng × ghế</th>
+            <th>Số ghế</th>
+            <th>Số suất chiếu</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model.Rooms)
+        {
+            <tr>
+                <td>@r.RoomName</td>
+                <td>@r.TotalRows × @r.TotalColumns</td>
+                <td>@r.SeatCount</td>
+                <td>@r.ShowtimeCount</td>
+                <td class="text-end">
+                    <a asp-action="Edit" asp-route-id="@r.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
+                    @if (r.ShowtimeCount == 0)
+                    {
+                        <form asp-action="Delete" asp-route-id="@r.Id" method="post" class="d-inline"
+                              onsubmit="return confirm('Xóa phòng này và toàn bộ ghế?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
