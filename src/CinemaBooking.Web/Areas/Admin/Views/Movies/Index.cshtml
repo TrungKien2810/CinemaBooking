@@ -1,0 +1,44 @@
+@model List<Movie>
+@{
+    ViewData["Title"] = "Quản lý phim";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Phim</h1>
+    <a asp-action="Create" class="btn btn-primary">Thêm phim</a>
+</div>
+
+<table class="table table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Tên phim</th>
+            <th>Thể loại</th>
+            <th>Thời lượng</th>
+            <th>Khởi chiếu</th>
+            <th>Trạng thái</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var m in Model)
+        {
+            <tr>
+                <td>@m.Title</td>
+                <td>@m.Genre</td>
+                <td>@m.DurationMinutes phút</td>
+                <td>@m.ReleaseDate.ToString("dd/MM/yyyy")</td>
+                <td>@(m.IsActive ? "Đang chiếu" : "Đã ẩn")</td>
+                <td class="text-end">
+                    <a asp-action="Edit" asp-route-id="@m.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
+                    @if (m.IsActive)
+                    {
+                        <form asp-action="Delete" asp-route-id="@m.Id" method="post" class="d-inline"
+                              onsubmit="return confirm('Ẩn phim này khỏi trang khách?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Ẩn</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
