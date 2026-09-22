@@ -12,7 +12,7 @@
 | **Tên** | `CinemaBooking.Smart` |
 | **Loại** | Web application (ASP.NET Core MVC) có tương tác real-time |
 | **Nền tảng** | .NET 9 · EF Core 9 · SQL Server (LocalDB khi dev) · SignalR |
-| **Mô hình** | Nền tảng tổng hợp **nhiều chuỗi rạp** (CGV, Starlight…), mỗi chuỗi có **nhiều chi nhánh** (CGV Vincom Bà Triệu, CGV Aeon Tân Phú…): mỗi chuỗi tự quản chi nhánh, phòng, lịch chiếu bằng tài khoản riêng; khách tìm một phim và thấy suất chiếu ở mọi chi nhánh của mọi chuỗi đang chiếu phim đó |
+| **Mô hình** | Hệ thống đặt vé của **một rạp** (một thương hiệu) có **nhiều chi nhánh** ở nhiều thành phố (Vincom Bà Triệu, Aeon Tân Phú…): danh mục phim dùng chung, nhưng **mỗi chi nhánh có lịch chiếu và giá vé riêng**; khách tìm một phim và thấy suất chiếu ở mọi chi nhánh đang chiếu phim đó |
 | **Điểm nhấn** | Giữ ghế real-time: khi một khách đang chọn ghế, khách khác thấy ghế bị khóa tạm thời (5 phút) |
 | **Nhóm** | 3 người · ~8 tuần (xem [SPRINT-PLAN.md](docs/project-state/SPRINT-PLAN.md)) |
 
@@ -42,34 +42,44 @@ xem §12.
 ### 3.1 Khách hàng
 
 - Xem danh sách phim đang chiếu (tên, thể loại, thời lượng, poster), tìm kiếm & lọc theo thể loại.
-- Tìm theo tên phim → trang chi tiết phim liệt kê suất chiếu của **mọi chuỗi rạp** đang chiếu phim đó,
-  gom theo ngày → chuỗi rạp → chi nhánh, lọc được theo chuỗi và thành phố. Khách tự chọn suất, không bị
-  gắn vào một chuỗi.
+- Tìm theo tên phim → trang chi tiết phim liệt kê suất chiếu ở **mọi chi nhánh** đang chiếu phim đó,
+  gom theo ngày → chi nhánh, lọc được theo thành phố và chi nhánh.
 - Chọn ghế trên sơ đồ phòng chiếu, chọn nhiều ghế.
 - **Giữ ghế** ngay khi click — ghế đổi màu ở mọi máy khác trong cùng suất chiếu, khóa 5 phút.
 - Đặt vé (guest checkout hoặc đã đăng nhập), thanh toán giả lập.
 - Nhận email xác nhận kèm mã đặt vé.
 - Bỏ chọn ghế thủ công; hoặc ghế tự trả về trống sau 5 phút.
 
-### 3.2 Quản trị nền tảng (vai trò `Admin`)
+### 3.2 Quản trị (vai trò `Admin`)
 
-- CRUD **phim** — danh mục phim dùng chung cho mọi chuỗi rạp; soft delete bằng `IsActive`. Cùng một phim
-  chiếu ở nhiều chuỗi chỉ có **một** bản ghi (§5.1 mục 4).
-- CRUD **chuỗi rạp** và cấp tài khoản quản lý (`ChainManager`) cho từng chuỗi.
-- Xem đơn và doanh thu toàn hệ thống, lọc theo chuỗi.
+Một vai trò quản trị duy nhất, quản lý toàn bộ chi nhánh của rạp (§7.7):
 
-### 3.3 Quản lý chuỗi rạp (vai trò `ChainManager`)
+- CRUD **phim** — danh mục phim dùng chung cho mọi chi nhánh; soft delete bằng `IsActive`. Cùng một phim
+  chiếu ở nhiều chi nhánh chỉ có **một** bản ghi (§5.1 mục 4).
+- CRUD **chi nhánh** (tên, thành phố, địa chỉ) và **phòng chiếu** (cấu hình số hàng × số cột → sinh ghế tự động).
+- CRUD **suất chiếu** — **xếp lịch cho từng chi nhánh một** (§3.2.1): chọn phim từ danh mục chung
+  (không gõ tên phim tự do) + phòng thuộc chi nhánh đó, đặt giá riêng cho suất.
+- Quản lý đơn: xem, tìm theo mã, hủy vé.
+- Thống kê doanh thu theo ngày / chi nhánh / phim / suất chiếu.
 
-Mỗi tài khoản gắn với **đúng một** chuỗi rạp, quản lý **mọi chi nhánh** của chuỗi đó và chỉ thấy/sửa
-dữ liệu của chuỗi mình (§7.7):
+#### 3.2.1 Cái gì dùng chung, cái gì riêng theo chi nhánh
 
-- CRUD chi nhánh (tên, thành phố, địa chỉ) và phòng chiếu (cấu hình số hàng × số cột → sinh ghế tự động).
-- CRUD suất chiếu: chọn phim từ danh mục chung (không gõ tên phim tự do) + phòng thuộc chi nhánh của
-  chuỗi mình, tự đặt giá. Phim chưa có trong danh mục thì báo Admin nền tảng thêm.
-- Quản lý đơn thuộc suất chiếu của chuỗi: xem, tìm theo mã, hủy vé.
-- Thống kê doanh thu của chuỗi theo ngày / phim / suất chiếu.
+Theo cách các chuỗi rạp vận hành thật: khâu **chọn phim** làm tập trung (đàm phán với nhà phát hành),
+còn khâu **xếp suất** làm ở từng rạp — dựa trên số phòng, sức chứa, định dạng phòng và nhu cầu khu vực
+của chính rạp đó. Cùng một ngày, hai chi nhánh của cùng thương hiệu có danh sách suất khác hẳn nhau.
 
-### 3.4 Tác vụ nền (Worker Service)
+| | Dùng chung toàn hệ thống | Riêng theo chi nhánh |
+|---|---|---|
+| Dữ liệu | Danh mục `Movies` (tên, poster, thời lượng, thể loại) | `Showtimes` (phim nào, phòng nào, giờ nào, bao nhiêu suất) |
+| | | `BasePrice` — giá khác nhau theo chi nhánh / khung giờ |
+| | | `Rooms`, `Seats` — sơ đồ ghế của riêng chi nhánh |
+
+**Hệ quả cho code:** không có bảng "lịch chiếu chuẩn" rồi nhân bản xuống chi nhánh. `Showtime` gắn
+`RoomId`, phòng gắn chi nhánh — lịch **tự nhiên** đã riêng, không cần thêm ràng buộc nào. Nếu sau này
+muốn đỡ nhập liệu thì làm chức năng **copy lịch** (nhân bản lịch chi nhánh A → B, hoặc tuần này →
+tuần sau) rồi admin sửa tay — đó là tiện ích nhập liệu, không phải ràng buộc dữ liệu (IDEAS #6).
+
+### 3.3 Tác vụ nền (Worker Service)
 
 - `ExpiredSeatCleaner` — mỗi **10 giây**, xóa lock hết hạn và báo ghế trống qua SignalR.
 - `EmailOutboxWorker` — mỗi 15 giây, gửi email đang chờ trong bảng `OutboxEmails`, retry tối đa 5 lần.
@@ -148,8 +158,7 @@ EF Core Code-First. Kiểu tiền tệ dùng `decimal(18,2)`, mọi mốc thời
 | Bảng | Cột chính |
 |---|---|
 | `Movies` | Id, Title, Description, Genre, **DurationMinutes**, ReleaseDate, PosterUrl, IsActive |
-| `CinemaChains` | Id, Name *(unique)*, LogoUrl, IsActive |
-| `Theaters` *(chi nhánh)* | Id, **CinemaChainId**, Name, **City**, Address · *unique (CinemaChainId, Name)* |
+| `Theaters` *(chi nhánh)* | Id, Name *(unique)*, **City**, Address, IsActive |
 | `Rooms` | Id, TheaterId, RoomName, TotalRows, TotalColumns |
 | `Seats` | Id, RoomId, RowNumber, ColumnNumber, SeatType · *unique (RoomId, Row, Column)* |
 | `Showtimes` | Id, MovieId, RoomId, StartTimeUtc, EndTimeUtc, BasePrice |
@@ -157,8 +166,8 @@ EF Core Code-First. Kiểu tiền tệ dùng `decimal(18,2)`, mọi mốc thời
 | `BookingSeats` | Id, BookingId, SeatId, **ShowtimeId**, PriceAtBooking · **unique (ShowtimeId, SeatId)** |
 | `Payments` | Id, BookingId, Amount, PaymentMethod, Status, TransactionId, CreatedUtc |
 | `OutboxEmails` | Id, ToAddress, Subject, Body, Status, AttemptCount, LastError, CreatedUtc, SentUtc |
-| `DailyRevenueReports` | Id, ReportDate, **CinemaChainId**, MovieId, TicketsSold, Revenue, GeneratedUtc |
-| *(Identity)* | `AspNetUsers` / `AspNetRoles` / … — sinh bởi `IdentityDbContext<ApplicationUser>`; `ApplicationUser` thêm FullName, **CinemaChainId?** (chỉ có giá trị với `ChainManager`) |
+| `DailyRevenueReports` | Id, ReportDate, **TheaterId**, MovieId, TicketsSold, Revenue, GeneratedUtc |
+| *(Identity)* | `AspNetUsers` / `AspNetRoles` / … — sinh bởi `IdentityDbContext<ApplicationUser>`; `ApplicationUser` thêm FullName |
 
 ### 5.1 Bốn ràng buộc quan trọng
 
@@ -169,13 +178,11 @@ EF Core Code-First. Kiểu tiền tệ dùng `decimal(18,2)`, mọi mốc thời
    xuống `BookingSeats` dù đã có ở `Bookings`.
 3. **Không có cột `Theaters.TotalRooms`.** Đó là dữ liệu dẫn xuất — đọc bằng `Rooms.Count`,
    tránh lệch dữ liệu.
-4. **Quyền sở hữu của chuỗi rạp chỉ lưu ở `Theaters.CinemaChainId`.** Phòng, suất chiếu, đơn suy ra
-   chuỗi qua `Room → Theater`, không lặp `CinemaChainId` xuống `Showtimes`/`Bookings` (cùng lý do bỏ
-   `TotalRooms`). Ngoại lệ: `DailyRevenueReports` là bảng tổng hợp nên lưu sẵn. `Movies` **không** có
-   `CinemaChainId` — phim giữa các chuỗi gần như luôn trùng nhau nên dùng **một danh mục chuẩn chung**;
-   chuỗi chọn phim theo `MovieId` khi tạo suất. Không để mỗi chuỗi tự tạo phim rồi ghép theo tên: tên
-   hay lệch ("Avatar 3" / "Avatar: Lửa và Tro Tàn"), phim làm lại trùng tên, và tìm "Avatar" sẽ ra
-   mỗi chuỗi một bản.
+4. **Chi nhánh chỉ xuất hiện ở `Rooms.TheaterId`.** Suất chiếu và đơn suy ra chi nhánh qua
+   `Room → Theater`, không lặp `TheaterId` xuống `Showtimes`/`Bookings` (cùng lý do bỏ `TotalRooms`).
+   Ngoại lệ: `DailyRevenueReports` là bảng tổng hợp nên lưu sẵn. `Movies` **không** gắn chi nhánh —
+   cả rạp dùng **một danh mục phim chung**, chi nhánh chọn phim theo `MovieId` khi tạo suất; nhờ vậy
+   tìm "Avatar" ra đúng một phim và trang chi tiết gom được suất của mọi chi nhánh.
 
 ---
 
@@ -249,19 +256,18 @@ lock RAM.
 sẽ ném `InvalidOperationException`. Cần DB thì inject `IServiceScopeFactory` và tự tạo scope
 (xem `EmailOutboxWorker`).
 
-### 7.7 Cách ly dữ liệu giữa các chuỗi rạp
+### 7.7 Phân quyền khu vực quản trị
 
-Ẩn nút trên giao diện **không** phải là phân quyền: quản lý CGV sửa `id` trên URL vẫn mở được suất
-chiếu của Starlight nếu controller không kiểm tra.
+Ẩn nút trên giao diện **không** phải là phân quyền: khách gõ thẳng `/Admin/Showtimes/Edit/12` vẫn vào
+được nếu controller không kiểm tra.
 
-- `CinemaChainId` lấy từ **tài khoản đang đăng nhập** (server-side), không bao giờ nhận từ form/query string.
-- Load theo id mà bản ghi không thuộc chuỗi mình → trả **404** (không 403, để không lộ id có tồn tại).
-- Tạo/sửa suất chiếu phải kiểm tra `RoomId` thuộc chuỗi mình — form có thể bị sửa để gửi phòng chuỗi khác.
-- **Không** dùng EF global query filter: trang khách, `SeatHub` và Worker cần đọc xuyên chuỗi, filter
-  toàn cục buộc rải `IgnoreQueryFilters()` khắp nơi. Lọc tường minh ở service quản trị + test
-  "quản lý chuỗi A không đọc/sửa được dữ liệu chuỗi B".
-- Khóa ghế, `SeatHub`, unique index `(ShowtimeId, SeatId)` **không đổi**: `ShowtimeId` vốn đã duy nhất
-  toàn hệ thống.
+- Toàn bộ khu quản trị đặt `[Authorize(Roles = "Admin")]` ở **cấp controller**, không rải trên từng action
+  — thêm action mới mà quên attribute là lỗ hổng.
+- Vai trò lấy từ **tài khoản đang đăng nhập** (server-side), không bao giờ nhận từ form/query string.
+- Tạo/sửa suất chiếu vẫn phải kiểm tra `RoomId` (và `MovieId`) có thật và còn `IsActive` — form có thể bị
+  sửa để gửi id bất kỳ.
+- Khu khách và `SeatHub` đọc dữ liệu của **mọi chi nhánh**, không lọc theo tài khoản — chi nhánh chỉ là
+  một tiêu chí lọc do khách chọn, không phải ranh giới bảo mật.
 
 ---
 
@@ -270,12 +276,11 @@ chiếu của Starlight nếu controller không kiểm tra.
 | Trang | Nội dung |
 |---|---|
 | Trang chủ | Phim nổi bật, tìm kiếm, lọc theo thể loại |
-| Chi tiết phim | Thông tin phim + suất chiếu theo ngày, gom theo chuỗi rạp → chi nhánh; lọc theo chuỗi và thành phố |
+| Chi tiết phim | Thông tin phim + suất chiếu theo ngày, gom theo chi nhánh; lọc theo thành phố và chi nhánh |
 | Chọn ghế | Sơ đồ dạng lưới CSS Grid; 4 trạng thái: trống / mình đang giữ / người khác giữ / đã đặt. Đồng hồ đếm ngược 5 phút |
 | Thanh toán | Form thông tin khách + tóm tắt ghế, validate bằng Data Annotations + jQuery Unobtrusive |
 | Xác nhận | Mã đặt vé, thông báo email đang được gửi |
-| Admin nền tảng | CRUD phim, chuỗi rạp + tài khoản quản lý; đơn & doanh thu toàn hệ thống |
-| Quản lý chuỗi | CRUD chi nhánh/phòng/suất chiếu của chuỗi mình, danh sách đơn, dashboard doanh thu của chuỗi (lọc theo chi nhánh) |
+| Quản trị | CRUD phim, chi nhánh, phòng, suất chiếu; danh sách đơn; dashboard doanh thu (lọc theo chi nhánh) |
 
 ---
 
@@ -287,7 +292,7 @@ chiếu của Starlight nếu controller không kiểm tra.
 | Sprint | Tuần | Mục tiêu | Kết quả bàn giao |
 |---|---|---|---|
 | 1 | 1–2 | Nền tảng | Solution, Domain, EF Core + migration, seed, Identity, CI |
-| 2 | 3–4 | Catalog & Admin | Chuỗi rạp + vai trò `ChainManager`, CRUD phim/rạp/phòng/suất chiếu, chi tiết phim đa chuỗi |
+| 2 | 3–4 | Catalog & Admin | Chi nhánh + `City`, CRUD phim/chi nhánh/phòng/suất chiếu, chi tiết phim gom suất nhiều chi nhánh |
 | 3 | 5–6 | Real-time | `SeatHub`, `SeatLockManager`, sơ đồ ghế live |
 | 4 | 7–8 | Đặt vé & Worker | Booking + thanh toán, 3 worker, thống kê, test & tài liệu |
 
@@ -299,7 +304,7 @@ chiếu của Starlight nếu controller không kiểm tra.
 |---|---|
 | Nhiều người click cùng một ghế | `ConcurrentDictionary.TryAdd` (atomic) + unique index ở DB làm chốt chặn cuối |
 | Client mất kết nối giữa chừng | `OnDisconnectedAsync` nhả lock; giai đoạn thanh toán dựa vào `Booking` `Pending` |
-| Quản lý chuỗi này sửa dữ liệu chuỗi khác (đổi id trên URL) | Lọc theo `CinemaChainId` của tài khoản ở server, 404 khi không thuộc chuỗi, test cách ly (§7.7) |
+| Khách gõ thẳng URL khu quản trị | `[Authorize(Roles = "Admin")]` ở cấp controller + kiểm tra id gửi lên từ form (§7.7) |
 | Ghế bị treo sau khi hết hạn | `ExpiredSeatCleaner` mỗi 10 giây + `TryLock` tự cướp lock đã quá hạn |
 | Ghế đã đặt không hiển thị khi tải trang | Controller trả kèm danh sách `Confirmed` từ DB, không dựa vào SignalR |
 | Email mất khi web process chết | Bảng `OutboxEmails` + Worker gửi, retry 5 lần — không fire-and-forget |
