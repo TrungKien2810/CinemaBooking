@@ -15,12 +15,18 @@ namespace CinemaBooking.Web.Controllers;
 public class BookingController : Controller
 {
     private readonly CinemaDbContext _db;
+    private readonly IBookedSeatQuery _bookedSeats;
     private readonly DisplayTimeZone _tz;
     private readonly TimeProvider _clock;
 
-    public BookingController(CinemaDbContext db, IOptions<DisplayTimeZone> tz, TimeProvider clock)
+    public BookingController(
+        CinemaDbContext db,
+        IBookedSeatQuery bookedSeats,
+        IOptions<DisplayTimeZone> tz,
+        TimeProvider clock)
     {
         _db = db;
+        _bookedSeats = bookedSeats;
         _tz = tz.Value;
         _clock = clock;
     }
@@ -34,27 +40,18 @@ public class BookingController : Controller
     {
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
         var showtime = await _db.Showtimes.AsNoTracking()
-            .Where(s => s.Id == id && s.StartTimeUtc > nowUtc && s.Movie!.IsActive && s.Room!.Theater!.IsActive)
-            .Select(s => new
-            {
-                s.Id,
-                s.Movie!.Title,
-                TheaterName = s.Room!.Theater!.Name,
-                s.Room.Theater.City,
-                s.Room.RoomName,
-                s.StartTimeUtc,
-            })
-            .FirstOrDefaultAsync(ct);
+            .Include(s => s.Movie)
+            .Include(s => s.Room!).ThenInclude(r => r.Theater)
+            .Include(s => s.Room!).ThenInclude(r => r.Seats)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(s => s.Id == id && s.StartTimeUtc > nowUtc
+                                      && s.Movie!.IsActive && s.Room!.Theater!.IsActive, ct);
 
         if (showtime is null) return NotFound();
 
-        return View(new SeatMapViewModel(
-            showtime.Id,
-            showtime.Title,
-            showtime.TheaterName,
-            showtime.City,
-            showtime.RoomName,
-            _tz.ToLocalTime(showtime.StartTimeUtc),
-            (int)SeatHub.HoldDuration.TotalSeconds));
+        var booked = await _bookedSeats.GetBookedSeatIdsAsync(showtime.Id, ct);
+
+        return View(SeatMapViewModel.Build(
+            showtime, booked, _tz.ToLocalTime(showtime.StartTimeUtc), (int)SeatHub.HoldDuration.TotalSeconds));
     }
 }
