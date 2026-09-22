@@ -42,10 +42,17 @@ public class CinemaDbContext : IdentityDbContext<ApplicationUser>
         b.Entity<Booking>().HasIndex(x => x.BookingCode).IsUnique();
 
         // Chốt chặn cuối chống đặt trùng: dù lock trong RAM có sai, DB vẫn từ chối.
-        // Filtered index để vé đã hủy không chiếm chỗ của ghế.
+        // Index KHÔNG lọc theo trạng thái đơn (BookingSeats không có cột trạng thái) — hủy vé phải
+        // xóa dòng BookingSeats thì ghế mới được đặt lại.
         b.Entity<BookingSeat>()
             .HasIndex(x => new { x.ShowtimeId, x.SeatId })
             .IsUnique();
+
+        // ShowtimeId lặp lại từ Booking chỉ để đặt index ở trên; FK giữ cho nó luôn trỏ vào suất có thật.
+        // Restrict: Showtime → Bookings → BookingSeats đã cascade, thêm đường cascade thứ hai
+        // là multiple cascade paths trên SQL Server.
+        b.Entity<BookingSeat>().HasOne(x => x.Showtime).WithMany().HasForeignKey(x => x.ShowtimeId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         b.Entity<Booking>()
             .HasOne(x => x.Payment).WithOne(p => p.Booking!)
