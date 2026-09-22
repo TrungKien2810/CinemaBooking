@@ -83,16 +83,43 @@ public class RoomsController : AdminControllerBase
         form.Id = id;
         form.TheaterId = room.TheaterId;
         form.TheaterName = room.Theater!.Name;
-        form.TotalRows = room.TotalRows;
-        form.TotalColumns = room.TotalColumns;
-        ModelState.Remove(nameof(form.TotalRows));
-        ModelState.Remove(nameof(form.TotalColumns));
+
+        var layoutChanged = form.TotalRows != room.TotalRows || form.TotalColumns != room.TotalColumns;
+        if (layoutChanged && await HasBookedSeatsAsync(room.Id, ct))
+        {
+            ModelState.AddModelError(string.Empty,
+                "Không đổi được sơ đồ ghế: phòng đã có vé được đặt. Chỉ sửa được tên phòng.");
+        }
         if (!ModelState.IsValid) return View("Form", form);
 
         room.RoomName = form.RoomName.Trim();
+        if (layoutChanged)
+        {
+            room.TotalRows = form.TotalRows;
+            room.TotalColumns = form.TotalColumns;
+            await RegenerateSeatsAsync(room, ct);
+        }
         await _db.SaveChangesAsync(ct);
 
         return RedirectToAction(nameof(Index), new { theaterId = room.TheaterId });
+    }
+
+    /// <summary>
+    /// Đã có vé tham chiếu tới ghế (FK Restrict) thì không xóa ghế được, và cũng không được:
+    /// khách đang cầm vé ghế C7 mà phòng chỉ còn 5 hàng thì vé đó vô nghĩa.
+    /// </summary>
+    private Task<bool> HasBookedSeatsAsync(int roomId, CancellationToken ct) =>
+        _db.BookingSeats.AnyAsync(bs => bs.Seat!.RoomId == roomId, ct);
+
+    /// <summary>
+    /// Xóa toàn bộ ghế cũ rồi sinh lại theo layout mới, thay vì thêm/bớt từng hàng: quy ước
+    /// loại ghế (VIP ở giữa, ghế đôi hàng cuối) phụ thuộc tổng số hàng nên đổi layout là đổi cả sơ đồ.
+    /// </summary>
+    private async Task RegenerateSeatsAsync(Room room, CancellationToken ct)
+    {
+        var oldSeats = await _db.Seats.Where(s => s.RoomId == room.Id).ToListAsync(ct);
+        _db.Seats.RemoveRange(oldSeats);
+        _db.Seats.AddRange(SeatGenerator.Generate(room));
     }
 
     /// <summary>
