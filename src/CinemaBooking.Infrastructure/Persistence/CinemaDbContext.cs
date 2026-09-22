@@ -30,6 +30,9 @@ public class CinemaDbContext : IdentityDbContext<ApplicationUser>
         b.Entity<Showtime>()
             .HasIndex(s => new { s.RoomId, s.StartTimeUtc });
 
+        b.Entity<Theater>().HasIndex(t => t.Name).IsUnique();
+        b.Entity<Theater>().HasIndex(t => t.City);
+
         b.Entity<Showtime>().Property(s => s.BasePrice).HasPrecision(18, 2);
         b.Entity<Booking>().Property(x => x.TotalAmount).HasPrecision(18, 2);
         b.Entity<BookingSeat>().Property(x => x.PriceAtBooking).HasPrecision(18, 2);
