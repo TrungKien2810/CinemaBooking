@@ -1,0 +1,11 @@
+@model SeatMapViewModel
+@{
+    ViewData["Title"] = $"Chọn ghế — {Model.MovieTitle}";
+}
+
+<h1 class="h3">@Model.MovieTitle</h1>
+<p class="cb-muted">
+    @Model.TheaterName (@Model.City) · @Model.RoomName · @Model.StartLocal.ToString("HH:mm dd/MM/yyyy")
+</p>
+
+<div id="seat-map" data-showtime-id="@Model.ShowtimeId" data-hold-seconds="@Model.HoldSeconds"></div>
