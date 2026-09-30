@@ -84,6 +84,11 @@ public class SeatHub : Hub<ISeatClient>
         {
             case LockResult.Acquired:
                 await Clients.Caller.SeatHeldByMe(seatId, (int)HoldDuration.TotalSeconds);
+                // OthersInGroup chứ không phải Group: người chọn đã tô ghế "của mình" qua
+                // SeatHeldByMe, nhận thêm SeatLocked sẽ vẽ đè thành "người khác giữ".
+                // Kể cả khi lock vừa được cướp từ người giữ đã hết hạn, người đó cũng nằm trong
+                // "others" nên thấy ghế chuyển sang bị giữ.
+                await Clients.OthersInGroup(GroupName(showtimeId)).SeatLocked(seatId);
                 break;
 
             case LockResult.AlreadyHeldBySelf:
