@@ -140,10 +140,18 @@ public class SeatHub : Hub<ISeatClient>
     {
         // Rớt mạng thì trả ghế ngay. Lưu ý: giai đoạn thanh toán KHÔNG được dựa vào
         // connection này — booking đã Pending giữ chỗ bằng bản ghi DB, không bằng lock RAM.
-        foreach (var key in _locks.ReleaseAllFor(Context.ConnectionId))
+        // Gom theo suất: đóng tab đang giữ 6 ghế là 1 tin SeatUnlocked cho group, không phải 6.
+        var releasedByShowtime = _locks.ReleaseAllFor(Context.ConnectionId)
+            .GroupBy(k => k.ShowtimeId);
+
+        foreach (var showtime in releasedByShowtime)
         {
-            await Clients.Group(GroupName(key.ShowtimeId)).SeatUnlocked(new[] { key.SeatId });
+            var seatIds = showtime.Select(k => k.SeatId).OrderBy(id => id).ToList();
+            await Clients.Group(GroupName(showtime.Key)).SeatUnlocked(seatIds);
         }
+
+        // Group membership do SignalR tự gỡ khi connection đóng; chỉ cần dọn state của mình.
+        Context.Items.Remove(JoinedKey);
         await base.OnDisconnectedAsync(exception);
     }
 }
