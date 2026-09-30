@@ -116,4 +116,74 @@ public class ShowtimeQueryServiceTests
 
         Assert.Equal(new[] { new DateOnly(2026, 10, 10), new DateOnly(2026, 10, 11) }, dates);
     }
+
+    [Fact]
+    public async Task GetForMovieOnDate_filters_by_city_and_by_branch()
+    {
+        using var db = TestDatabase.Create();
+        var hanoiA = db.SeedRoom("Vincom Bà Triệu", city: "Hà Nội");
+        var hanoiB = db.SeedRoom("Aeon Long Biên", city: "Hà Nội");
+        var saigon = db.SeedRoom("Aeon Tân Phú", city: "TP. Hồ Chí Minh");
+        var movie = db.SeedMovie("Dune");
+        var start = new DateTime(2026, 10, 10, 5, 0, 0, DateTimeKind.Utc);
+        db.SeedShowtime(movie, hanoiA, start);
+        db.SeedShowtime(movie, hanoiB, start.AddHours(1));
+        db.SeedShowtime(movie, saigon, start.AddHours(2));
+        await db.SaveChangesAsync();
+
+        var sut = Sut(db, new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc));
+        var day = new DateOnly(2026, 10, 10);
+
+        var all = await sut.GetForMovieOnDateAsync(movie.Id, day);
+        var hanoi = await sut.GetForMovieOnDateAsync(movie.Id, day, new ShowtimeFilter(City: "Hà Nội"));
+        var oneBranch = await sut.GetForMovieOnDateAsync(movie.Id, day, new ShowtimeFilter(TheaterId: hanoiB.TheaterId));
+
+        Assert.Equal(3, all.Count);
+        Assert.Equal(new[] { "Vincom Bà Triệu", "Aeon Long Biên" }, hanoi.Select(s => s.TheaterName));
+        Assert.Equal("Aeon Long Biên", Assert.Single(oneBranch).TheaterName);
+    }
+
+    [Fact]
+    public async Task Queries_hide_showtimes_of_closed_branches()
+    {
+        using var db = TestDatabase.Create();
+        var open = db.SeedRoom("Vincom Bà Triệu");
+        var closed = db.SeedRoom("Aeon Long Biên");
+        closed.Theater!.IsActive = false;
+        var movie = db.SeedMovie("Dune");
+        db.SeedShowtime(movie, open, new DateTime(2026, 10, 10, 5, 0, 0, DateTimeKind.Utc));
+        db.SeedShowtime(movie, closed, new DateTime(2026, 10, 11, 5, 0, 0, DateTimeKind.Utc));
+        await db.SaveChangesAsync();
+
+        var sut = Sut(db, new DateTime(2026, 10, 9, 0, 0, 0, DateTimeKind.Utc));
+        var from = new DateOnly(2026, 10, 10);
+
+        Assert.Empty(await sut.GetForMovieOnDateAsync(movie.Id, new DateOnly(2026, 10, 11)));
+        Assert.Equal(from, Assert.Single(await sut.GetAvailableDatesAsync(movie.Id, from)));
+        Assert.Equal("Vincom Bà Triệu", Assert.Single(await sut.GetBranchesForMovieAsync(movie.Id, from)).Name);
+    }
+
+    [Fact]
+    public async Task GetBranchesForMovie_lists_each_branch_once_sorted_by_city_then_name()
+    {
+        using var db = TestDatabase.Create();
+        var saigon = db.SeedRoom("Aeon Tân Phú", city: "TP. Hồ Chí Minh");
+        var hanoiB = db.SeedRoom("Vincom Bà Triệu", city: "Hà Nội");
+        var hanoiA = db.SeedRoom("Aeon Long Biên", city: "Hà Nội");
+        var movie = db.SeedMovie("Dune");
+        var start = new DateTime(2026, 10, 10, 5, 0, 0, DateTimeKind.Utc);
+        db.SeedShowtime(movie, saigon, start);
+        db.SeedShowtime(movie, hanoiB, start);
+        db.SeedShowtime(movie, hanoiB, start.AddHours(3));
+        db.SeedShowtime(movie, hanoiA, start);
+        await db.SaveChangesAsync();
+
+        var sut = Sut(db, new DateTime(2026, 10, 9, 0, 0, 0, DateTimeKind.Utc));
+
+        var branches = await sut.GetBranchesForMovieAsync(movie.Id, new DateOnly(2026, 10, 10));
+
+        Assert.Equal(
+            new[] { "Aeon Long Biên", "Vincom Bà Triệu", "Aeon Tân Phú" },
+            branches.Select(b => b.Name));
+    }
 }
