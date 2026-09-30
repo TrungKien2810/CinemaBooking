@@ -3,12 +3,13 @@
     ViewData["Title"] = $"Phòng chiếu — {Model.TheaterName}";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">Phòng chiếu · @Model.TheaterName</h1>
+<div class="admin-page-head">
     <div>
-        <a asp-controller="Theaters" asp-action="Index" class="btn btn-link">Chi nhánh</a>
-        <a asp-action="Create" asp-route-theaterId="@Model.TheaterId" class="btn btn-primary">Thêm phòng</a>
+        <a asp-controller="Theaters" asp-action="Index" class="admin-back">← Danh sách chi nhánh</a>
+        <h1 class="page-title">Phòng chiếu · @Model.TheaterName</h1>
+        <p class="cb-muted page-subtitle">@Model.Rooms.Count phòng · @Model.Rooms.Sum(r => r.SeatCount) ghế</p>
     </div>
+    <a asp-action="Create" asp-route-theaterId="@Model.TheaterId" class="btn btn-primary">Thêm phòng</a>
 </div>
 
 @if (TempData["Error"] is string error)
@@ -16,35 +17,47 @@
     <div class="alert alert-danger">@error</div>
 }
 
-<table class="table table-sm align-middle">
-    <thead>
-        <tr>
-            <th>Tên phòng</th>
-            <th>Hàng × ghế</th>
-            <th>Số ghế</th>
-            <th>Số suất chiếu</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var r in Model.Rooms)
-        {
-            <tr>
-                <td>@r.RoomName</td>
-                <td>@r.TotalRows × @r.TotalColumns</td>
-                <td>@r.SeatCount</td>
-                <td>@r.ShowtimeCount</td>
-                <td class="text-end">
-                    <a asp-action="Edit" asp-route-id="@r.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
-                    @if (r.ShowtimeCount == 0)
-                    {
-                        <form asp-action="Delete" asp-route-id="@r.Id" method="post" class="d-inline"
-                              onsubmit="return confirm('Xóa phòng này và toàn bộ ghế?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
-                        </form>
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+@if (Model.Rooms.Count == 0)
+{
+    <div class="cb-card empty-state">
+        <p class="empty-title">Chi nhánh chưa có phòng chiếu</p>
+        <p class="cb-muted">Thêm phòng và nhập số hàng × số ghế — sơ đồ ghế được sinh tự động.</p>
+    </div>
+}
+else
+{
+    <div class="cb-card admin-table-wrap">
+        <table class="table admin-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Phòng</th>
+                    <th>Sơ đồ</th>
+                    <th class="text-end">Số ghế</th>
+                    <th class="text-end">Suất chiếu</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Rooms)
+                {
+                    <tr>
+                        <td class="fw-semibold">@r.RoomName</td>
+                        <td class="text-nowrap">@r.TotalRows hàng × @r.TotalColumns ghế</td>
+                        <td class="text-end">@r.SeatCount</td>
+                        <td class="text-end">@r.ShowtimeCount</td>
+                        <td class="admin-actions">
+                            <a asp-action="Edit" asp-route-id="@r.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
+                            @if (r.ShowtimeCount == 0)
+                            {
+                                <form asp-action="Delete" asp-route-id="@r.Id" method="post" class="d-inline"
+                                      data-confirm="Xóa phòng “@r.RoomName” và toàn bộ ghế?">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
