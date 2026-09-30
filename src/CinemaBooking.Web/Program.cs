@@ -28,6 +28,9 @@ builder.Services.AddScoped<IShowtimeQueryService, ShowtimeQueryService>();
 builder.Services.AddScoped<IMovieCatalogService, MovieCatalogService>();
 builder.Services.AddScoped<IShowtimeScheduler, ShowtimeScheduler>();
 
+// ── Dev C: danh bạ chi nhánh cho bộ lọc thành phố và trang chi nhánh ──
+builder.Services.AddScoped<IBranchDirectory, BranchDirectory>();
+
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(o =>
     {
