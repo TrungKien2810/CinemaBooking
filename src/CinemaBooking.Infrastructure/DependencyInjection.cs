@@ -18,6 +18,13 @@ public static class DependencyInjection
         // Singleton: trạng thái lock phải sống xuyên request.
         services.AddSingleton<ISeatLockManager, InMemorySeatLockManager>();
 
+        // Cấu hình sai (0 phút, quét 0 giây) thì chết ngay lúc khởi động, không đợi tới khi khách chọn ghế.
+        services.AddOptions<SeatHoldOptions>()
+            .Bind(config.GetSection(SeatHoldOptions.SectionName))
+            .Validate(o => o.DurationMinutes is >= 1 and <= 30, "SeatHold:DurationMinutes phải trong khoảng 1–30.")
+            .Validate(o => o.CleanupIntervalSeconds is >= 1 and <= 300, "SeatHold:CleanupIntervalSeconds phải trong khoảng 1–300.")
+            .ValidateOnStart();
+
         // Scoped + HttpClientFactory: tránh socket exhaustion và stale DNS.
         services.AddHttpClient<IPaymentService, MockPaymentService>(c =>
         {
