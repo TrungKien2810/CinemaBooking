@@ -962,3 +962,28 @@ body {
 .form-select.input-validation-error:focus {
     box-shadow: 0 0 0 0.2rem rgba(var(--bs-danger-rgb), 0.25);
 }
+
+/* --- Trang hệ thống rạp ---------------------------------------------------- */
+
+.city-group + .city-group {
+    margin-top: 2rem;
+}
+
+.branch-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--cb-gap);
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+
+.branch-card {
+    padding: 1.25rem;
+}
+
+.branch-rooms {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--cb-accent);
+}
