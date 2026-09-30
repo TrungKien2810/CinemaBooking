@@ -22,5 +22,9 @@ public interface ISeatClient
     Task SeatRejected(int seatId, string reason);
 }
 
-/// <summary>Một ghế đang bị giữ. <see cref="Mine"/> = true nếu chính connection nhận snapshot đang giữ.</summary>
-public sealed record HeldSeat(int SeatId, bool Mine);
+/// <summary>
+/// Một ghế đang bị giữ. <see cref="Mine"/> = true nếu chính connection nhận snapshot đang giữ;
+/// khi đó <see cref="SecondsLeft"/> là số giây còn lại để client chạy tiếp đồng hồ đếm ngược
+/// thay vì đếm lại từ đầu. Ghế của người khác không lộ thời hạn (null).
+/// </summary>
+public sealed record HeldSeat(int SeatId, bool Mine, int? SecondsLeft = null);
