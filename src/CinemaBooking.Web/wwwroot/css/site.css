@@ -721,3 +721,18 @@ body {
 .seat-legend .seat-dot {
     width: 0.875rem;
 }
+
+/* Thanh lọc (ngày, chi nhánh) phía trên bảng admin. */
+.admin-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.admin-hints {
+    padding-left: 1.1rem;
+    margin-bottom: 0;
+}
