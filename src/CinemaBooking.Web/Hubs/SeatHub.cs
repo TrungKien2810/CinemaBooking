@@ -108,8 +108,22 @@ public class SeatHub : Hub<ISeatClient>
 
     public async Task ReleaseSeat(int showtimeId, int seatId)
     {
-        if (!_locks.Release(new SeatKey(showtimeId, seatId), Context.ConnectionId)) return;
-        await Clients.Group(GroupName(showtimeId)).SeatUnlocked(new[] { seatId });
+        var key = new SeatKey(showtimeId, seatId);
+
+        if (_locks.Release(key, Context.ConnectionId))
+        {
+            // Cả group, kể cả người nhả: một event duy nhất để mọi máy tô lại ghế trống.
+            await Clients.Group(GroupName(showtimeId)).SeatUnlocked(new[] { seatId });
+            return;
+        }
+
+        // Không nhả được = lock không còn là của mình (đã hết hạn và bị dọn, hoặc người khác đã
+        // cướp sau khi hết hạn). Chỉ sửa lại màn hình người gọi, không làm phiền cả group.
+        var holder = _locks.GetLocksForShowtime(showtimeId).FirstOrDefault(l => l.Key == key);
+        if (holder is null)
+            await Clients.Caller.SeatUnlocked(new[] { seatId });
+        else if (holder.ConnectionId != Context.ConnectionId)
+            await Clients.Caller.SeatLocked(seatId);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
