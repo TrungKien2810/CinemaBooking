@@ -534,7 +534,7 @@ body {
     margin-bottom: 1.5rem;
 }
 
-.admin-back {
+.back-link {
     display: inline-block;
     margin-bottom: 0.25rem;
     font-size: 0.9rem;
@@ -542,7 +542,7 @@ body {
     text-decoration: none;
 }
 
-.admin-back:hover {
+.back-link:hover {
     color: var(--cb-accent);
 }
 
@@ -735,4 +735,120 @@ body {
 .admin-hints {
     padding-left: 1.1rem;
     margin-bottom: 0;
+}
+
+/* --- Thẻ phim bấm được ------------------------------------------------------ */
+
+.movie-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.movie-card {
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.movie-card:hover,
+.movie-card:focus-within {
+    transform: translateY(-2px);
+    border-color: var(--cb-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .movie-card {
+        transition: none;
+    }
+
+    .movie-card:hover,
+    .movie-card:focus-within {
+        transform: none;
+    }
+}
+
+/* --- Trang chi tiết phim ---------------------------------------------------- */
+
+.movie-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
+    gap: 1.5rem;
+    padding: 1.25rem;
+    margin: 0.75rem 0 2rem;
+}
+
+@media (min-width: 768px) {
+    .movie-hero {
+        grid-template-columns: 15rem minmax(0, 1fr);
+        padding: 1.5rem;
+    }
+}
+
+.movie-hero-poster {
+    border-radius: var(--cb-radius-sm);
+    overflow: hidden;
+}
+
+.movie-description {
+    margin: 1rem 0 0;
+    max-width: 65ch;
+    white-space: pre-line;
+}
+
+.section-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.branch-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.branch-showtimes {
+    padding: 1.25rem;
+}
+
+.branch-name {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.showtime-slots {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0;
+}
+
+.showtime-slot {
+    display: flex;
+    flex-direction: column;
+    min-width: 7.5rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius-sm);
+    background-color: var(--cb-surface-2);
+    color: var(--cb-text);
+    text-decoration: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.showtime-slot:hover,
+.showtime-slot:focus-visible {
+    border-color: var(--cb-accent);
+    background-color: var(--cb-accent-soft);
+    color: var(--cb-text);
+}
+
+.showtime-time {
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.showtime-meta {
+    font-size: 0.8rem;
+    color: var(--cb-text-muted);
 }
