@@ -18,7 +18,7 @@ public class MovieDetailsTests
     {
         var clock = new FixedTimeProvider(NowUtc);
         var options = Options.Create(Tz);
-        return new MoviesController(db, new ShowtimeQueryService(db, options, clock), options, clock);
+        return new MoviesController(db, new ShowtimeQueryService(db, options, clock), new BranchDirectory(db), options, clock);
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public class MovieDetailsTests
         var movie = db.SeedMovie("Đã gỡ", isActive: false);
         await db.SaveChangesAsync();
 
-        var result = await Sut(db).Details(movie.Id, null, default);
+        var result = await Sut(db).Details(movie.Id, null, null, null, default);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -47,7 +47,7 @@ public class MovieDetailsTests
         db.SeedShowtime(movie, hn, NowUtc.AddHours(3));
         await db.SaveChangesAsync();
 
-        var view = Assert.IsType<ViewResult>(await Sut(db).Details(movie.Id, null, default));
+        var view = Assert.IsType<ViewResult>(await Sut(db).Details(movie.Id, null, null, null, default));
         var model = Assert.IsType<MovieDetailsViewModel>(view.Model);
 
         Assert.Equal(new DateOnly(2026, 10, 10), model.SelectedDate);
@@ -66,10 +66,68 @@ public class MovieDetailsTests
         db.SeedShowtime(movie, room, NowUtc.AddDays(2));
         await db.SaveChangesAsync();
 
-        var view = Assert.IsType<ViewResult>(await Sut(db).Details(movie.Id, new DateOnly(2026, 10, 11), default));
+        var view = Assert.IsType<ViewResult>(await Sut(db).Details(movie.Id, new DateOnly(2026, 10, 11), null, null, default));
         var model = Assert.IsType<MovieDetailsViewModel>(view.Model);
 
         Assert.Equal(new DateOnly(2026, 10, 12), model.SelectedDate);
         Assert.Single(Assert.Single(model.Branches).Showtimes);
+    }
+
+    [Fact]
+    public async Task Details_filters_by_city_and_drops_closed_branches()
+    {
+        using var db = TestDatabase.Create();
+        var q1 = db.SeedRoom("CineSmart Nguyễn Huệ");
+        var hn = db.SeedRoom("CineSmart Cầu Giấy");
+        var closed = db.SeedRoom("CineSmart Đã đóng");
+        q1.Theater!.City = "TP. Hồ Chí Minh";
+        hn.Theater!.City = "Hà Nội";
+        closed.Theater!.City = "Hà Nội";
+        closed.Theater.IsActive = false;
+
+        var movie = db.SeedMovie("Dune");
+        db.SeedShowtime(movie, q1, NowUtc.AddHours(2));
+        db.SeedShowtime(movie, hn, NowUtc.AddHours(2));
+        db.SeedShowtime(movie, closed, NowUtc.AddHours(2));
+        await db.SaveChangesAsync();
+
+        var view = Assert.IsType<ViewResult>(await Sut(db).Details(movie.Id, null, "hà nội", null, default));
+        var model = Assert.IsType<MovieDetailsViewModel>(view.Model);
+
+        Assert.Equal("Hà Nội", model.Filter.City);
+        Assert.Equal("CineSmart Cầu Giấy", Assert.Single(model.Branches).TheaterName);
+        Assert.Equal(["CineSmart Cầu Giấy"], model.Filter.Branches.Select(b => b.Name));
+    }
+
+    [Fact]
+    public void BuildFilter_ignores_unknown_city_and_derives_city_from_branch()
+    {
+        var branches = new List<BranchListItem>
+        {
+            new(1, "CineSmart Cầu Giấy", "Hà Nội", null, 2),
+            new(2, "CineSmart Nguyễn Huệ", "TP. Hồ Chí Minh", null, 2),
+        };
+
+        var unknown = MoviesController.BuildFilter(branches, "Đà Nẵng", 99);
+        Assert.False(unknown.IsActive);
+        Assert.Equal(2, unknown.Branches.Count);
+
+        var byBranch = MoviesController.BuildFilter(branches, "Hà Nội", 2);
+        Assert.Equal(2, byBranch.TheaterId);
+        Assert.Equal("TP. Hồ Chí Minh", byBranch.City);
+    }
+
+    [Theory]
+    [InlineData(10, "Hôm nay")]
+    [InlineData(11, "Ngày mai")]
+    [InlineData(14, "T4 · 14/10")]
+    [InlineData(18, "CN · 18/10")]
+    public void DateLabel_uses_vietnamese_names_without_culture(int dayOfMonth, string expected)
+    {
+        var model = new MovieDetailsViewModel(
+            new MovieCardViewModel(1, "Dune", null, 120, default, null), null,
+            new DateOnly(2026, 10, 10), [], null, new ShowtimeFilter(null, null, [], []), []);
+
+        Assert.Equal(expected, model.DateLabel(new DateOnly(2026, 10, dayOfMonth)));
     }
 }
