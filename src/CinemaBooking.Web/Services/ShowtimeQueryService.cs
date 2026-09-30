@@ -1,3 +1,4 @@
+using CinemaBooking.Domain.Entities;
 using CinemaBooking.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -18,17 +19,15 @@ public sealed class ShowtimeQueryService : IShowtimeQueryService
     }
 
     public async Task<IReadOnlyList<ShowtimeListItem>> GetForMovieOnDateAsync(
-        int movieId, DateOnly localDate, CancellationToken ct = default)
+        int movieId, DateOnly localDate, ShowtimeFilter? filter = null, CancellationToken ct = default)
     {
         // Đổi "một ngày ở giờ rạp" thành nửa khoảng UTC trước khi truy vấn: so sánh trở thành
         // một range scan chạy được trên index (RoomId, StartTimeUtc), thay vì phải đọc cả bảng
         // rồi cộng offset từng dòng trong RAM.
         var (fromUtc, toUtc) = _tz.DayRangeUtc(localDate);
 
-        return await _db.Showtimes.AsNoTracking()
-            .Where(s => s.MovieId == movieId
-                && s.StartTimeUtc >= fromUtc
-                && s.StartTimeUtc < toUtc)
+        return await ForMovie(movieId, filter)
+            .Where(s => s.StartTimeUtc >= fromUtc && s.StartTimeUtc < toUtc)
             .OrderBy(s => s.StartTimeUtc)
             .Select(s => new ShowtimeListItem(
                 s.Id,
@@ -46,19 +45,10 @@ public sealed class ShowtimeQueryService : IShowtimeQueryService
     }
 
     public async Task<IReadOnlyList<DateOnly>> GetAvailableDatesAsync(
-        int movieId, DateOnly fromLocalDate, int dayCount = 7, CancellationToken ct = default)
+        int movieId, DateOnly fromLocalDate, int dayCount = 7, ShowtimeFilter? filter = null,
+        CancellationToken ct = default)
     {
-        var (windowFromUtc, _) = _tz.DayRangeUtc(fromLocalDate);
-        var (_, windowToUtc) = _tz.DayRangeUtc(fromLocalDate.AddDays(dayCount - 1));
-
-        // Suất đã bắt đầu thì không bán được nữa — cắt luôn ở DB.
-        var lowerBoundUtc = _clock.GetUtcNow().UtcDateTime;
-        if (windowFromUtc > lowerBoundUtc) lowerBoundUtc = windowFromUtc;
-
-        var startTimes = await _db.Showtimes.AsNoTracking()
-            .Where(s => s.MovieId == movieId
-                && s.StartTimeUtc > lowerBoundUtc
-                && s.StartTimeUtc < windowToUtc)
+        var startTimes = await UpcomingInWindow(ForMovie(movieId, filter), fromLocalDate, dayCount)
             .Select(s => s.StartTimeUtc)
             .Distinct()
             .ToListAsync(ct);
@@ -69,5 +59,49 @@ public sealed class ShowtimeQueryService : IShowtimeQueryService
             .Distinct()
             .OrderBy(d => d)
             .ToList();
+    }
+
+    public async Task<IReadOnlyList<BranchOption>> GetBranchesForMovieAsync(
+        int movieId, DateOnly fromLocalDate, int dayCount = 7, CancellationToken ct = default)
+    {
+        // Anonymous type thay vì record: EF dịch được DISTINCT + ORDER BY trên nó, còn thuộc tính
+        // của record tạo qua constructor thì không map ngược lại thành cột được.
+        var rows = await UpcomingInWindow(ForMovie(movieId, ShowtimeFilter.None), fromLocalDate, dayCount)
+            .Select(s => new { s.Room!.TheaterId, s.Room!.Theater!.Name, s.Room!.Theater!.City })
+            .Distinct()
+            .OrderBy(b => b.City).ThenBy(b => b.Name)
+            .ToListAsync(ct);
+
+        return rows.Select(b => new BranchOption(b.TheaterId, b.Name, b.City)).ToList();
+    }
+
+    /// <summary>Suất của một phim ở chi nhánh còn hoạt động, đã áp bộ lọc — mọi điều kiện đều dịch ra SQL.</summary>
+    private IQueryable<Showtime> ForMovie(int movieId, ShowtimeFilter? filter)
+    {
+        var query = _db.Showtimes.AsNoTracking()
+            .Where(s => s.MovieId == movieId && s.Room!.Theater!.IsActive);
+
+        if (!string.IsNullOrWhiteSpace(filter?.City))
+        {
+            var city = filter.City.Trim();
+            query = query.Where(s => s.Room!.Theater!.City == city);
+        }
+
+        if (filter?.TheaterId is int theaterId)
+            query = query.Where(s => s.Room!.TheaterId == theaterId);
+
+        return query;
+    }
+
+    private IQueryable<Showtime> UpcomingInWindow(IQueryable<Showtime> query, DateOnly fromLocalDate, int dayCount)
+    {
+        var (windowFromUtc, _) = _tz.DayRangeUtc(fromLocalDate);
+        var (_, windowToUtc) = _tz.DayRangeUtc(fromLocalDate.AddDays(dayCount - 1));
+
+        // Suất đã bắt đầu thì không bán được nữa — cắt luôn ở DB.
+        var lowerBoundUtc = _clock.GetUtcNow().UtcDateTime;
+        if (windowFromUtc > lowerBoundUtc) lowerBoundUtc = windowFromUtc;
+
+        return query.Where(s => s.StartTimeUtc > lowerBoundUtc && s.StartTimeUtc < windowToUtc);
     }
 }
