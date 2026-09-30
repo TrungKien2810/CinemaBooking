@@ -1,8 +1,19 @@
-namespace CinemaBooking.Web.Models;
+﻿namespace CinemaBooking.Web.Models;
 
-public sealed record HomeIndexViewModel(IReadOnlyList<MovieCardViewModel> Movies)
+/// <param name="Keyword">Từ khóa đang tìm (đã chuẩn hoá), để điền lại vào ô tìm kiếm.</param>
+/// <param name="Genre">Thể loại đang lọc.</param>
+/// <param name="Genres">Các thể loại có thật trong dữ liệu, để vẽ chip lọc.</param>
+public sealed record HomeIndexViewModel(
+    IReadOnlyList<MovieCardViewModel> Movies,
+    string? Keyword = null,
+    string? Genre = null,
+    IReadOnlyList<string>? Genres = null)
 {
     public bool HasMovies => Movies.Count > 0;
+
+    public bool IsFiltered => Keyword is not null || Genre is not null;
+
+    public IReadOnlyList<string> GenreOptions => Genres ?? [];
 }
 
 /// <summary>
@@ -12,7 +23,7 @@ public sealed record HomeIndexViewModel(IReadOnlyList<MovieCardViewModel> Movies
 /// Cùng bộ trường với MovieListItem của Dev B (IMovieCatalogService) nhưng khác vai trò:
 /// MovieListItem là DTO của tầng service, còn bản này là view model — nó giữ phần hiển thị
 /// (ảnh mặc định, nhãn thể loại) để DTO của service không phải biết gì về đường dẫn ảnh.
-/// Sprint 2 khi trang chủ chuyển sang gọi service, controller chỉ cần map DTO sang đây.
+/// Trang chủ gọi service rồi map DTO sang đây (<see cref="FromListItem"/>).
 /// </summary>
 public sealed record MovieCardViewModel(
     int Id,
@@ -30,4 +41,7 @@ public sealed record MovieCardViewModel(
         string.IsNullOrWhiteSpace(PosterUrl) ? PlaceholderPoster : PosterUrl;
 
     public string GenreOrDefault => string.IsNullOrWhiteSpace(Genre) ? "Chưa phân loại" : Genre;
+
+    public static MovieCardViewModel FromListItem(Services.MovieListItem m) =>
+        new(m.Id, m.Title, m.Genre, m.DurationMinutes, m.ReleaseDate, m.PosterUrl);
 }

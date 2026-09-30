@@ -931,3 +931,20 @@ body {
     font-weight: 400;
     color: var(--cb-text-muted);
 }
+
+/* --- Tìm kiếm & lọc thể loại ở trang chủ ------------------------------------ */
+
+.movie-search {
+    display: flex;
+    gap: 0.5rem;
+    max-width: 36rem;
+    margin-bottom: 1rem;
+}
+
+.genre-filter {
+    margin-bottom: 1.5rem;
+}
+
+.search-summary {
+    margin: -0.5rem 0 1.25rem;
+}
