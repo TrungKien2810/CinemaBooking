@@ -5,7 +5,9 @@ using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Hubs;
 using CinemaBooking.Web.Middleware;
 using CinemaBooking.Web.Services;
+using CinemaBooking.Web.Validation;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -27,9 +29,6 @@ builder.Services.TryAddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IShowtimeQueryService, ShowtimeQueryService>();
 builder.Services.AddScoped<IMovieCatalogService, MovieCatalogService>();
 builder.Services.AddScoped<IShowtimeScheduler, ShowtimeScheduler>();
-
-// ── Dev C: danh bạ chi nhánh cho bộ lọc thành phố và trang chi nhánh ──
-builder.Services.AddScoped<IBranchDirectory, BranchDirectory>();
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(o =>
@@ -58,6 +57,11 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.Cookie.HttpOnly = true;
     o.Cookie.SameSite = SameSiteMode.Lax;
 });
+
+// ── Dev C: danh bạ chi nhánh cho bộ lọc thành phố và trang chi nhánh ──
+builder.Services.AddScoped<IBranchDirectory, BranchDirectory>();
+// ── Dev C: thông báo lỗi model binding bằng tiếng Việt (cả server lẫn data-val-number) ──
+builder.Services.Configure<MvcOptions>(VietnameseModelBindingMessages.Apply);
 
 // Giỏ ghế tạm giữa trang chọn ghế và trang thanh toán.
 builder.Services.AddDistributedMemoryCache();

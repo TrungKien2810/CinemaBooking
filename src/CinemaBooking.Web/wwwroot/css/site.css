@@ -948,3 +948,17 @@ body {
 .search-summary {
     margin: -0.5rem 0 1.25rem;
 }
+
+/* --- Ô nhập bị lỗi validation ---------------------------------------------- */
+
+/* MVC gắn .input-validation-error cho ô lỗi sau khi post về server, và jQuery Validate
+   (qua unobtrusive) gắn đúng class đó phía client — một luật phủ được cả hai đường. */
+.form-control.input-validation-error,
+.form-select.input-validation-error {
+    border-color: var(--bs-form-invalid-border-color);
+}
+
+.form-control.input-validation-error:focus,
+.form-select.input-validation-error:focus {
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-danger-rgb), 0.25);
+}
