@@ -631,3 +631,15 @@ body {
     border-radius: var(--cb-radius-sm);
     overflow: hidden;
 }
+
+.admin-form-narrow {
+    max-width: 40rem;
+}
+
+/* Dòng tiêu đề nhóm (thành phố) trong bảng chi nhánh. */
+.admin-table .admin-group-row > th {
+    background-color: var(--cb-surface-2);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding-block: 0.5rem;
+}
