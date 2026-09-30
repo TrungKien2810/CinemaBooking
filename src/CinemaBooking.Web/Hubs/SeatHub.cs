@@ -1,5 +1,7 @@
 using CinemaBooking.Domain.Abstractions;
+using CinemaBooking.Infrastructure;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
 
 namespace CinemaBooking.Web.Hubs;
 
@@ -10,16 +12,22 @@ namespace CinemaBooking.Web.Hubs;
 /// </summary>
 public class SeatHub : Hub<ISeatClient>
 {
-    public static readonly TimeSpan HoldDuration = TimeSpan.FromMinutes(5);
-
     /// <summary>Hạn mức ghế một connection giữ cùng lúc trong một suất — chặn một người khóa cả phòng.</summary>
     public const int MaxSeatsPerConnection = 8;
 
     private const string JoinedKey = "SeatHub.JoinedShowtimes";
 
     private readonly ISeatLockManager _locks;
+    private readonly SeatHoldOptions _hold;
 
-    public SeatHub(ISeatLockManager locks) => _locks = locks;
+    public SeatHub(ISeatLockManager locks, IOptions<SeatHoldOptions> hold)
+    {
+        _locks = locks;
+        _hold = hold.Value;
+    }
+
+    /// <summary>Thời gian giữ lấy từ section SeatHold — Worker dọn lock theo cùng cấu hình.</summary>
+    private int HoldSeconds => (int)_hold.Duration.TotalSeconds;
 
     public static string GroupName(int showtimeId) => $"showtime-{showtimeId}";
 
@@ -88,12 +96,12 @@ public class SeatHub : Hub<ISeatClient>
         }
 
         // TODO(Sprint 3): kiểm tra ghế đã Confirmed trong DB trước khi cấp lock.
-        var result = _locks.TryLock(key, Context.ConnectionId, Context.UserIdentifier, HoldDuration);
+        var result = _locks.TryLock(key, Context.ConnectionId, Context.UserIdentifier, _hold.Duration);
 
         switch (result)
         {
             case LockResult.Acquired:
-                await Clients.Caller.SeatHeldByMe(seatId, (int)HoldDuration.TotalSeconds);
+                await Clients.Caller.SeatHeldByMe(seatId, HoldSeconds);
                 // OthersInGroup chứ không phải Group: người chọn đã tô ghế "của mình" qua
                 // SeatHeldByMe, nhận thêm SeatLocked sẽ vẽ đè thành "người khác giữ".
                 // Kể cả khi lock vừa được cướp từ người giữ đã hết hạn, người đó cũng nằm trong
@@ -103,7 +111,7 @@ public class SeatHub : Hub<ISeatClient>
 
             case LockResult.AlreadyHeldBySelf:
                 // Lock đã được gia hạn; báo lại để client khởi động lại đồng hồ đếm ngược.
-                await Clients.Caller.SeatHeldByMe(seatId, (int)HoldDuration.TotalSeconds);
+                await Clients.Caller.SeatHeldByMe(seatId, HoldSeconds);
                 break;
 
             case LockResult.AlreadyBooked:

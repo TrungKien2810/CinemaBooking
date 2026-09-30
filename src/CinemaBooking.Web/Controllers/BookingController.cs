@@ -1,7 +1,7 @@
 using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Domain.Entities;
+using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
-using CinemaBooking.Web.Hubs;
 using CinemaBooking.Web.Models;
 using CinemaBooking.Web.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +22,7 @@ public class BookingController : Controller
     private readonly ISeatPricingService _pricing;
     private readonly DisplayTimeZone _tz;
     private readonly TimeProvider _clock;
+    private readonly SeatHoldOptions _hold;
 
     public BookingController(
         CinemaDbContext db,
@@ -29,7 +30,8 @@ public class BookingController : Controller
         ISeatLockManager locks,
         ISeatPricingService pricing,
         IOptions<DisplayTimeZone> tz,
-        TimeProvider clock)
+        TimeProvider clock,
+        IOptions<SeatHoldOptions> hold)
     {
         _db = db;
         _bookedSeats = bookedSeats;
@@ -37,6 +39,7 @@ public class BookingController : Controller
         _pricing = pricing;
         _tz = tz.Value;
         _clock = clock;
+        _hold = hold.Value;
     }
 
     [HttpGet]
@@ -48,7 +51,7 @@ public class BookingController : Controller
         var booked = await _bookedSeats.GetBookedSeatIdsAsync(showtime.Id, ct);
 
         return View(SeatMapViewModel.Build(
-            showtime, booked, _pricing, _tz.ToLocalTime(showtime.StartTimeUtc), (int)SeatHub.HoldDuration.TotalSeconds));
+            showtime, booked, _pricing, _tz.ToLocalTime(showtime.StartTimeUtc), (int)_hold.Duration.TotalSeconds));
     }
 
     /// <summary>
