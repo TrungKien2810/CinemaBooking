@@ -5,7 +5,7 @@
 
 <div class="admin-page-head">
     <div>
-        <a asp-controller="Theaters" asp-action="Index" class="admin-back">← Danh sách chi nhánh</a>
+        <a asp-controller="Theaters" asp-action="Index" class="back-link">← Danh sách chi nhánh</a>
         <h1 class="page-title">Phòng chiếu · @Model.TheaterName</h1>
         <p class="cb-muted page-subtitle">@Model.Rooms.Count phòng · @Model.Rooms.Sum(r => r.SeatCount) ghế</p>
     </div>

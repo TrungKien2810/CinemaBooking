@@ -1,0 +1,69 @@
+@model MovieDetailsViewModel
+@{
+    var m = Model.Movie;
+}
+
+<a asp-controller="Home" asp-action="Index" class="back-link">← Phim đang chiếu</a>
+
+<section class="movie-hero cb-card">
+    <div class="movie-poster movie-hero-poster">
+        <img src="@m.PosterOrPlaceholder"
+             data-poster-fallback="@MovieCardViewModel.PlaceholderPoster"
+             alt="Poster phim @m.Title" width="240" height="360" />
+    </div>
+    <div class="movie-hero-body">
+        <h1 class="page-title">@m.Title</h1>
+        <p class="cb-muted movie-meta">
+            <span class="movie-genre">@m.GenreOrDefault</span>
+            <span aria-hidden="true">·</span>
+            <span>@m.DurationMinutes phút</span>
+            <span aria-hidden="true">·</span>
+            <span>Khởi chiếu @m.ReleaseDate.ToString("dd/MM/yyyy")</span>
+        </p>
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <p class="movie-description">@Model.Description</p>
+        }
+    </div>
+</section>
+
+<section class="showtime-section" id="lich-chieu">
+    <h2 class="section-title">Lịch chiếu</h2>
+
+    @if (Model.SelectedDate is { } day)
+    {
+        <p class="cb-muted">Ngày @day.ToString("dd/MM/yyyy")</p>
+    }
+
+    @if (!Model.HasShowtimes)
+    {
+        <div class="cb-card empty-state">
+            <p class="empty-title">Chưa có suất chiếu</p>
+            <p class="cb-muted">Phim này chưa có suất nào trong 7 ngày tới. Quay lại sau nhé.</p>
+        </div>
+    }
+    else
+    {
+        <div class="branch-list">
+            @foreach (var branch in Model.Branches)
+            {
+                <article class="cb-card branch-showtimes">
+                    <h3 class="branch-name">@branch.TheaterName</h3>
+                    <ul class="showtime-slots">
+                        @foreach (var s in branch.Showtimes)
+                        {
+                            <li>
+                                @* /Booking/SeatMap/{id} là trang chọn ghế của A3.1 (BookingController). *@
+                                <a class="showtime-slot" href="@Url.Content($"~/Booking/SeatMap/{s.Id}")"
+                                   title="@s.RoomName · kết thúc @s.EndLocal.ToString("HH:mm")">
+                                    <span class="showtime-time">@s.StartLocal.ToString("HH:mm")</span>
+                                    <span class="showtime-meta">@s.RoomName · @s.BasePrice.ToString("N0") đ</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </article>
+            }
+        </div>
+    }
+</section>
