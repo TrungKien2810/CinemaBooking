@@ -105,6 +105,14 @@ public class RoomsController : AdminControllerBase
     }
 
     /// <summary>
+    /// Sơ đồ ghế xem trước cho form phòng — form gọi lại mỗi khi admin đổi số hàng/số ghế.
+    /// Không đụng DB: chỉ chạy <see cref="SeatGenerator"/> trên một phòng tạm.
+    /// </summary>
+    [HttpGet]
+    public IActionResult SeatPreview(int rows, int columns) =>
+        PartialView("_SeatPreview", SeatPreviewModel.For(rows, columns));
+
+    /// <summary>
     /// Đã có vé tham chiếu tới ghế (FK Restrict) thì không xóa ghế được, và cũng không được:
     /// khách đang cầm vé ghế C7 mà phòng chỉ còn 5 hàng thì vé đó vô nghĩa.
     /// </summary>
