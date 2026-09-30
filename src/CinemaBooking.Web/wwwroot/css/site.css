@@ -429,3 +429,87 @@ body {
 .prose-heading:not(:first-child) {
     margin-top: 1.5rem;
 }
+
+/* --- Khu quản trị: sidebar + nội dung --------------------------------------- */
+
+.admin-shell {
+    display: grid;
+    gap: var(--cb-gap);
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 992px) {
+    .admin-shell {
+        grid-template-columns: 14rem minmax(0, 1fr);
+        align-items: start;
+    }
+
+    /* Trang dài (danh sách suất chiếu) vẫn thấy menu khi cuộn. */
+    .admin-sidebar {
+        position: sticky;
+        top: 1rem;
+    }
+}
+
+.admin-sidebar {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.admin-sidebar-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cb-text-muted);
+}
+
+.admin-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Màn hẹp: menu nằm ngang trên đầu nội dung, cuộn ngang nếu không đủ chỗ. */
+@media (max-width: 991.98px) {
+    .admin-nav {
+        flex-direction: row;
+        overflow-x: auto;
+    }
+
+    .admin-nav-link {
+        white-space: nowrap;
+    }
+}
+
+.admin-nav-link {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--cb-radius-sm);
+    color: var(--cb-text-muted);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.admin-nav-link:hover {
+    background-color: var(--cb-surface-2);
+    color: var(--cb-text);
+}
+
+.admin-nav-link.active {
+    background-color: var(--cb-accent-soft);
+    color: var(--cb-text);
+    box-shadow: inset 3px 0 0 var(--cb-accent);
+}
+
+.admin-sidebar-foot {
+    border-top: 1px solid var(--cb-border);
+    padding-top: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.admin-content {
+    min-width: 0;
+}
