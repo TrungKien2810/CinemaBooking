@@ -36,16 +36,26 @@ public class SeatHub : Hub<ISeatClient>
     {
         if (showtimeId <= 0) throw new HubException("Suất chiếu không hợp lệ.");
 
+        // Vào group TRƯỚC rồi mới chụp snapshot: một SeatLocked xảy ra giữa hai bước vẫn tới được
+        // client (có thể trùng với snapshot — vô hại). Làm ngược lại thì event đó rơi mất và ghế
+        // hiện trống trên máy này cho tới khi có event kế tiếp.
         await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(showtimeId));
         JoinedShowtimes.Add(showtimeId);
 
-        // Gửi trạng thái hiện tại để client vẽ đúng ngay khi vào (ghế đang giữ).
         // Ghế ĐÃ ĐẶT lấy từ DB ở Controller và render sẵn vào trang, không đi qua hub.
-        var held = _locks.GetLocksForShowtime(showtimeId)
-            .Select(l => new HeldSeat(l.Key.SeatId, l.ConnectionId == Context.ConnectionId))
-            .ToList();
-        await Clients.Caller.SeatSnapshot(held);
+        await Clients.Caller.SeatSnapshot(Snapshot(showtimeId, DateTime.UtcNow));
     }
+
+    private List<HeldSeat> Snapshot(int showtimeId, DateTime nowUtc) =>
+        _locks.GetLocksForShowtime(showtimeId)
+            .OrderBy(l => l.Key.SeatId)
+            .Select(l => l.ConnectionId == Context.ConnectionId
+                ? new HeldSeat(l.Key.SeatId, true, SecondsUntil(l.ExpiresUtc, nowUtc))
+                : new HeldSeat(l.Key.SeatId, false))
+            .ToList();
+
+    private static int SecondsUntil(DateTime expiresUtc, DateTime nowUtc) =>
+        Math.Max(0, (int)Math.Ceiling((expiresUtc - nowUtc).TotalSeconds));
 
     /// <summary>Rời trang chọn ghế mà vẫn giữ kết nối (SPA/back) — không nhận tin của suất này nữa.</summary>
     public Task LeaveShowtime(int showtimeId)
