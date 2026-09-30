@@ -36,7 +36,9 @@ public sealed class ShowtimeQueryService : IShowtimeQueryService
                 s.Movie!.Title,
                 s.RoomId,
                 s.Room!.RoomName,
+                s.Room!.TheaterId,
                 s.Room!.Theater!.Name,
+                s.Room!.Theater!.City,
                 s.StartTimeUtc,
                 s.EndTimeUtc,
                 s.BasePrice))

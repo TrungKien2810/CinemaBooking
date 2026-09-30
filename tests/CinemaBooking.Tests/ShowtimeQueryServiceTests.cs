@@ -56,10 +56,10 @@ public class ShowtimeQueryServiceTests
     }
 
     [Fact]
-    public async Task GetForMovieOnDate_projects_room_and_theater_names()
+    public async Task GetForMovieOnDate_projects_room_branch_and_city()
     {
         using var db = TestDatabase.Create();
-        var room = db.SeedRoom("Lotte Nam Sài Gòn", "Phòng 3");
+        var room = db.SeedRoom("Lotte Nam Sài Gòn", "Phòng 3", "TP. Hồ Chí Minh");
         var movie = db.SeedMovie("Dune");
         db.SeedShowtime(movie, room, new DateTime(2026, 10, 10, 5, 0, 0, DateTimeKind.Utc));
         await db.SaveChangesAsync();
@@ -70,7 +70,9 @@ public class ShowtimeQueryServiceTests
 
         Assert.Equal("Dune", item.MovieTitle);
         Assert.Equal("Phòng 3", item.RoomName);
+        Assert.Equal(room.TheaterId, item.TheaterId);
         Assert.Equal("Lotte Nam Sài Gòn", item.TheaterName);
+        Assert.Equal("TP. Hồ Chí Minh", item.City);
         Assert.Equal(90_000m, item.BasePrice);
     }
 
