@@ -1,5 +1,6 @@
 using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Infrastructure;
+using CinemaBooking.Web.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 
@@ -19,11 +20,14 @@ public class SeatHub : Hub<ISeatClient>
 
     private readonly ISeatLockManager _locks;
     private readonly SeatHoldOptions _hold;
+    private readonly ISeatAvailabilityQuery _availability;
 
-    public SeatHub(ISeatLockManager locks, IOptions<SeatHoldOptions> hold)
+    // Hub sống theo từng invocation trong scope riêng, nên inject service Scoped (DbContext) là an toàn.
+    public SeatHub(ISeatLockManager locks, IOptions<SeatHoldOptions> hold, ISeatAvailabilityQuery availability)
     {
         _locks = locks;
         _hold = hold.Value;
+        _availability = availability;
     }
 
     /// <summary>Thời gian giữ lấy từ section SeatHold — Worker dọn lock theo cùng cấu hình.</summary>
@@ -95,7 +99,18 @@ public class SeatHub : Hub<ISeatClient>
             return;
         }
 
-        // TODO(Sprint 3): kiểm tra ghế đã Confirmed trong DB trước khi cấp lock.
+        // Hỏi DB sau các kiểm tra rẻ ở trên. Đây không phải chốt chặn cuối — hai người vẫn có
+        // thể lọt qua cùng lúc — chốt cuối là unique index (ShowtimeId, SeatId) lúc ghi Booking.
+        switch (await _availability.CheckAsync(showtimeId, seatId, Context.ConnectionAborted))
+        {
+            case SeatAvailability.Booked:
+                await Clients.Caller.SeatRejected(seatId, "Ghế đã có người đặt.");
+                return;
+            case SeatAvailability.NotBookable:
+                await Clients.Caller.SeatRejected(seatId, "Ghế hoặc suất chiếu không còn mở bán.");
+                return;
+        }
+
         var result = _locks.TryLock(key, Context.ConnectionId, Context.UserIdentifier, _hold.Duration);
 
         switch (result)
