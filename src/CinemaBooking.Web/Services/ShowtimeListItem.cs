@@ -7,7 +7,9 @@ public sealed record ShowtimeListItem(
     string MovieTitle,
     int RoomId,
     string RoomName,
+    int TheaterId,
     string TheaterName,
+    string City,
     DateTime StartTimeUtc,
     DateTime EndTimeUtc,
     decimal BasePrice);
