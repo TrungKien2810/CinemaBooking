@@ -23,6 +23,10 @@
     --cb-accent-hover: rgb(var(--cb-accent-hover-rgb));
     --cb-accent-soft: rgba(var(--cb-accent-rgb), 0.14);
 
+    /* Trạng thái "đang hoạt động" (phim đang chiếu, chi nhánh mở cửa). */
+    --cb-success: #4ade80;
+    --cb-success-soft: rgba(34, 197, 94, 0.14);
+
     --cb-radius: 0.625rem;
     --cb-radius-sm: 0.375rem;
     --cb-gap: 1.25rem;
@@ -512,4 +516,118 @@ body {
 
 .admin-content {
     min-width: 0;
+}
+
+/* --- Khu quản trị: đầu trang, bảng, form ------------------------------------ */
+
+.admin-page-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.admin-back {
+    display: inline-block;
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+    color: var(--cb-text-muted);
+    text-decoration: none;
+}
+
+.admin-back:hover {
+    color: var(--cb-accent);
+}
+
+/* Bảng rộng hơn màn hình thì cuộn ngang trong khung, không đẩy vỡ cả trang. */
+.admin-table-wrap {
+    overflow-x: auto;
+}
+
+.admin-table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--cb-text);
+    --bs-table-border-color: var(--cb-border);
+    --bs-table-hover-bg: var(--cb-surface-2);
+}
+
+.admin-table > thead th {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--cb-text-muted);
+    white-space: nowrap;
+}
+
+.admin-table > :not(caption) > * > * {
+    padding: 0.75rem 1rem;
+}
+
+/* Bản ghi đã ẩn / đã đóng vẫn hiện để admin bật lại, nhưng lùi xuống nền. */
+.admin-table tr.is-inactive > td {
+    color: var(--cb-text-muted);
+}
+
+.admin-actions {
+    text-align: end;
+    white-space: nowrap;
+}
+
+.admin-actions > * + * {
+    margin-left: 0.25rem;
+}
+
+.admin-movie-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.admin-poster-thumb {
+    width: 36px;
+    height: 54px;
+    object-fit: cover;
+    border-radius: 0.25rem;
+    background-color: var(--cb-surface-2);
+    flex-shrink: 0;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.status-badge.is-on {
+    background-color: var(--cb-success-soft);
+    color: var(--cb-success);
+}
+
+.status-badge.is-off {
+    background-color: var(--cb-surface-2);
+    color: var(--cb-text-muted);
+}
+
+.admin-form {
+    padding: 1.5rem;
+}
+
+.admin-form-actions {
+    display: flex;
+    gap: 0.5rem;
+    border-top: 1px solid var(--cb-border);
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+}
+
+.admin-poster-preview {
+    max-width: 14rem;
+    border-radius: var(--cb-radius-sm);
+    overflow: hidden;
 }
