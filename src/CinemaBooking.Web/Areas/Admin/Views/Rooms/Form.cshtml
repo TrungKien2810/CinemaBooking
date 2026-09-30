@@ -42,6 +42,13 @@
                 }
             </p>
         </div>
+
+        <div class="col-lg-7">
+            <div class="form-label">Xem trước sơ đồ ghế</div>
+            <div data-seat-preview data-url="@Url.Action("SeatPreview")" aria-live="polite">
+                <partial name="_SeatPreview" model="SeatPreviewModel.For(Model.TotalRows, Model.TotalColumns)" />
+            </div>
+        </div>
     </div>
 
     <div class="admin-form-actions">
@@ -52,4 +59,35 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        // Vẽ lại sơ đồ khi đổi số hàng/số ghế. Debounce để gõ "12" không bắn 2 request,
+        // và bỏ qua phản hồi cũ về muộn (gõ nhanh 8 → 10, request "8" về sau "10").
+        (function () {
+            var box = document.querySelector('[data-seat-preview]');
+            var rows = document.getElementById('@Html.IdFor(m => m.TotalRows)');
+            var cols = document.getElementById('@Html.IdFor(m => m.TotalColumns)');
+            if (!box || !rows || !cols) return;
+
+            var timer, latest = 0;
+
+            function refresh() {
+                var r = parseInt(rows.value, 10), c = parseInt(cols.value, 10);
+                if (!(r > 0) || !(c > 0)) return;
+
+                var ticket = ++latest;
+                var url = box.dataset.url + '?rows=' + r + '&columns=' + c;
+                fetch(url, { headers: { 'X-Requested-With': 'fetch' } })
+                    .then(function (res) { return res.ok ? res.text() : Promise.reject(res.status); })
+                    .then(function (html) { if (ticket === latest) box.innerHTML = html; })
+                    .catch(function () { /* giữ sơ đồ cũ, lỗi mạng không đáng chặn form */ });
+            }
+
+            [rows, cols].forEach(function (input) {
+                input.addEventListener('input', function () {
+                    clearTimeout(timer);
+                    timer = setTimeout(refresh, 250);
+                });
+            });
+        })();
+    </script>
 }
