@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace CinemaBooking.Web.Areas.Admin.Controllers;
 
-/// <summary>Tra cứu đơn đặt vé của mọi chi nhánh: lọc theo mã, chi nhánh, trạng thái.</summary>
+/// <summary>Tra cứu đơn đặt vé của mọi chi nhánh: lọc theo mã, chi nhánh, trạng thái; xem chi tiết.</summary>
 public class BookingsController : AdminControllerBase
 {
     /// <summary>Số đơn tối đa trên một trang danh sách — đơn mới nhất trước, lọc để thu hẹp.</summary>
@@ -67,5 +67,44 @@ public class BookingsController : AdminControllerBase
             .ToListAsync(ct);
 
         return View(new BookingsIndexViewModel(code, theaterId, status, theaters, items, MaxItems));
+    }
+
+    public async Task<IActionResult> Details(int id, CancellationToken ct)
+    {
+        var b = await _db.Bookings.AsNoTracking()
+            .Where(x => x.Id == id)
+            .Select(x => new
+            {
+                x.Id,
+                x.BookingCode,
+                x.Status,
+                x.BookingTimeUtc,
+                x.CustomerName,
+                x.CustomerEmail,
+                x.CustomerPhone,
+                x.Showtime!.Movie!.Title,
+                TheaterName = x.Showtime.Room!.Theater!.Name,
+                x.Showtime.Room.RoomName,
+                x.Showtime.StartTimeUtc,
+                x.TotalAmount,
+                PaymentStatus = (PaymentStatus?)x.Payment!.Status,
+                x.Payment.TransactionId,
+                Seats = x.Seats
+                    .OrderBy(s => s.Seat!.RowNumber).ThenBy(s => s.Seat!.ColumnNumber)
+                    .Select(s => new { s.Seat, s.PriceAtBooking })
+                    .ToList(),
+            })
+            .FirstOrDefaultAsync(ct);
+        if (b is null) return NotFound();
+
+        var seats = b.Seats
+            .Select(s => new BookingSeatLine(s.Seat!.Label, s.Seat.SeatType, s.PriceAtBooking))
+            .ToList();
+
+        return View(new BookingDetailsViewModel(
+            b.Id, b.BookingCode, b.Status, _tz.ToLocalTime(b.BookingTimeUtc),
+            b.CustomerName, b.CustomerEmail, b.CustomerPhone,
+            b.Title, b.TheaterName, b.RoomName, _tz.ToLocalTime(b.StartTimeUtc),
+            b.TotalAmount, b.PaymentStatus, b.TransactionId, seats));
     }
 }

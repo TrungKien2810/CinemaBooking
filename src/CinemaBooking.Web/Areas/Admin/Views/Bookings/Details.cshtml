@@ -1,0 +1,54 @@
+@model BookingDetailsViewModel
+@{
+    ViewData["Title"] = "Đơn " + Model.BookingCode;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Đơn @Model.BookingCode <span class="badge bg-secondary">@Model.Status</span></h1>
+    <a asp-action="Index" class="btn btn-outline-secondary">Về danh sách</a>
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">Đặt lúc</dt>
+    <dd class="col-sm-9">@Model.BookedLocal.ToString("dd/MM/yyyy HH:mm")</dd>
+    <dt class="col-sm-3">Khách hàng</dt>
+    <dd class="col-sm-9">@Model.CustomerName · @Model.CustomerEmail @(Model.CustomerPhone is null ? "" : "· " + Model.CustomerPhone)</dd>
+    <dt class="col-sm-3">Phim</dt>
+    <dd class="col-sm-9">@Model.MovieTitle</dd>
+    <dt class="col-sm-3">Suất chiếu</dt>
+    <dd class="col-sm-9">@Model.ShowtimeStartLocal.ToString("dd/MM/yyyy HH:mm") · @Model.TheaterName · @Model.RoomName</dd>
+    <dt class="col-sm-3">Thanh toán</dt>
+    <dd class="col-sm-9">@(Model.PaymentStatus?.ToString() ?? "Chưa có") @(Model.TransactionId is null ? "" : "· " + Model.TransactionId)</dd>
+</dl>
+
+<h2 class="h5">Ghế</h2>
+<table class="table table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Ghế</th>
+            <th>Loại</th>
+            <th class="text-end">Giá lúc đặt</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var s in Model.Seats)
+        {
+            <tr>
+                <td>@s.Label</td>
+                <td>@s.SeatType</td>
+                <td class="text-end">@s.Price.ToString("N0")</td>
+            </tr>
+        }
+        @if (Model.Seats.Count == 0)
+        {
+            <tr><td colspan="3" class="text-center text-muted">Đơn không còn giữ ghế nào (đã hủy hoặc hết hạn).</td></tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <th colspan="2">Tổng tiền</th>
+            <th class="text-end">@Model.TotalAmount.ToString("N0")</th>
+        </tr>
+    </tfoot>
+</table>
+
