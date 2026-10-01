@@ -3,7 +3,11 @@
     ViewData["Title"] = "Doanh thu";
 }
 
-<h1 class="h3 mb-3">Doanh thu</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Doanh thu</h1>
+    <a asp-action="Breakdown" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")"
+       class="btn btn-outline-secondary">Theo phim &amp; suất chiếu</a>
+</div>
 
 <form method="get" class="row g-2 align-items-end mb-3">
     <div class="col-auto">

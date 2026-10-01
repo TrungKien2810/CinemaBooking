@@ -1,0 +1,85 @@
+@model RevenueBreakdownViewModel
+@{
+    ViewData["Title"] = "Doanh thu theo phim & suất chiếu";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Doanh thu theo phim &amp; suất chiếu</h1>
+    <a asp-action="Index" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")"
+       class="btn btn-outline-secondary">Về tổng quan</a>
+</div>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-auto">
+        <label for="from" class="form-label">Từ ngày</label>
+        <input id="from" name="from" type="date" value="@Model.From.ToString("yyyy-MM-dd")" class="form-control" />
+    </div>
+    <div class="col-auto">
+        <label for="to" class="form-label">Đến ngày</label>
+        <input id="to" name="to" type="date" value="@Model.To.ToString("yyyy-MM-dd")" class="form-control" />
+    </div>
+    <div class="col-auto">
+        <label for="theaterId" class="form-label">Chi nhánh</label>
+        <select id="theaterId" name="theaterId" class="form-select"
+                asp-items="@(new SelectList(Model.Theaters, "Value", "Text", Model.TheaterId))">
+            <option value="">Tất cả chi nhánh</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">Xem</button>
+    </div>
+</form>
+
+<h2 class="h5">Theo phim</h2>
+<table class="table table-sm align-middle mb-4">
+    <thead>
+        <tr>
+            <th>Phim</th>
+            <th class="text-end">Vé</th>
+            <th class="text-end">Doanh thu</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var m in Model.ByMovie)
+        {
+            <tr>
+                <td>@m.MovieTitle</td>
+                <td class="text-end">@m.Tickets</td>
+                <td class="text-end">@m.Revenue.ToString("N0")</td>
+            </tr>
+        }
+        @if (Model.ByMovie.Count == 0)
+        {
+            <tr><td colspan="3" class="text-center text-muted">Chưa có vé nào được bán trong khoảng này.</td></tr>
+        }
+    </tbody>
+</table>
+
+<h2 class="h5">Theo suất chiếu</h2>
+<table class="table table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Suất</th>
+            <th>Phim</th>
+            <th>Chi nhánh</th>
+            <th>Phòng</th>
+            <th class="text-end">Vé / ghế</th>
+            <th class="text-end">Lấp đầy</th>
+            <th class="text-end">Doanh thu</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var s in Model.ByShowtime)
+        {
+            <tr>
+                <td>@s.StartLocal.ToString("dd/MM HH:mm")</td>
+                <td>@s.MovieTitle</td>
+                <td>@s.TheaterName</td>
+                <td>@s.RoomName</td>
+                <td class="text-end">@s.Tickets / @s.Capacity</td>
+                <td class="text-end">@s.Occupancy.ToString("P0")</td>
+                <td class="text-end">@s.Revenue.ToString("N0")</td>
+            </tr>
+        }
+    </tbody>
+</table>
