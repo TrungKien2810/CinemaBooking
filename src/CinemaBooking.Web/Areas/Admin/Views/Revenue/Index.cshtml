@@ -1,0 +1,85 @@
+@model RevenueDashboardViewModel
+@{
+    ViewData["Title"] = "Doanh thu";
+}
+
+<h1 class="h3 mb-3">Doanh thu</h1>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-auto">
+        <label for="from" class="form-label">Từ ngày</label>
+        <input id="from" name="from" type="date" value="@Model.From.ToString("yyyy-MM-dd")" class="form-control" />
+    </div>
+    <div class="col-auto">
+        <label for="to" class="form-label">Đến ngày</label>
+        <input id="to" name="to" type="date" value="@Model.To.ToString("yyyy-MM-dd")" class="form-control" />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">Xem</button>
+    </div>
+</form>
+
+<p class="text-muted small">Chỉ tính đơn đã xác nhận, theo ngày đặt vé (giờ rạp).</p>
+
+<div class="row g-3 mb-4">
+    <div class="col-auto">
+        <div class="border rounded p-3">
+            <div class="text-muted small">Tổng doanh thu</div>
+            <div class="h4 mb-0">@Model.TotalRevenue.ToString("N0") ₫</div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="border rounded p-3">
+            <div class="text-muted small">Vé đã bán</div>
+            <div class="h4 mb-0">@Model.TotalTickets</div>
+        </div>
+    </div>
+</div>
+
+<h2 class="h5">Theo chi nhánh</h2>
+<table class="table table-sm align-middle mb-4">
+    <thead>
+        <tr>
+            <th>Chi nhánh</th>
+            <th class="text-end">Vé</th>
+            <th class="text-end">Doanh thu</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model.ByTheater)
+        {
+            <tr>
+                <td>@t.TheaterName</td>
+                <td class="text-end">@t.Tickets</td>
+                <td class="text-end">@t.Revenue.ToString("N0")</td>
+            </tr>
+        }
+        @if (Model.ByTheater.Count == 0)
+        {
+            <tr><td colspan="3" class="text-center text-muted">Chưa có vé nào được bán trong khoảng này.</td></tr>
+        }
+    </tbody>
+</table>
+
+<h2 class="h5">Theo ngày</h2>
+<table class="table table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Ngày</th>
+            <th>Chi nhánh</th>
+            <th class="text-end">Vé</th>
+            <th class="text-end">Doanh thu</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model.ByDay)
+        {
+            <tr>
+                <td>@r.Day.ToString("dd/MM/yyyy")</td>
+                <td>@r.TheaterName</td>
+                <td class="text-end">@r.Tickets</td>
+                <td class="text-end">@r.Revenue.ToString("N0")</td>
+            </tr>
+        }
+    </tbody>
+</table>
