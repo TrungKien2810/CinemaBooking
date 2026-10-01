@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace CinemaBooking.Web.Areas.Admin.Controllers;
 
-/// <summary>Tra cứu đơn đặt vé của mọi chi nhánh: lọc theo mã, chi nhánh, trạng thái; xem chi tiết.</summary>
+/// <summary>Tra cứu đơn đặt vé của mọi chi nhánh: lọc theo mã, chi nhánh, trạng thái; xem chi tiết và hủy.</summary>
 public class BookingsController : AdminControllerBase
 {
     /// <summary>Số đơn tối đa trên một trang danh sách — đơn mới nhất trước, lọc để thu hẹp.</summary>
@@ -106,5 +106,38 @@ public class BookingsController : AdminControllerBase
             b.CustomerName, b.CustomerEmail, b.CustomerPhone,
             b.Title, b.TheaterName, b.RoomName, _tz.ToLocalTime(b.StartTimeUtc),
             b.TotalAmount, b.PaymentStatus, b.TransactionId, seats));
+    }
+
+    /// <summary>
+    /// Hủy đơn và trả ghế. "Ghế đã đặt" = có dòng BookingSeats của suất (AD-5), nên trả ghế là XÓA
+    /// các dòng đó — đổi trạng thái thôi thì unique index vẫn chặn người khác đặt lại ghế.
+    /// Thanh toán đã thành công thì đánh dấu hoàn tiền. Một lần SaveChanges = một transaction.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Cancel(int id, CancellationToken ct)
+    {
+        var booking = await _db.Bookings
+            .Include(b => b.Seats)
+            .Include(b => b.Payment)
+            .FirstOrDefaultAsync(b => b.Id == id, ct);
+        if (booking is null) return NotFound();
+
+        if (booking.Status is not (BookingStatus.Pending or BookingStatus.Confirmed))
+        {
+            TempData["Error"] = "Đơn này đã hủy hoặc hết hạn, không còn giữ ghế nào.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var freedSeats = booking.Seats.Count;
+        booking.Status = BookingStatus.Cancelled;
+        _db.BookingSeats.RemoveRange(booking.Seats);
+        if (booking.Payment is { Status: PaymentStatus.Succeeded })
+            booking.Payment.Status = PaymentStatus.Refunded;
+
+        await _db.SaveChangesAsync(ct);
+
+        TempData["Message"] = $"Đã hủy đơn {booking.BookingCode} và trả {freedSeats} ghế.";
+        return RedirectToAction(nameof(Details), new { id });
     }
 }

@@ -8,6 +8,15 @@
     <a asp-action="Index" class="btn btn-outline-secondary">Về danh sách</a>
 </div>
 
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+@if (TempData["Message"] is string message)
+{
+    <div class="alert alert-success">@message</div>
+}
+
 <dl class="row">
     <dt class="col-sm-3">Đặt lúc</dt>
     <dd class="col-sm-9">@Model.BookedLocal.ToString("dd/MM/yyyy HH:mm")</dd>
@@ -52,3 +61,10 @@
     </tfoot>
 </table>
 
+@if (Model.CanCancel)
+{
+    <form asp-action="Cancel" asp-route-id="@Model.Id" method="post"
+          onsubmit="return confirm('Hủy đơn @Model.BookingCode và trả ghế?');">
+        <button type="submit" class="btn btn-outline-danger">Hủy đơn</button>
+    </form>
+}
