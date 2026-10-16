@@ -19,6 +19,7 @@ public sealed class BookingService : IBookingService
 {
     private readonly CinemaDbContext _db;
     private readonly IBookedSeatQuery _bookedSeats;
+    private readonly ISeatLockManager _locks;
     private readonly ISeatPricingService _pricing;
     private readonly IBookingCodeGenerator _codes;
     private readonly TimeProvider _clock;
@@ -26,12 +27,14 @@ public sealed class BookingService : IBookingService
     public BookingService(
         CinemaDbContext db,
         IBookedSeatQuery bookedSeats,
+        ISeatLockManager locks,
         ISeatPricingService pricing,
         IBookingCodeGenerator codes,
         TimeProvider clock)
     {
         _db = db;
         _bookedSeats = bookedSeats;
+        _locks = locks;
         _pricing = pricing;
         _codes = codes;
         _clock = clock;
@@ -56,6 +59,15 @@ public sealed class BookingService : IBookingService
         var booked = await _bookedSeats.GetBookedSeatIdsAsync(showtime.Id, ct);
         if (seatIds.Any(booked.Contains))
             return BookingResult.Failed(BookingResultKind.SeatsUnavailable, "Có ghế vừa được người khác đặt. Vui lòng chọn lại.");
+
+        // Khách có thể ngồi ở trang thanh toán lâu hơn thời gian giữ ghế: lock RAM đã hết hạn trong
+        // lúc điền form. Ghi Booking lúc này là bán ghế mà không ai còn giữ — phải chọn lại.
+        if (string.IsNullOrWhiteSpace(request.ConnectionId))
+            return BookingResult.Failed(BookingResultKind.LocksExpired, "Mất kết nối giữ ghế, vui lòng tải lại trang.");
+
+        var keys = seatIds.Select(seatId => new SeatKey(showtime.Id, seatId)).ToList();
+        if (!_locks.ValidateLocks(keys, request.ConnectionId))
+            return BookingResult.Failed(BookingResultKind.LocksExpired, "Thời gian giữ ghế đã hết hoặc ghế không còn do bạn giữ. Vui lòng chọn lại.");
 
         var booking = BuildBooking(request, showtime, seats);
 
