@@ -94,6 +94,7 @@ internal sealed class SeatHubHarness
         public Task SeatHeldByMe(int seatId, int holdSeconds) => Send(nameof(SeatHeldByMe), seatId, holdSeconds);
         public Task SeatLocked(int seatId) => Send(nameof(SeatLocked), seatId);
         public Task SeatUnlocked(IReadOnlyList<int> seatIds) => Send(nameof(SeatUnlocked), seatIds);
+        public Task SeatBooked(IReadOnlyList<int> seatIds) => Send(nameof(SeatBooked), seatIds);
         public Task SeatRejected(int seatId, string reason) => Send(nameof(SeatRejected), seatId, reason);
     }
 

@@ -3,9 +3,11 @@ using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
+using CinemaBooking.Web.Hubs;
 using CinemaBooking.Web.Models;
 using CinemaBooking.Web.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -22,6 +24,7 @@ public class BookingController : Controller
     private readonly ISeatLockManager _locks;
     private readonly ISeatPricingService _pricing;
     private readonly IBookingService _bookings;
+    private readonly IHubContext<SeatHub, ISeatClient> _seats;
     private readonly DisplayTimeZone _tz;
     private readonly TimeProvider _clock;
     private readonly SeatHoldOptions _hold;
@@ -32,6 +35,7 @@ public class BookingController : Controller
         ISeatLockManager locks,
         ISeatPricingService pricing,
         IBookingService bookings,
+        IHubContext<SeatHub, ISeatClient> seats,
         IOptions<DisplayTimeZone> tz,
         TimeProvider clock,
         IOptions<SeatHoldOptions> hold)
@@ -41,6 +45,7 @@ public class BookingController : Controller
         _locks = locks;
         _pricing = pricing;
         _bookings = bookings;
+        _seats = seats;
         _tz = tz.Value;
         _clock = clock;
         _hold = hold.Value;
@@ -138,6 +143,9 @@ public class BookingController : Controller
             TempData["Error"] = result.Message;
             return RedirectToAction(nameof(Checkout));
         }
+
+        // Ghế đã được đặt: báo cho mọi máy đang mở suất này vẽ lại thành "đã đặt" (General.md §6.2 bước 5).
+        await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatBooked(selection.SeatIds.ToList());
 
         HttpContext.Session.ClearSeatSelection();
         TempData["BookingCode"] = result.BookingCode;

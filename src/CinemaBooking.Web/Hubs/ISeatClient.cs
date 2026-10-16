@@ -18,6 +18,9 @@ public interface ISeatClient
     /// <summary>Các ghế vừa trống trở lại (bỏ chọn, rớt mạng, hết hạn).</summary>
     Task SeatUnlocked(IReadOnlyList<int> seatIds);
 
+    /// <summary>Các ghế vừa được đặt xong (đơn đã Confirmed) — client khác vẽ lại thành "đã đặt".</summary>
+    Task SeatBooked(IReadOnlyList<int> seatIds);
+
     /// <summary>Không giữ được ghế; <paramref name="reason"/> hiển thị thẳng lên toast.</summary>
     Task SeatRejected(int seatId, string reason);
 }
