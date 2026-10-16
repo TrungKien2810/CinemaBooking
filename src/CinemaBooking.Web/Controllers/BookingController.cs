@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Infrastructure;
@@ -20,6 +21,7 @@ public class BookingController : Controller
     private readonly IBookedSeatQuery _bookedSeats;
     private readonly ISeatLockManager _locks;
     private readonly ISeatPricingService _pricing;
+    private readonly IBookingService _bookings;
     private readonly DisplayTimeZone _tz;
     private readonly TimeProvider _clock;
     private readonly SeatHoldOptions _hold;
@@ -29,6 +31,7 @@ public class BookingController : Controller
         IBookedSeatQuery bookedSeats,
         ISeatLockManager locks,
         ISeatPricingService pricing,
+        IBookingService bookings,
         IOptions<DisplayTimeZone> tz,
         TimeProvider clock,
         IOptions<SeatHoldOptions> hold)
@@ -37,6 +40,7 @@ public class BookingController : Controller
         _bookedSeats = bookedSeats;
         _locks = locks;
         _pricing = pricing;
+        _bookings = bookings;
         _tz = tz.Value;
         _clock = clock;
         _hold = hold.Value;
@@ -101,6 +105,43 @@ public class BookingController : Controller
         return View(new CheckoutViewModel(
             showtime.Id, showtime.Movie!.Title, showtime.Room.Theater!.Name, showtime.Room.RoomName,
             _tz.ToLocalTime(showtime.StartTimeUtc), seats));
+    }
+
+    /// <summary>
+    /// Chốt đơn: tạo Booking trong một transaction, thu tiền và xếp email xác nhận (xem
+    /// <see cref="IBookingService"/>). Danh sách ghế lấy lại từ Session, không đọc từ form.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Checkout(CheckoutFormModel form, CancellationToken ct)
+    {
+        var selection = HttpContext.Session.GetSeatSelection();
+        if (selection is null) return RedirectToAction("Index", "Home");
+
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = "Vui lòng kiểm tra lại thông tin liên hệ.";
+            return RedirectToAction(nameof(Checkout));
+        }
+
+        var result = await _bookings.PlaceAsync(new BookingRequest(
+            selection.ShowtimeId,
+            selection.SeatIds,
+            selection.ConnectionId,
+            form.CustomerName,
+            form.CustomerEmail,
+            form.CustomerPhone,
+            User.FindFirstValue(ClaimTypes.NameIdentifier)), ct);
+
+        if (!result.IsSuccess)
+        {
+            TempData["Error"] = result.Message;
+            return RedirectToAction(nameof(Checkout));
+        }
+
+        HttpContext.Session.ClearSeatSelection();
+        TempData["BookingCode"] = result.BookingCode;
+        return RedirectToAction("Index", "Home");
     }
 
     private async Task<string?> ValidateSelectionAsync(Showtime showtime, List<int> ids, string? connectionId, CancellationToken ct)
