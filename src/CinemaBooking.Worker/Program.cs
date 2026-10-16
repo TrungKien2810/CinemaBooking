@@ -16,7 +16,17 @@ builder.Services.AddCinemaInfrastructure(builder.Configuration);
 builder.Services.TryAddSingleton(TimeProvider.System);
 
 // ── Dev B: Worker phát "ghế trống" ra ngoài process (Sprint 4) ──
-builder.Services.AddSingleton<ISeatReleaseNotifier, LoggingSeatReleaseNotifier>();
+// Có URL của Web thì nói chuyện với SeatHub qua SignalR client; chưa cấu hình thì dùng bản chỉ log
+// để Worker vẫn chạy được (ghế vẫn được nhả, chỉ chậm tin báo cho trình duyệt).
+if (!string.IsNullOrWhiteSpace(builder.Configuration["WebHub:BaseUrl"]))
+{
+    builder.Services.Configure<WebHubOptions>(builder.Configuration.GetSection(WebHubOptions.SectionName));
+    builder.Services.AddSingleton<ISeatReleaseNotifier, SignalRSeatReleaseNotifier>();
+}
+else
+{
+    builder.Services.AddSingleton<ISeatReleaseNotifier, LoggingSeatReleaseNotifier>();
+}
 
 // Trần retry / nhịp quét của hàng đợi email — đọc từ section EmailOutbox.
 builder.Services.Configure<EmailOutboxOptions>(
