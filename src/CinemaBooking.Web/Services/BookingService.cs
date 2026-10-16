@@ -73,10 +73,35 @@ public sealed class BookingService : IBookingService
 
         await using var transaction = await _db.Database.BeginTransactionAsync(ct);
         _db.Bookings.Add(booking);
-        await _db.SaveChangesAsync(ct);
+
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (IsDuplicateSeat(ex))
+        {
+            // Ai đó thắng cuộc đua giữa lúc kiểm ghế và lúc ghi: unique index (ShowtimeId, SeatId) từ chối.
+            // Đây là chốt chặn cuối (General.md §5.1 mục 2) — trả lỗi thân thiện, không để lộ 500.
+            _db.ChangeTracker.Clear();
+            return BookingResult.Failed(BookingResultKind.SeatsUnavailable, "Có ghế vừa bị người khác đặt. Vui lòng chọn lại.");
+        }
+
         await transaction.CommitAsync(ct);
 
         return BookingResult.Success(booking.BookingCode);
+    }
+
+    /// <summary>
+    /// Nhận diện vi phạm unique index (ShowtimeId, SeatId). SQL Server: "Cannot insert duplicate key
+    /// ... 'BookingSeats'"; SQLite: "UNIQUE constraint failed: BookingSeats...". Dò theo thông điệp
+    /// để chạy được trên cả hai provider, không phụ thuộc mã lỗi riêng của từng DB.
+    /// </summary>
+    private static bool IsDuplicateSeat(DbUpdateException ex)
+    {
+        var message = ex.InnerException?.Message ?? ex.Message;
+        return message.Contains("BookingSeats", StringComparison.OrdinalIgnoreCase)
+            && (message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("duplicate", StringComparison.OrdinalIgnoreCase));
     }
 
     private Booking BuildBooking(BookingRequest request, Showtime showtime, IReadOnlyList<Seat> seats)
