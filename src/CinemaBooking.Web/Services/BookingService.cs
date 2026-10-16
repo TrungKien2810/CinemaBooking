@@ -115,6 +115,11 @@ public sealed class BookingService : IBookingService
         booking.Status = BookingStatus.Confirmed;
         booking.Payment!.Status = PaymentStatus.Succeeded;
         booking.Payment.TransactionId = charge.TransactionId;
+
+        // Email KHÔNG gửi trực tiếp trong request (fire-and-forget sẽ mất mail nếu process chết):
+        // Web chỉ ghi vào outbox cùng transaction với bước xác nhận, EmailOutboxWorker mới gửi.
+        _db.OutboxEmails.Add(BuildConfirmationEmail(booking, showtime, seats));
+
         await _db.SaveChangesAsync(ct);
 
         // Ghế đã thành "đã đặt" ở DB: nhả lock RAM để nhường chỗ cho lần mua sau.
@@ -172,6 +177,34 @@ public sealed class BookingService : IBookingService
     }
 
     /// <summary>
+    /// Thư xác nhận chỉ là dữ liệu trong outbox; nội dung hiển thị ở đây phải đủ để khách đọc lại
+    /// mà không cần mở DB (mã vé, phim, suất, ghế, số tiền).
+    /// </summary>
+    private static OutboxEmail BuildConfirmationEmail(Booking booking, Showtime showtime, IReadOnlyList<Seat> seats)
+    {
+        var labels = string.Join(", ", seats
+            .OrderBy(s => s.RowNumber).ThenBy(s => s.ColumnNumber)
+            .Select(s => s.Label));
+
+        var body =
+            $"Xin chào {booking.CustomerName},\n\n" +
+            $"Đơn {booking.BookingCode} của bạn đã được xác nhận.\n" +
+            $"Phim: {showtime.Movie?.Title}\n" +
+            $"Suất chiếu: {showtime.StartTimeUtc:HH:mm dd/MM/yyyy} (UTC)\n" +
+            $"Ghế: {labels}\n" +
+            $"Tổng tiền: {booking.TotalAmount:N0} VND\n\n" +
+            "Cảm ơn bạn đã đặt vé tại CinemaBooking.";
+
+        return new OutboxEmail
+        {
+            ToAddress = booking.CustomerEmail,
+            Subject = $"Xác nhận đặt vé {booking.BookingCode}",
+            Body = body,
+            Status = OutboxStatus.Pending,
+        };
+    }
+
+    /// <summary>
     /// Cùng điều kiện "suất còn bán" với <c>BookingController.FindBookableShowtimeAsync</c>:
     /// suất chưa bắt đầu, phim và chi nhánh chưa ẩn.
     /// </summary>
@@ -179,6 +212,7 @@ public sealed class BookingService : IBookingService
     {
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
         return _db.Showtimes
+            .Include(s => s.Movie)
             .Include(s => s.Room!).ThenInclude(r => r.Seats)
             .FirstOrDefaultAsync(s => s.Id == showtimeId
                 && s.StartTimeUtc > nowUtc
