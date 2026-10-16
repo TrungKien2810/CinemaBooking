@@ -14,6 +14,10 @@ builder.Services.AddCinemaInfrastructure(builder.Configuration);
 // ── Dev B: Worker phát "ghế trống" ra ngoài process (Sprint 4) ──
 builder.Services.AddSingleton<ISeatReleaseNotifier, LoggingSeatReleaseNotifier>();
 
+// Trần retry / nhịp quét của hàng đợi email — đọc từ section EmailOutbox.
+builder.Services.Configure<EmailOutboxOptions>(
+    builder.Configuration.GetSection(EmailOutboxOptions.SectionName));
+
 builder.Services.AddHostedService<ExpiredSeatCleaner>();
 builder.Services.AddHostedService<EmailOutboxWorker>();
 builder.Services.AddHostedService<DailyReportWorker>();
