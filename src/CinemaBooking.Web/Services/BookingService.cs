@@ -21,6 +21,7 @@ public sealed class BookingService : IBookingService
     private readonly IBookedSeatQuery _bookedSeats;
     private readonly ISeatLockManager _locks;
     private readonly ISeatPricingService _pricing;
+    private readonly IPaymentService _payment;
     private readonly IBookingCodeGenerator _codes;
     private readonly TimeProvider _clock;
 
@@ -29,6 +30,7 @@ public sealed class BookingService : IBookingService
         IBookedSeatQuery bookedSeats,
         ISeatLockManager locks,
         ISeatPricingService pricing,
+        IPaymentService payment,
         IBookingCodeGenerator codes,
         TimeProvider clock)
     {
@@ -36,6 +38,7 @@ public sealed class BookingService : IBookingService
         _bookedSeats = bookedSeats;
         _locks = locks;
         _pricing = pricing;
+        _payment = payment;
         _codes = codes;
         _clock = clock;
     }
@@ -71,22 +74,51 @@ public sealed class BookingService : IBookingService
 
         var booking = BuildBooking(request, showtime, seats);
 
-        await using var transaction = await _db.Database.BeginTransactionAsync(ct);
-        _db.Bookings.Add(booking);
-
-        try
+        // Transaction 1: giữ chỗ. Suất chiếu đã bắt đầu hay chưa được kiểm lại ở trên; đơn Pending
+        // + unique index chính là thứ giữ ghế trong lúc khách thanh toán (General.md §7.5) — mất
+        // kết nối SignalR ở bước này cũng không làm mất ghế.
+        await using (var transaction = await _db.Database.BeginTransactionAsync(ct))
         {
+            _db.Bookings.Add(booking);
+
+            try
+            {
+                await _db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateException ex) when (IsDuplicateSeat(ex))
+            {
+                // Ai đó thắng cuộc đua giữa lúc kiểm ghế và lúc ghi: unique index (ShowtimeId, SeatId) từ chối.
+                // Đây là chốt chặn cuối (General.md §5.1 mục 2) — trả lỗi thân thiện, không để lộ 500.
+                _db.ChangeTracker.Clear();
+                return BookingResult.Failed(BookingResultKind.SeatsUnavailable, "Có ghế vừa bị người khác đặt. Vui lòng chọn lại.");
+            }
+
+            await transaction.CommitAsync(ct);
+        }
+
+        var charge = await _payment.ChargeAsync(
+            new PaymentRequest(booking.BookingCode, booking.TotalAmount, booking.CustomerEmail), ct);
+
+        if (!charge.Succeeded)
+        {
+            // Đơn không thành: xóa dòng BookingSeats để trả ghế ngay (unique index không lọc theo trạng
+            // thái đơn, nên hủy vé phải xóa dòng ghế), giữ lại Booking làm lịch sử.
+            _db.BookingSeats.RemoveRange(booking.Seats);
+            booking.Status = BookingStatus.Cancelled;
+            booking.Payment!.Status = PaymentStatus.Failed;
             await _db.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateException ex) when (IsDuplicateSeat(ex))
-        {
-            // Ai đó thắng cuộc đua giữa lúc kiểm ghế và lúc ghi: unique index (ShowtimeId, SeatId) từ chối.
-            // Đây là chốt chặn cuối (General.md §5.1 mục 2) — trả lỗi thân thiện, không để lộ 500.
-            _db.ChangeTracker.Clear();
-            return BookingResult.Failed(BookingResultKind.SeatsUnavailable, "Có ghế vừa bị người khác đặt. Vui lòng chọn lại.");
+
+            return BookingResult.Failed(BookingResultKind.PaymentFailed,
+                charge.FailureReason ?? "Thanh toán không thành công. Vui lòng thử lại.");
         }
 
-        await transaction.CommitAsync(ct);
+        booking.Status = BookingStatus.Confirmed;
+        booking.Payment!.Status = PaymentStatus.Succeeded;
+        booking.Payment.TransactionId = charge.TransactionId;
+        await _db.SaveChangesAsync(ct);
+
+        // Ghế đã thành "đã đặt" ở DB: nhả lock RAM để nhường chỗ cho lần mua sau.
+        foreach (var key in keys) _locks.Release(key, request.ConnectionId);
 
         return BookingResult.Success(booking.BookingCode);
     }
