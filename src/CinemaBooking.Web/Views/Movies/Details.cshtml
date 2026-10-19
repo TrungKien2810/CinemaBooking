@@ -1,0 +1,119 @@
+@model MovieDetailsViewModel
+@{
+    var m = Model.Movie;
+    var f = Model.Filter;
+    var day = Model.SelectedDate?.ToString("yyyy-MM-dd");
+
+    // Link giữ nguyên ngày đang chọn, chỉ đổi bộ lọc — và ngược lại. Neo #lich-chieu để
+    // bấm tab/chip không nhảy về đầu trang.
+    string Link(string? date, string? city, int? theaterId) =>
+        Url.Action("Details", new { id = m.Id, date, city, theaterId }) + "#lich-chieu";
+}
+
+<a asp-controller="Home" asp-action="Index" class="back-link">← Phim đang chiếu</a>
+
+<section class="movie-hero cb-card">
+    <div class="movie-poster movie-hero-poster">
+        <img src="@m.PosterOrPlaceholder"
+             data-poster-fallback="@MovieCardViewModel.PlaceholderPoster"
+             alt="Poster phim @m.Title" width="240" height="360" />
+    </div>
+    <div class="movie-hero-body">
+        <h1 class="page-title">@m.Title</h1>
+        <p class="cb-muted movie-meta">
+            <span class="movie-genre">@m.GenreOrDefault</span>
+            <span aria-hidden="true">·</span>
+            <span>@m.DurationMinutes phút</span>
+            <span aria-hidden="true">·</span>
+            <span>Khởi chiếu @m.ReleaseDate.ToString("dd/MM/yyyy")</span>
+        </p>
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <p class="movie-description">@Model.Description</p>
+        }
+    </div>
+</section>
+
+<section class="showtime-section" id="lich-chieu">
+    <h2 class="section-title">Lịch chiếu</h2>
+
+    @if (Model.Dates.Count == 0)
+    {
+        <div class="cb-card empty-state">
+            <p class="empty-title">Chưa có suất chiếu</p>
+            <p class="cb-muted">Phim này chưa có suất nào trong 7 ngày tới. Quay lại sau nhé.</p>
+        </div>
+    }
+    else
+    {
+        <nav class="date-tabs" aria-label="Chọn ngày">
+            @foreach (var d in Model.Dates)
+            {
+                var isCurrent = d == Model.SelectedDate;
+                <a href="@Link(d.ToString("yyyy-MM-dd"), f.City, f.TheaterId)"
+                   class="date-tab @(isCurrent ? "active" : null)"
+                   aria-current="@(isCurrent ? "date" : null)">@Model.DateLabel(d)</a>
+            }
+        </nav>
+
+        <div class="filter-bar">
+            <div class="filter-row" role="group" aria-label="Thành phố">
+                <span class="filter-label">Thành phố</span>
+                <a href="@Link(day, null, null)" class="filter-chip @(f.City is null ? "active" : null)">Tất cả</a>
+                @foreach (var c in f.Cities)
+                {
+                    <a href="@Link(day, c, null)" class="filter-chip @(c == f.City ? "active" : null)">@c</a>
+                }
+            </div>
+            <div class="filter-row" role="group" aria-label="Chi nhánh">
+                <span class="filter-label">Chi nhánh</span>
+                <a href="@Link(day, f.City, null)" class="filter-chip @(f.TheaterId is null ? "active" : null)">Tất cả</a>
+                @foreach (var b in f.Branches)
+                {
+                    <a href="@Link(day, b.City, b.Id)" class="filter-chip @(b.Id == f.TheaterId ? "active" : null)">@b.Name</a>
+                }
+            </div>
+        </div>
+
+        @if (!Model.HasShowtimes)
+        {
+            <div class="cb-card empty-state">
+                <p class="empty-title">Không có suất phù hợp</p>
+                <p class="cb-muted">
+                    Ngày này không còn suất ở nơi bạn chọn.
+                    @if (f.IsActive)
+                    {
+                        <a href="@Link(day, null, null)">Xem mọi chi nhánh</a>
+                    }
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="branch-list">
+                @foreach (var branch in Model.Branches)
+                {
+                    <article class="cb-card branch-showtimes">
+                        <h3 class="branch-name">
+                            @branch.TheaterName
+                            <span class="branch-city">@branch.City</span>
+                        </h3>
+                        <ul class="showtime-slots">
+                            @foreach (var s in branch.Showtimes)
+                            {
+                                <li>
+                                    @* /Booking/SeatMap/{id} là trang chọn ghế của A3.1 (BookingController). *@
+                                    <a class="showtime-slot" href="@Url.Content($"~/Booking/SeatMap/{s.Id}")"
+                                       title="@s.RoomName · kết thúc @s.EndLocal.ToString("HH:mm")">
+                                        <span class="showtime-time">@s.StartLocal.ToString("HH:mm")</span>
+                                        <span class="showtime-meta">@s.RoomName · @s.BasePrice.ToString("N0") đ</span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </article>
+                }
+            </div>
+        }
+    }
+</section>

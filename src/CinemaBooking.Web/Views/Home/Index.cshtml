@@ -1,6 +1,9 @@
-﻿@model HomeIndexViewModel
+@model HomeIndexViewModel
 @{
     ViewData["Title"] = "Phim đang chiếu";
+
+    // Chip thể loại giữ nguyên từ khóa đang tìm, và ngược lại form tìm giữ thể loại (input ẩn).
+    string GenreLink(string? genre) => Url.Action("Index", new { q = Model.Keyword, genre })!;
 }
 
 <section class="page-head">
@@ -8,14 +11,56 @@
     <p class="cb-muted page-subtitle">Chọn phim, chọn suất, rồi giữ ghế ngay trên sơ đồ phòng chiếu.</p>
 </section>
 
+<form method="get" asp-action="Index" class="movie-search" role="search">
+    <label for="q" class="visually-hidden">Tìm phim</label>
+    <input id="q" name="q" type="search" value="@Model.Keyword" class="form-control"
+           placeholder="Tìm theo tên phim hoặc thể loại…" maxlength="100" autocomplete="off" />
+    @if (Model.Genre is not null)
+    {
+        <input type="hidden" name="genre" value="@Model.Genre" />
+    }
+    <button type="submit" class="btn btn-primary">Tìm</button>
+</form>
+
+@if (Model.GenreOptions.Count > 0)
+{
+    <nav class="filter-row genre-filter" aria-label="Lọc theo thể loại">
+        <a href="@GenreLink(null)" class="filter-chip @(Model.Genre is null ? "active" : null)">Tất cả</a>
+        @foreach (var g in Model.GenreOptions)
+        {
+            var isCurrent = string.Equals(g, Model.Genre, StringComparison.OrdinalIgnoreCase);
+            <a href="@GenreLink(g)" class="filter-chip @(isCurrent ? "active" : null)"
+               aria-current="@(isCurrent ? "true" : null)">@g</a>
+        }
+    </nav>
+}
+
+@if (Model.IsFiltered)
+{
+    <p class="cb-muted search-summary">
+        @Model.Movies.Count phim
+        @if (Model.Keyword is not null) { <text>khớp “<strong>@Model.Keyword</strong>”</text> }
+        @if (Model.Genre is not null) { <text>thuộc thể loại <strong>@Model.Genre</strong></text> }
+        · <a asp-action="Index">Xóa bộ lọc</a>
+    </p>
+}
+
 @if (!Model.HasMovies)
 {
     <div class="cb-card empty-state">
-        <p class="empty-title">Chưa có phim nào</p>
-        <p class="cb-muted">
-            Danh sách phim lấy trực tiếp từ database. Nếu bạn vừa tạo database mới,
-            hãy chạy lại ứng dụng để phần seed dữ liệu mẫu chạy.
-        </p>
+        @if (Model.IsFiltered)
+        {
+            <p class="empty-title">Không tìm thấy phim phù hợp</p>
+            <p class="cb-muted">Thử từ khóa khác hoặc <a asp-action="Index">xem tất cả phim</a>.</p>
+        }
+        else
+        {
+            <p class="empty-title">Chưa có phim nào</p>
+            <p class="cb-muted">
+                Danh sách phim lấy trực tiếp từ database. Nếu bạn vừa tạo database mới,
+                hãy chạy lại ứng dụng để phần seed dữ liệu mẫu chạy.
+            </p>
+        }
     </div>
 }
 else
