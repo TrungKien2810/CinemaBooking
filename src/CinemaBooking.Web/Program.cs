@@ -34,6 +34,12 @@ builder.Services.AddScoped<IShowtimeScheduler, ShowtimeScheduler>();
 builder.Services.AddScoped<IBookedSeatQuery, BookedSeatQuery>();
 builder.Services.AddSingleton<ISeatPricingService, SeatPricingService>();
 
+// ── Dev B: SeatHub kiểm tra ghế ở DB trước khi cấp lock ──
+builder.Services.AddScoped<ISeatAvailabilityQuery, SeatAvailabilityQuery>();
+
+// ── Dev B: luồng đặt vé (kiểm ghế + lock → ghi Booking trong một transaction → thu tiền → outbox) ──
+builder.Services.AddScoped<IBookingService, BookingService>();
+
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(o =>
     {

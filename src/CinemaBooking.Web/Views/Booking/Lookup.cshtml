@@ -1,0 +1,46 @@
+@model BookingLookupViewModel
+@{
+    ViewData["Title"] = "Tra cứu vé";
+}
+
+<section class="page-head">
+    <h1 class="page-title">Tra cứu vé</h1>
+    <p class="cb-muted page-subtitle">Nhập mã vé (dạng CB-XXXXXX) để xem lại thông tin đặt chỗ.</p>
+</section>
+
+<div class="cb-card">
+    <form asp-controller="Booking" asp-action="Lookup" method="get" class="row g-2 align-items-end">
+        <div class="col-sm-8">
+            <label for="code" class="form-label">Mã vé</label>
+            <input id="code" name="code" value="@Model.Code" class="form-control"
+                   placeholder="CB-8F3A21" autocomplete="off" />
+        </div>
+        <div class="col-sm-4">
+            <button type="submit" class="btn btn-primary w-100">Tra cứu</button>
+        </div>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Error))
+    {
+        <div class="alert alert-danger mt-3 mb-0" role="alert">@Model.Error</div>
+    }
+</div>
+
+@if (Model.Booking is not null)
+{
+    <div class="cb-card mt-4">
+        <partial name="_BookingDetails" model="Model.Booking" />
+        <div class="booking-actions">
+            <a asp-controller="Booking" asp-action="Confirmation" asp-route-code="@Model.Booking.BookingCode"
+               class="btn btn-outline-secondary">Mở trang xác nhận</a>
+        </div>
+    </div>
+}
+else if (string.IsNullOrWhiteSpace(Model.Code))
+{
+    <div class="cb-card empty-state mt-4">
+        <div class="empty-title">Chưa có mã vé?</div>
+        <p class="cb-muted">Mã vé nằm trong email xác nhận hoặc hiện ngay sau khi bạn đặt vé thành công.</p>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Xem phim đang chiếu</a>
+    </div>
+}

@@ -41,6 +41,8 @@ docs/*
 !docs/project-state/
 docs/project-state/*
 !docs/project-state/SPRINT-PLAN.md
+!docs/screenshots/
+!docs/screenshots/*.png
 config/
 .claude/
 .agents/

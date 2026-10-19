@@ -1,0 +1,20 @@
+@model string?
+@{
+    ViewData["Title"] = "Không tìm thấy vé";
+}
+
+<div class="cb-card empty-state">
+    <div class="empty-title">Không tìm thấy vé</div>
+    <p class="cb-muted">
+        @if (string.IsNullOrWhiteSpace(Model))
+        {
+            @:Mã vé không hợp lệ hoặc chưa được nhập.
+        }
+        else
+        {
+            <text>Không có vé nào khớp với mã <strong>@Model</strong>. Vui lòng kiểm tra lại email xác nhận.</text>
+        }
+    </p>
+    <a asp-controller="Booking" asp-action="Lookup" class="btn btn-primary">Tra cứu lại</a>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-link">Về trang chủ</a>
+</div>

@@ -1,0 +1,43 @@
+@model MyBookingsViewModel
+@{
+    ViewData["Title"] = "Vé của tôi";
+}
+
+<section class="page-head">
+    <h1 class="page-title">Vé của tôi</h1>
+    <p class="cb-muted page-subtitle">Các đơn đã đặt bằng tài khoản này.</p>
+</section>
+
+@if (Model.Bookings.Count == 0)
+{
+    <div class="cb-card empty-state">
+        <div class="empty-title">Bạn chưa có vé nào</div>
+        <p class="cb-muted">Chọn một phim và giữ ghế để đơn đầu tiên xuất hiện ở đây.</p>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Xem phim đang chiếu</a>
+    </div>
+}
+else
+{
+    <div class="booking-list">
+        @foreach (var booking in Model.Bookings)
+        {
+            <article class="cb-card booking-list-item">
+                <div class="booking-list-main">
+                    <div class="booking-list-code">@booking.BookingCode</div>
+                    <h2 class="booking-list-title">@booking.MovieTitle</h2>
+                    <p class="cb-muted mb-1">@booking.TheaterName · @booking.RoomName</p>
+                    <p class="cb-muted mb-1">@booking.StartLocal.ToString("HH:mm dd/MM/yyyy")</p>
+                    <p class="cb-muted mb-0">Ghế: @string.Join(", ", booking.Seats.Select(s => s.Label))</p>
+                </div>
+                <div class="booking-list-side">
+                    <span class="badge @(booking.Status == BookingStatus.Confirmed ? "text-bg-success" : "text-bg-secondary")">
+                        @booking.StatusLabel
+                    </span>
+                    <div class="booking-list-total">@booking.TotalAmount.ToString("N0") ₫</div>
+                    <a asp-controller="Booking" asp-action="Confirmation" asp-route-code="@booking.BookingCode"
+                       class="btn btn-outline-secondary btn-sm">Xem chi tiết</a>
+                </div>
+            </article>
+        }
+    </div>
+}

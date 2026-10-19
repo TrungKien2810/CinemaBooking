@@ -159,6 +159,22 @@ chuỗi tay: gõ sai thì build vẫn xanh, lỗi chỉ lộ lúc chạy dưới
 
 ---
 
+## Ảnh giao diện
+
+Ảnh chụp từ bản chạy thật (`dotnet run` + LocalDB), không phải mockup.
+
+| Trang chủ | Sơ đồ ghế real-time |
+| --- | --- |
+| ![Trang chủ](docs/screenshots/home.png) | ![Sơ đồ ghế](docs/screenshots/seat-map.png) |
+
+| Tra cứu vé | Xác nhận vé |
+| --- | --- |
+| ![Tra cứu vé](docs/screenshots/lookup-result.png) | ![Xác nhận vé](docs/screenshots/confirmation.png) |
+
+> Trang tra cứu khi chưa nhập mã: [`docs/screenshots/lookup.png`](docs/screenshots/lookup.png).
+
+---
+
 ## Ba điều dễ làm sai
 
 1. **Khóa ghế theo cặp `(ShowtimeId, SeatId)`**, không phải theo `SeatId` — cùng một ghế ở hai
