@@ -1,5 +1,6 @@
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
+using CinemaBooking.Web.Services;
 
 namespace CinemaBooking.Web.Models;
 
@@ -23,6 +24,7 @@ public sealed record SeatMapViewModel(
     public static SeatMapViewModel Build(
         Showtime showtime,
         IReadOnlySet<int> bookedSeatIds,
+        ISeatPricingService pricing,
         DateTime startLocal,
         int holdSeconds)
     {
@@ -44,7 +46,7 @@ public sealed record SeatMapViewModel(
                     seat.Id,
                     seat.Label,
                     seat.SeatType,
-                    PriceFor(showtime.BasePrice, seat.SeatType),
+                    pricing.PriceFor(showtime.BasePrice, seat.SeatType),
                     bookedSeatIds.Contains(seat.Id));
             }
             rows.Add(new SeatRowViewModel(RowLabel(row), cells));
@@ -56,14 +58,6 @@ public sealed record SeatMapViewModel(
     }
 
     private static string RowLabel(int row) => ((char)('A' + row - 1)).ToString();
-
-    /// <summary>Ghế VIP +20%, ghế đôi tính giá hai người.</summary>
-    private static decimal PriceFor(decimal basePrice, SeatType type) => type switch
-    {
-        SeatType.Vip => basePrice * 1.2m,
-        SeatType.Couple => basePrice * 2m,
-        _ => basePrice,
-    };
 }
 
 /// <summary>Một hàng ghế; <see cref="Seats"/> có đúng TotalColumns phần tử, null là lối đi/ô trống.</summary>
