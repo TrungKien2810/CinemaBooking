@@ -1,10 +1,13 @@
+using System.Security.Claims;
 using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Domain.Entities;
+using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Hubs;
 using CinemaBooking.Web.Models;
 using CinemaBooking.Web.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -20,23 +23,32 @@ public class BookingController : Controller
     private readonly IBookedSeatQuery _bookedSeats;
     private readonly ISeatLockManager _locks;
     private readonly ISeatPricingService _pricing;
+    private readonly IBookingService _bookings;
+    private readonly IHubContext<SeatHub, ISeatClient> _seats;
     private readonly DisplayTimeZone _tz;
     private readonly TimeProvider _clock;
+    private readonly SeatHoldOptions _hold;
 
     public BookingController(
         CinemaDbContext db,
         IBookedSeatQuery bookedSeats,
         ISeatLockManager locks,
         ISeatPricingService pricing,
+        IBookingService bookings,
+        IHubContext<SeatHub, ISeatClient> seats,
         IOptions<DisplayTimeZone> tz,
-        TimeProvider clock)
+        TimeProvider clock,
+        IOptions<SeatHoldOptions> hold)
     {
         _db = db;
         _bookedSeats = bookedSeats;
         _locks = locks;
         _pricing = pricing;
+        _bookings = bookings;
+        _seats = seats;
         _tz = tz.Value;
         _clock = clock;
+        _hold = hold.Value;
     }
 
     [HttpGet]
@@ -48,7 +60,7 @@ public class BookingController : Controller
         var booked = await _bookedSeats.GetBookedSeatIdsAsync(showtime.Id, ct);
 
         return View(SeatMapViewModel.Build(
-            showtime, booked, _pricing, _tz.ToLocalTime(showtime.StartTimeUtc), (int)SeatHub.HoldDuration.TotalSeconds));
+            showtime, booked, _pricing, _tz.ToLocalTime(showtime.StartTimeUtc), (int)_hold.Duration.TotalSeconds));
     }
 
     /// <summary>
@@ -98,6 +110,46 @@ public class BookingController : Controller
         return View(new CheckoutViewModel(
             showtime.Id, showtime.Movie!.Title, showtime.Room.Theater!.Name, showtime.Room.RoomName,
             _tz.ToLocalTime(showtime.StartTimeUtc), seats));
+    }
+
+    /// <summary>
+    /// Chốt đơn: tạo Booking trong một transaction, thu tiền và xếp email xác nhận (xem
+    /// <see cref="IBookingService"/>). Danh sách ghế lấy lại từ Session, không đọc từ form.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Checkout(CheckoutFormModel form, CancellationToken ct)
+    {
+        var selection = HttpContext.Session.GetSeatSelection();
+        if (selection is null) return RedirectToAction("Index", "Home");
+
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = "Vui lòng kiểm tra lại thông tin liên hệ.";
+            return RedirectToAction(nameof(Checkout));
+        }
+
+        var result = await _bookings.PlaceAsync(new BookingRequest(
+            selection.ShowtimeId,
+            selection.SeatIds,
+            selection.ConnectionId,
+            form.CustomerName,
+            form.CustomerEmail,
+            form.CustomerPhone,
+            User.FindFirstValue(ClaimTypes.NameIdentifier)), ct);
+
+        if (!result.IsSuccess)
+        {
+            TempData["Error"] = result.Message;
+            return RedirectToAction(nameof(Checkout));
+        }
+
+        // Ghế đã được đặt: báo cho mọi máy đang mở suất này vẽ lại thành "đã đặt" (General.md §6.2 bước 5).
+        await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatBooked(selection.SeatIds.ToList());
+
+        HttpContext.Session.ClearSeatSelection();
+        TempData["BookingCode"] = result.BookingCode;
+        return RedirectToAction("Index", "Home");
     }
 
     private async Task<string?> ValidateSelectionAsync(Showtime showtime, List<int> ids, string? connectionId, CancellationToken ct)
