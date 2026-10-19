@@ -18,11 +18,17 @@ public class Movie
     public ICollection<Showtime> Showtimes { get; set; } = new List<Showtime>();
 }
 
+/// <summary>Một chi nhánh của rạp. Lịch chiếu và giá vé đi theo chi nhánh qua Room → Showtime (AD-4).</summary>
 public class Theater
 {
     public int Id { get; set; }
+    /// <summary>Unique toàn hệ thống — khách phân biệt chi nhánh bằng tên.</summary>
     [Required, MaxLength(200)] public string Name { get; set; } = string.Empty;
+    /// <summary>Thành phố của chi nhánh, để khách lọc suất chiếu theo nơi mình ở.</summary>
+    [Required, MaxLength(100)] public string City { get; set; } = string.Empty;
     [MaxLength(500)] public string? Address { get; set; }
+    /// <summary>Soft delete: chi nhánh đóng cửa vẫn giữ lại để đơn cũ còn tra được.</summary>
+    public bool IsActive { get; set; } = true;
 
     // TotalRooms cố ý KHÔNG lưu: là dữ liệu dẫn xuất, đọc bằng Rooms.Count.
     public ICollection<Room> Rooms { get; set; } = new List<Room>();
