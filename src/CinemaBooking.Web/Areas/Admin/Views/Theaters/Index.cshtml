@@ -1,45 +1,68 @@
 @model List<TheaterListItem>
 @{
     ViewData["Title"] = "Quản lý chi nhánh";
+    // Controller đã sắp theo City rồi Name, GroupBy giữ nguyên thứ tự đó.
+    var byCity = Model.GroupBy(t => t.City).ToList();
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">Chi nhánh</h1>
+<div class="admin-page-head">
+    <div>
+        <h1 class="page-title">Chi nhánh</h1>
+        <p class="cb-muted page-subtitle">@Model.Count chi nhánh · @byCity.Count thành phố · @Model.Sum(t => t.RoomCount) phòng chiếu</p>
+    </div>
     <a asp-action="Create" class="btn btn-primary">Thêm chi nhánh</a>
 </div>
 
-<div class="table-responsive"><table class="table table-sm align-middle">
-    <thead>
-        <tr>
-            <th>Tên chi nhánh</th>
-            <th>Thành phố</th>
-            <th>Địa chỉ</th>
-            <th>Số phòng</th>
-            <th>Trạng thái</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var t in Model)
-        {
-            <tr>
-                <td>@t.Name</td>
-                <td>@t.City</td>
-                <td>@t.Address</td>
-                <td>@t.RoomCount</td>
-                <td>@(t.IsActive ? "Đang hoạt động" : "Đã đóng")</td>
-                <td class="text-end">
-                    <a asp-controller="Rooms" asp-action="Index" asp-route-theaterId="@t.Id" class="btn btn-sm btn-outline-primary">Phòng</a>
-                    <a asp-action="Edit" asp-route-id="@t.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
-                    @if (t.IsActive)
+@if (Model.Count == 0)
+{
+    <div class="cb-card empty-state">
+        <p class="empty-title">Chưa có chi nhánh nào</p>
+        <p class="cb-muted">Thêm chi nhánh, rồi thêm phòng chiếu cho chi nhánh đó.</p>
+    </div>
+}
+else
+{
+    <div class="cb-card admin-table-wrap">
+        <table class="table admin-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Chi nhánh</th>
+                    <th>Địa chỉ</th>
+                    <th class="text-end">Phòng</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            @foreach (var city in byCity)
+            {
+                <tbody>
+                    <tr class="admin-group-row">
+                        <th colspan="5" scope="rowgroup">@city.Key <span class="cb-muted fw-normal">· @city.Count() chi nhánh</span></th>
+                    </tr>
+                    @foreach (var t in city)
                     {
-                        <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline"
-                              onsubmit="return confirm('Đóng chi nhánh này?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Đóng</button>
-                        </form>
+                        <tr class="@(t.IsActive ? null : "is-inactive")">
+                            <td class="fw-semibold">@t.Name</td>
+                            <td>@(t.Address ?? "—")</td>
+                            <td class="text-end">@t.RoomCount</td>
+                            <td>
+                                <span class="status-badge @(t.IsActive ? "is-on" : "is-off")">@(t.IsActive ? "Đang hoạt động" : "Đã đóng")</span>
+                            </td>
+                            <td class="admin-actions">
+                                <a asp-controller="Rooms" asp-action="Index" asp-route-theaterId="@t.Id" class="btn btn-sm btn-outline-primary">Phòng chiếu</a>
+                                <a asp-action="Edit" asp-route-id="@t.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
+                                @if (t.IsActive)
+                                {
+                                    <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline"
+                                          data-confirm="Đóng chi nhánh “@t.Name”? Khách sẽ không thấy suất chiếu của chi nhánh này nữa.">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Đóng</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
                     }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table></div>
+                </tbody>
+            }
+        </table>
+    </div>
+}

@@ -2,54 +2,89 @@
 @{
     var isEdit = Model.Id is not null;
     ViewData["Title"] = isEdit ? "Sửa phim" : "Thêm phim";
+    var poster = string.IsNullOrWhiteSpace(Model.PosterUrl) ? MovieCardViewModel.PlaceholderPoster : Model.PosterUrl;
 }
 
-<h1 class="h3 mb-3">@ViewData["Title"]</h1>
+<div class="admin-page-head">
+    <div>
+        <a asp-action="Index" class="back-link">← Danh sách phim</a>
+        <h1 class="page-title">@ViewData["Title"]</h1>
+    </div>
+</div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="col-lg-8">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form">
+    <div asp-validation-summary="ModelOnly"></div>
 
-    <div class="mb-3">
-        <label asp-for="Title" class="form-label"></label>
-        <input asp-for="Title" class="form-control" />
-        <span asp-validation-for="Title" class="text-danger small"></span>
-    </div>
-    <div class="row">
-        <div class="col-md-4 mb-3">
-            <label asp-for="Genre" class="form-label"></label>
-            <input asp-for="Genre" class="form-control" />
-            <span asp-validation-for="Genre" class="text-danger small"></span>
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="mb-3">
+                <label asp-for="Title" class="form-label"></label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger small"></span>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label asp-for="Genre" class="form-label"></label>
+                    <input asp-for="Genre" class="form-control" placeholder="Hành động, Hoạt hình…" />
+                    <span asp-validation-for="Genre" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label asp-for="DurationMinutes" class="form-label"></label>
+                    <input asp-for="DurationMinutes" class="form-control" />
+                    <span asp-validation-for="DurationMinutes" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label asp-for="ReleaseDate" class="form-label"></label>
+                    <input asp-for="ReleaseDate" type="date" class="form-control" />
+                    <span asp-validation-for="ReleaseDate" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label asp-for="PosterUrl" class="form-label"></label>
+                <input asp-for="PosterUrl" class="form-control" placeholder="https://… hoặc /img/…" data-poster-input />
+                <span asp-validation-for="PosterUrl" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description" rows="5" class="form-control"></textarea>
+                <span asp-validation-for="Description" class="text-danger small"></span>
+            </div>
+            <div class="form-check mb-1">
+                <input asp-for="IsActive" class="form-check-input" />
+                <label asp-for="IsActive" class="form-check-label"></label>
+            </div>
+            <p class="form-text mt-0">Bỏ chọn để ẩn phim khỏi trang khách. Suất chiếu và vé cũ vẫn được giữ.</p>
         </div>
-        <div class="col-md-4 mb-3">
-            <label asp-for="DurationMinutes" class="form-label"></label>
-            <input asp-for="DurationMinutes" class="form-control" />
-            <span asp-validation-for="DurationMinutes" class="text-danger small"></span>
+
+        <div class="col-lg-4">
+            <div class="form-label">Xem trước poster</div>
+            <div class="movie-poster admin-poster-preview">
+                <img src="@poster" alt="Xem trước poster"
+                     data-poster-fallback="@MovieCardViewModel.PlaceholderPoster" data-poster-preview />
+            </div>
         </div>
-        <div class="col-md-4 mb-3">
-            <label asp-for="ReleaseDate" class="form-label"></label>
-            <input asp-for="ReleaseDate" type="date" class="form-control" />
-            <span asp-validation-for="ReleaseDate" class="text-danger small"></span>
-        </div>
-    </div>
-    <div class="mb-3">
-        <label asp-for="PosterUrl" class="form-label"></label>
-        <input asp-for="PosterUrl" class="form-control" />
-        <span asp-validation-for="PosterUrl" class="text-danger small"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Description" class="form-label"></label>
-        <textarea asp-for="Description" rows="4" class="form-control"></textarea>
-        <span asp-validation-for="Description" class="text-danger small"></span>
-    </div>
-    <div class="form-check mb-3">
-        <input asp-for="IsActive" class="form-check-input" />
-        <label asp-for="IsActive" class="form-check-label"></label>
     </div>
 
-    <button type="submit" class="btn btn-primary">Lưu</button>
-    <a asp-action="Index" class="btn btn-link">Quay lại</a>
+    <div class="admin-form-actions">
+        <button type="submit" class="btn btn-primary">Lưu</button>
+        <a asp-action="Index" class="btn btn-link">Hủy</a>
+    </div>
 </form>
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        // Xem trước poster ngay khi gõ URL. Ảnh lỗi thì site.js tự thay bằng ảnh mặc định;
+        // đổi URL mới phải xóa cờ "đã thay" để ảnh mới được thử tải lại.
+        (function () {
+            var input = document.querySelector('[data-poster-input]');
+            var img = document.querySelector('[data-poster-preview]');
+            if (!input || !img) return;
+
+            input.addEventListener('change', function () {
+                delete img.dataset.posterFallbackApplied;
+                img.src = input.value.trim() || img.dataset.posterFallback;
+            });
+        })();
+    </script>
 }
