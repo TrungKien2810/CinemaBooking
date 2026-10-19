@@ -692,3 +692,177 @@ body {
         animation: none;
     }
 }
+
+/* --- Thanh toán & vé (Sprint 4) ------------------------------------------- */
+
+.checkout-card,
+.checkout-summary {
+    padding: 1.25rem;
+}
+
+.checkout-heading {
+    margin-bottom: 1rem;
+    font-size: 1.05rem;
+}
+
+.checkout-payment {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--cb-border);
+}
+
+.checkout-payment-title {
+    margin-bottom: 0.75rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cb-text-muted);
+}
+
+.checkout-payment-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background-color: var(--cb-surface-2);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius-sm);
+}
+
+.checkout-radio {
+    flex: 0 0 auto;
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.15rem;
+    border: 2px solid var(--cb-accent);
+    border-radius: 50%;
+    background-color: var(--cb-accent);
+    box-shadow: inset 0 0 0 3px var(--cb-surface-2);
+}
+
+.checkout-table {
+    margin-top: 1rem;
+}
+
+.checkout-table tfoot th {
+    font-size: 1rem;
+    border-top: 1px solid var(--cb-border);
+}
+
+.booking-confirmation {
+    padding: 1.5rem;
+}
+
+.booking-code-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: rgba(var(--cb-accent-rgb), 0.08);
+    border: 1px dashed var(--cb-accent);
+    border-radius: var(--cb-radius-sm);
+}
+
+.booking-code {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    letter-spacing: 0.12em;
+    color: var(--cb-accent);
+}
+
+.booking-movie {
+    margin-bottom: 0.25rem;
+    font-size: 1.25rem;
+}
+
+.booking-time {
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.booking-meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem 1rem;
+    margin: 0;
+}
+
+.booking-meta dt {
+    color: var(--cb-text-muted);
+    font-weight: 500;
+}
+
+.booking-meta dd {
+    margin: 0;
+    text-align: right;
+}
+
+.booking-meta-email {
+    word-break: break-all;
+}
+
+.booking-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.booking-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.booking-list-item {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem;
+}
+
+.booking-list-main {
+    min-width: 0;
+}
+
+.booking-list-code {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--cb-accent);
+}
+
+.booking-list-title {
+    margin: 0.15rem 0 0.35rem;
+    font-size: 1.1rem;
+}
+
+.booking-list-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+    text-align: right;
+}
+
+.booking-list-total {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+@media (max-width: 575.98px) {
+    .booking-list-side {
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .booking-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-meta dd {
+        text-align: left;
+    }
+}
