@@ -1,0 +1,75 @@
+@using CinemaBooking.Domain.Enums
+@model BookingsIndexViewModel
+@{
+    ViewData["Title"] = "Quản lý đơn đặt vé";
+}
+
+<h1 class="h3 mb-3">Đơn đặt vé</h1>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-auto">
+        <label for="code" class="form-label">Mã đơn</label>
+        <input id="code" name="code" value="@Model.Code" class="form-control" placeholder="CB-..." />
+    </div>
+    <div class="col-auto">
+        <label for="theaterId" class="form-label">Chi nhánh</label>
+        <select id="theaterId" name="theaterId" class="form-select"
+                asp-items="@(new SelectList(Model.Theaters, "Value", "Text", Model.TheaterId))">
+            <option value="">Tất cả chi nhánh</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <label for="status" class="form-label">Trạng thái</label>
+        <select id="status" name="status" class="form-select">
+            <option value="">Mọi trạng thái</option>
+            @foreach (var s in Enum.GetValues<BookingStatus>())
+            {
+                <option value="@s" selected="@(s == Model.Status)">@s</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">Lọc</button>
+    </div>
+</form>
+
+<table class="table table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Mã đơn</th>
+            <th>Khách hàng</th>
+            <th>Phim</th>
+            <th>Chi nhánh</th>
+            <th>Suất chiếu</th>
+            <th>Đặt lúc</th>
+            <th class="text-end">Số ghế</th>
+            <th class="text-end">Tổng tiền</th>
+            <th>Trạng thái</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var b in Model.Items)
+        {
+            <tr>
+                <td><a asp-action="Details" asp-route-id="@b.Id">@b.BookingCode</a></td>
+                <td>@b.CustomerName</td>
+                <td>@b.MovieTitle</td>
+                <td>@b.TheaterName</td>
+                <td>@b.ShowtimeStartLocal.ToString("dd/MM HH:mm")</td>
+                <td>@b.BookedLocal.ToString("dd/MM HH:mm")</td>
+                <td class="text-end">@b.SeatCount</td>
+                <td class="text-end">@b.TotalAmount.ToString("N0")</td>
+                <td>@b.Status</td>
+            </tr>
+        }
+        @if (Model.Items.Count == 0)
+        {
+            <tr><td colspan="9" class="text-center text-muted">Không có đơn nào khớp bộ lọc.</td></tr>
+        }
+    </tbody>
+</table>
+
+@if (Model.Items.Count == Model.MaxItems)
+{
+    <p class="text-muted small">Chỉ hiện @Model.MaxItems đơn mới nhất — lọc theo mã hoặc chi nhánh để thu hẹp.</p>
+}
