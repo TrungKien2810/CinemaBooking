@@ -1,4 +1,5 @@
 ﻿using CinemaBooking.Domain.Entities;
+using CinemaBooking.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace CinemaBooking.Infrastructure.Persistence;
@@ -138,11 +139,73 @@ public static class CatalogSeeder
         await db.SaveChangesAsync(ct);
 
         var rooms = theaters.SelectMany(t => t.Rooms).ToList();
-        db.Seats.AddRange(rooms.SelectMany(SeatGenerator.Generate));
+        var seats = rooms.SelectMany(SeatGenerator.Generate).ToList();
+        db.Seats.AddRange(seats);
         await db.SaveChangesAsync(ct);
 
-        db.Showtimes.AddRange(theaters.SelectMany((t, i) => BuildShowtimes(movies, t, schedules[i])));
+        var showtimes = theaters.SelectMany((t, i) => BuildShowtimes(movies, t, schedules[i])).ToList();
+        db.Showtimes.AddRange(showtimes);
         await db.SaveChangesAsync(ct);
+
+        db.Bookings.AddRange(BuildSampleBookings(rooms, seats, showtimes));
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Vài đơn đã thanh toán ở suất sớm nhất ngày mai của mỗi chi nhánh, để mở trang chọn ghế
+    /// là thấy ngay ghế đỏ "đã đặt" mà không phải tự đặt vé trước. Chỉ lấy ghế hàng A (ghế
+    /// thường) nên giá vé bằng đúng giá gốc của suất.
+    /// </summary>
+    private static IEnumerable<Booking> BuildSampleBookings(List<Room> rooms, List<Seat> seats, List<Showtime> showtimes)
+    {
+        var tomorrow = DateOnly.FromDateTime(DateTime.UtcNow + VietnamOffset).AddDays(1);
+        var theaterOfRoom = rooms.ToDictionary(r => r.Id, r => r.TheaterId);
+
+        var targets = showtimes
+            .Where(s => DateOnly.FromDateTime(s.StartTimeUtc + VietnamOffset) == tomorrow)
+            .GroupBy(s => theaterOfRoom[s.RoomId])
+            .Select(g => g.OrderBy(s => s.StartTimeUtc).First())
+            .ToList();
+
+        var number = 0;
+        foreach (var showtime in targets)
+        {
+            var rowA = seats.Where(s => s.RoomId == showtime.RoomId && s.RowNumber == 1)
+                .ToDictionary(s => s.ColumnNumber);
+
+            yield return SampleBooking(++number, showtime, [rowA[4], rowA[5], rowA[6]], "Nguyễn Văn An", "an.nguyen@example.com");
+            yield return SampleBooking(++number, showtime, [rowA[1], rowA[2]], "Trần Thị Bình", "binh.tran@example.com");
+        }
+    }
+
+    private static Booking SampleBooking(int number, Showtime showtime, Seat[] seats, string name, string email)
+    {
+        var now = DateTime.UtcNow;
+        var total = showtime.BasePrice * seats.Length;
+
+        return new Booking
+        {
+            BookingCode = $"CB-SEED{number:00}",
+            ShowtimeId = showtime.Id,
+            CustomerName = name,
+            CustomerEmail = email,
+            BookingTimeUtc = now,
+            TotalAmount = total,
+            Status = BookingStatus.Confirmed,
+            Seats = seats.Select(s => new BookingSeat
+            {
+                SeatId = s.Id,
+                ShowtimeId = showtime.Id,
+                PriceAtBooking = showtime.BasePrice,
+            }).ToList(),
+            Payment = new Payment
+            {
+                Amount = total,
+                Status = PaymentStatus.Succeeded,
+                TransactionId = $"SEED-{number:00}",
+                CreatedUtc = now,
+            },
+        };
     }
 
     /// <summary>

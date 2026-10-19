@@ -33,6 +33,7 @@ public class BookingSeat
     public Seat? Seat { get; set; }
     /// <summary>Lặp lại từ Booking để đặt unique index (ShowtimeId, SeatId) — chốt chặn chống đặt trùng ở tầng DB.</summary>
     public int ShowtimeId { get; set; }
+    public Showtime? Showtime { get; set; }
     public decimal PriceAtBooking { get; set; }
 }
 
