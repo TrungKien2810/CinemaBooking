@@ -23,6 +23,15 @@
     --cb-accent-hover: rgb(var(--cb-accent-hover-rgb));
     --cb-accent-soft: rgba(var(--cb-accent-rgb), 0.14);
 
+    /* Trạng thái "đang hoạt động" (phim đang chiếu, chi nhánh mở cửa). */
+    --cb-success: #4ade80;
+    --cb-success-soft: rgba(34, 197, 94, 0.14);
+
+    /* Loại ghế — dùng chung cho sơ đồ xem trước ở admin và sơ đồ chọn ghế ở Sprint 3. */
+    --cb-seat-standard: #475569;
+    --cb-seat-vip: #d97706;
+    --cb-seat-couple: #db2777;
+
     --cb-radius: 0.625rem;
     --cb-radius-sm: 0.375rem;
     --cb-gap: 1.25rem;
@@ -428,4 +437,816 @@ body {
 
 .prose-heading:not(:first-child) {
     margin-top: 1.5rem;
+}
+
+/* --- Sơ đồ ghế (Sprint 3) -------------------------------------------------- */
+
+:root {
+    /* Ghế trống dùng nền surface-2; ba trạng thái còn lại có màu riêng để phân
+       biệt bằng mắt mà không phụ thuộc vào chữ bên trong ghế. */
+    --cb-seat-free-bg: var(--cb-surface-2);
+    --cb-seat-free-border: #3a4150;
+    --cb-seat-mine-bg: var(--cb-accent);
+    --cb-seat-mine-border: var(--cb-accent-hover);
+    --cb-seat-held-bg: #8a5a12;
+    --cb-seat-held-border: #b8781a;
+    --cb-seat-booked-bg: #3a2227;
+    --cb-seat-booked-border: #5a2a32;
+    --cb-seat-size: 2.1rem;
+}
+
+.seat-map-shell {
+    padding: 1.25rem;
+    overflow-x: auto;
+}
+
+.seat-map-screen {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.seat-map-screen span {
+    display: block;
+    width: min(100%, 28rem);
+    padding: 0.35rem 1rem;
+    text-align: center;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cb-text-muted);
+    border-top: 3px solid var(--cb-text-muted);
+    border-radius: 50% / 12px 12px 0 0;
+    background: linear-gradient(to bottom, rgba(154, 163, 178, 0.14), transparent);
+}
+
+.seat-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    width: max-content;
+    margin: 0 auto;
+}
+
+.seat-row {
+    display: grid;
+    grid-template-columns: 1.25rem repeat(var(--seat-cols), var(--cb-seat-size));
+    gap: 0.3rem;
+    align-items: center;
+}
+
+.seat-row-head {
+    margin-bottom: 0.15rem;
+}
+
+.seat-map-row-label,
+.seat-col-label {
+    font-size: 0.7rem;
+    color: var(--cb-text-muted);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.seat {
+    width: var(--cb-seat-size);
+    height: var(--cb-seat-size);
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--cb-seat-free-border);
+    border-radius: var(--cb-radius-sm);
+    background-color: var(--cb-seat-free-bg);
+    color: var(--cb-text-muted);
+    font-size: 0.6rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease,
+        color 0.15s ease, transform 0.1s ease;
+}
+
+.seat:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: var(--cb-accent);
+    color: var(--cb-text);
+}
+
+.seat:focus-visible {
+    outline: 2px solid var(--cb-accent);
+    outline-offset: 2px;
+}
+
+/* Ô lối đi: vẫn chiếm chỗ để các cột thẳng hàng nhưng không nhìn thấy. */
+.seat-gap {
+    visibility: hidden;
+    cursor: default;
+}
+
+.seat.is-mine {
+    background-color: var(--cb-seat-mine-bg);
+    border-color: var(--cb-seat-mine-border);
+    color: #fff;
+}
+
+.seat.is-held {
+    background-color: var(--cb-seat-held-bg);
+    border-color: var(--cb-seat-held-border);
+    color: #fff;
+    cursor: not-allowed;
+}
+
+.seat.is-booked {
+    background-color: var(--cb-seat-booked-bg);
+    border-color: var(--cb-seat-booked-border);
+    color: rgba(232, 234, 240, 0.45);
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+/* Bootstrap đặt opacity cho :disabled; ghế đã đặt cần giữ nguyên màu để đọc được. */
+.seat:disabled {
+    opacity: 1;
+}
+
+.seat-map-legend {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem 1.25rem;
+    font-size: 0.8rem;
+    color: var(--cb-text-muted);
+}
+
+.seat-map-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.seat-swatch {
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 1px solid var(--cb-seat-free-border);
+    border-radius: 0.25rem;
+    background-color: var(--cb-seat-free-bg);
+}
+
+.seat-swatch.is-mine {
+    background-color: var(--cb-seat-mine-bg);
+    border-color: var(--cb-seat-mine-border);
+}
+
+.seat-swatch.is-held {
+    background-color: var(--cb-seat-held-bg);
+    border-color: var(--cb-seat-held-border);
+}
+
+.seat-swatch.is-booked {
+    background-color: var(--cb-seat-booked-bg);
+    border-color: var(--cb-seat-booked-border);
+}
+
+.seat-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    padding: 0.9rem 1rem;
+    background-color: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius);
+}
+
+.seat-summary-info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.seat-timer {
+    color: var(--cb-seat-held-border);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.seat-total {
+    font-size: 1.05rem;
+}
+
+.seat-total strong {
+    color: var(--cb-accent);
+}
+
+/* Toast nổi ở góc phải dưới; aria-live ở container lo phần thông báo cho screen reader. */
+.seat-toasts {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 1080;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: min(22rem, calc(100vw - 2rem));
+}
+
+.seat-toast {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    background-color: var(--cb-surface-2);
+    border-left: 4px solid var(--cb-accent);
+    border-radius: var(--cb-radius-sm);
+    box-shadow: var(--cb-shadow);
+    animation: seat-toast-in 0.2s ease;
+}
+
+.seat-toast.is-error {
+    border-left-color: #ef4444;
+}
+
+@keyframes seat-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(0.5rem);
+    }
+}
+
+/* Trên điện thoại thu nhỏ ghế để cả phòng vừa chiều ngang. */
+@media (max-width: 575.98px) {
+    :root {
+        --cb-seat-size: 1.55rem;
+    }
+
+    .seat {
+        font-size: 0.52rem;
+    }
+
+    .seat-map-shell {
+        padding: 0.75rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .seat {
+        transition: none;
+    }
+
+    .seat-toast {
+        animation: none;
+    }
+}
+
+/* --- Khu quản trị: sidebar + nội dung --------------------------------------- */
+
+.admin-shell {
+    display: grid;
+    gap: var(--cb-gap);
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 992px) {
+    .admin-shell {
+        grid-template-columns: 14rem minmax(0, 1fr);
+        align-items: start;
+    }
+
+    /* Trang dài (danh sách suất chiếu) vẫn thấy menu khi cuộn. */
+    .admin-sidebar {
+        position: sticky;
+        top: 1rem;
+    }
+}
+
+.admin-sidebar {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.admin-sidebar-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cb-text-muted);
+}
+
+.admin-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Màn hẹp: menu nằm ngang trên đầu nội dung, cuộn ngang nếu không đủ chỗ. */
+@media (max-width: 991.98px) {
+    .admin-nav {
+        flex-direction: row;
+        overflow-x: auto;
+    }
+
+    .admin-nav-link {
+        white-space: nowrap;
+    }
+}
+
+.admin-nav-link {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--cb-radius-sm);
+    color: var(--cb-text-muted);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.admin-nav-link:hover {
+    background-color: var(--cb-surface-2);
+    color: var(--cb-text);
+}
+
+.admin-nav-link.active {
+    background-color: var(--cb-accent-soft);
+    color: var(--cb-text);
+    box-shadow: inset 3px 0 0 var(--cb-accent);
+}
+
+.admin-sidebar-foot {
+    border-top: 1px solid var(--cb-border);
+    padding-top: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.admin-content {
+    min-width: 0;
+}
+
+/* --- Khu quản trị: đầu trang, bảng, form ------------------------------------ */
+
+.admin-page-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+    color: var(--cb-text-muted);
+    text-decoration: none;
+}
+
+.back-link:hover {
+    color: var(--cb-accent);
+}
+
+/* Bảng rộng hơn màn hình thì cuộn ngang trong khung, không đẩy vỡ cả trang. */
+.admin-table-wrap {
+    overflow-x: auto;
+}
+
+.admin-table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--cb-text);
+    --bs-table-border-color: var(--cb-border);
+    --bs-table-hover-bg: var(--cb-surface-2);
+}
+
+.admin-table > thead th {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--cb-text-muted);
+    white-space: nowrap;
+}
+
+.admin-table > :not(caption) > * > * {
+    padding: 0.75rem 1rem;
+}
+
+/* Bản ghi đã ẩn / đã đóng vẫn hiện để admin bật lại, nhưng lùi xuống nền. */
+.admin-table tr.is-inactive > td {
+    color: var(--cb-text-muted);
+}
+
+.admin-actions {
+    text-align: end;
+    white-space: nowrap;
+}
+
+.admin-actions > * + * {
+    margin-left: 0.25rem;
+}
+
+.admin-movie-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.admin-poster-thumb {
+    width: 36px;
+    height: 54px;
+    object-fit: cover;
+    border-radius: 0.25rem;
+    background-color: var(--cb-surface-2);
+    flex-shrink: 0;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.status-badge.is-on {
+    background-color: var(--cb-success-soft);
+    color: var(--cb-success);
+}
+
+.status-badge.is-off {
+    background-color: var(--cb-surface-2);
+    color: var(--cb-text-muted);
+}
+
+.admin-form {
+    padding: 1.5rem;
+}
+
+.admin-form-actions {
+    display: flex;
+    gap: 0.5rem;
+    border-top: 1px solid var(--cb-border);
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+}
+
+.admin-poster-preview {
+    max-width: 14rem;
+    border-radius: var(--cb-radius-sm);
+    overflow: hidden;
+}
+
+.admin-form-narrow {
+    max-width: 40rem;
+}
+
+/* Dòng tiêu đề nhóm (thành phố) trong bảng chi nhánh. */
+.admin-table .admin-group-row > th {
+    background-color: var(--cb-surface-2);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding-block: 0.5rem;
+}
+
+/* --- Sơ đồ ghế xem trước (form phòng chiếu) -------------------------------- */
+
+.seat-preview {
+    background-color: var(--cb-surface-2);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius-sm);
+    padding: 1rem;
+}
+
+/* Vạch màn hình cong nhẹ ở đầu phòng, để admin biết hàng A nằm phía nào. */
+.seat-screen {
+    margin: 0 auto 1rem;
+    width: 70%;
+    padding-bottom: 0.25rem;
+    border-bottom: 3px solid var(--cb-text-muted);
+    border-radius: 0 0 50% 50% / 0 0 0.75rem 0.75rem;
+    text-align: center;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--cb-text-muted);
+}
+
+/* 50 ghế/hàng trên màn hẹp thì cuộn ngang thay vì bóp ghế thành vạch. */
+.seat-preview-scroll {
+    overflow-x: auto;
+}
+
+.seat-preview-grid {
+    display: grid;
+    grid-template-columns: 1.25rem repeat(var(--seat-cols), minmax(0.625rem, 1fr));
+    gap: 0.25rem;
+    min-width: calc(var(--seat-cols) * 0.875rem + 1.5rem);
+    align-items: center;
+}
+
+.seat-row-label {
+    font-size: 0.7rem;
+    color: var(--cb-text-muted);
+    text-align: center;
+}
+
+.seat-dot {
+    display: inline-block;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 0.2rem 0.2rem 0.35rem 0.35rem;
+}
+
+.seat-standard { background-color: var(--cb-seat-standard); }
+.seat-vip { background-color: var(--cb-seat-vip); }
+.seat-couple { background-color: var(--cb-seat-couple); }
+
+.seat-legend {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    font-size: 0.85rem;
+}
+
+.seat-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.seat-legend .seat-dot {
+    width: 0.875rem;
+}
+
+/* Thanh lọc (ngày, chi nhánh) phía trên bảng admin. */
+.admin-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.admin-hints {
+    padding-left: 1.1rem;
+    margin-bottom: 0;
+}
+
+/* --- Thẻ phim bấm được ------------------------------------------------------ */
+
+.movie-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.movie-card {
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.movie-card:hover,
+.movie-card:focus-within {
+    transform: translateY(-2px);
+    border-color: var(--cb-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .movie-card {
+        transition: none;
+    }
+
+    .movie-card:hover,
+    .movie-card:focus-within {
+        transform: none;
+    }
+}
+
+/* --- Trang chi tiết phim ---------------------------------------------------- */
+
+.movie-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
+    gap: 1.5rem;
+    padding: 1.25rem;
+    margin: 0.75rem 0 2rem;
+}
+
+@media (min-width: 768px) {
+    .movie-hero {
+        grid-template-columns: 15rem minmax(0, 1fr);
+        padding: 1.5rem;
+    }
+}
+
+.movie-hero-poster {
+    border-radius: var(--cb-radius-sm);
+    overflow: hidden;
+}
+
+.movie-description {
+    margin: 1rem 0 0;
+    max-width: 65ch;
+    white-space: pre-line;
+}
+
+.section-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.branch-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.branch-showtimes {
+    padding: 1.25rem;
+}
+
+.branch-name {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.showtime-slots {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0;
+}
+
+.showtime-slot {
+    display: flex;
+    flex-direction: column;
+    min-width: 7.5rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius-sm);
+    background-color: var(--cb-surface-2);
+    color: var(--cb-text);
+    text-decoration: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.showtime-slot:hover,
+.showtime-slot:focus-visible {
+    border-color: var(--cb-accent);
+    background-color: var(--cb-accent-soft);
+    color: var(--cb-text);
+}
+
+.showtime-time {
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.showtime-meta {
+    font-size: 0.8rem;
+    color: var(--cb-text-muted);
+}
+
+/* --- Tab ngày + chip lọc thành phố / chi nhánh ------------------------------ */
+
+/* Màn hẹp: 7 tab ngày cuộn ngang thay vì xuống dòng lộn xộn. */
+.date-tabs {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.date-tab {
+    flex-shrink: 0;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius-sm);
+    background-color: var(--cb-surface);
+    color: var(--cb-text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.date-tab:hover {
+    color: var(--cb-text);
+    border-color: var(--cb-text-muted);
+}
+
+.date-tab.active {
+    background-color: var(--cb-accent);
+    border-color: var(--cb-accent);
+    color: #fff;
+}
+
+.filter-bar {
+    display: grid;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.filter-label {
+    min-width: 5.5rem;
+    font-size: 0.85rem;
+    color: var(--cb-text-muted);
+}
+
+.filter-chip {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--cb-border);
+    border-radius: 999px;
+    color: var(--cb-text-muted);
+    text-decoration: none;
+    font-size: 0.875rem;
+}
+
+.filter-chip:hover {
+    color: var(--cb-text);
+}
+
+.filter-chip.active {
+    background-color: var(--cb-accent-soft);
+    border-color: var(--cb-accent);
+    color: var(--cb-text);
+}
+
+.branch-city {
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--cb-text-muted);
+}
+
+/* --- Tìm kiếm & lọc thể loại ở trang chủ ------------------------------------ */
+
+.movie-search {
+    display: flex;
+    gap: 0.5rem;
+    max-width: 36rem;
+    margin-bottom: 1rem;
+}
+
+.genre-filter {
+    margin-bottom: 1.5rem;
+}
+
+.search-summary {
+    margin: -0.5rem 0 1.25rem;
+}
+
+/* --- Ô nhập bị lỗi validation ---------------------------------------------- */
+
+/* MVC gắn .input-validation-error cho ô lỗi sau khi post về server, và jQuery Validate
+   (qua unobtrusive) gắn đúng class đó phía client — một luật phủ được cả hai đường. */
+.form-control.input-validation-error,
+.form-select.input-validation-error {
+    border-color: var(--bs-form-invalid-border-color);
+}
+
+.form-control.input-validation-error:focus,
+.form-select.input-validation-error:focus {
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-danger-rgb), 0.25);
+}
+
+/* --- Trang hệ thống rạp ---------------------------------------------------- */
+
+.city-group + .city-group {
+    margin-top: 2rem;
+}
+
+.branch-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--cb-gap);
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+
+.branch-card {
+    padding: 1.25rem;
+}
+
+.branch-rooms {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--cb-accent);
 }

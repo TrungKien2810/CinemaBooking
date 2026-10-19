@@ -1,0 +1,36 @@
+@using CinemaBooking.Domain.Enums
+@model SeatPreviewModel
+
+@{
+    static string CssFor(SeatType t) => t switch
+    {
+        SeatType.Vip => "seat-vip",
+        SeatType.Couple => "seat-couple",
+        _ => "seat-standard",
+    };
+}
+
+<div class="seat-preview">
+    <div class="seat-screen" aria-hidden="true">Màn hình</div>
+
+    <div class="seat-preview-scroll">
+        <div class="seat-preview-grid" style="--seat-cols: @Model.Columns"
+             role="img" aria-label="Sơ đồ @Model.Rows hàng × @Model.Columns ghế">
+            @for (var r = 0; r < Model.Grid.Count; r++)
+            {
+                <span class="seat-row-label">@SeatPreviewModel.RowLabel(r)</span>
+                @foreach (var type in Model.Grid[r])
+                {
+                    <span class="seat-dot @CssFor(type)"></span>
+                }
+            }
+        </div>
+    </div>
+
+    <ul class="seat-legend">
+        <li><span class="seat-dot seat-standard"></span> Thường · @Model.Count(SeatType.Standard)</li>
+        <li><span class="seat-dot seat-vip"></span> VIP · @Model.Count(SeatType.Vip)</li>
+        <li><span class="seat-dot seat-couple"></span> Ghế đôi · @Model.Count(SeatType.Couple)</li>
+        <li class="cb-muted">Tổng @(Model.Rows * Model.Columns) ghế</li>
+    </ul>
+</div>

@@ -4,33 +4,42 @@
     ViewData["Title"] = isEdit ? "Sửa chi nhánh" : "Thêm chi nhánh";
 }
 
-<h1 class="h3 mb-3">@ViewData["Title"]</h1>
+<div class="admin-page-head">
+    <div>
+        <a asp-action="Index" class="back-link">← Danh sách chi nhánh</a>
+        <h1 class="page-title">@ViewData["Title"]</h1>
+    </div>
+</div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="col-lg-8">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form admin-form-narrow">
+    <div asp-validation-summary="ModelOnly"></div>
 
     <div class="mb-3">
         <label asp-for="Name" class="form-label"></label>
-        <input asp-for="Name" class="form-control" />
+        <input asp-for="Name" class="form-control" placeholder="CinemaBooking Quận 1" />
         <span asp-validation-for="Name" class="text-danger small"></span>
     </div>
     <div class="mb-3">
         <label asp-for="City" class="form-label"></label>
-        <input asp-for="City" class="form-control" />
+        <input asp-for="City" class="form-control" placeholder="TP. Hồ Chí Minh" />
         <span asp-validation-for="City" class="text-danger small"></span>
+        <div class="form-text">Khách lọc suất chiếu theo thành phố — gõ đúng như tên các chi nhánh khác cùng thành phố.</div>
     </div>
     <div class="mb-3">
         <label asp-for="Address" class="form-label"></label>
         <input asp-for="Address" class="form-control" />
         <span asp-validation-for="Address" class="text-danger small"></span>
     </div>
-    <div class="form-check mb-3">
+    <div class="form-check mb-1">
         <input asp-for="IsActive" class="form-check-input" />
         <label asp-for="IsActive" class="form-check-label"></label>
     </div>
+    <p class="form-text mt-0">Chi nhánh đã đóng vẫn giữ phòng, suất chiếu và vé cũ để tra cứu.</p>
 
-    <button type="submit" class="btn btn-primary">Lưu</button>
-    <a asp-action="Index" class="btn btn-link">Quay lại</a>
+    <div class="admin-form-actions">
+        <button type="submit" class="btn btn-primary">Lưu</button>
+        <a asp-action="Index" class="btn btn-link">Hủy</a>
+    </div>
 </form>
 
 @section Scripts {

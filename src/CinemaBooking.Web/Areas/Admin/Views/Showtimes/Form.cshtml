@@ -4,10 +4,15 @@
     ViewData["Title"] = isEdit ? "Sửa suất chiếu" : "Thêm suất chiếu";
 }
 
-<h1 class="h3 mb-3">@ViewData["Title"]</h1>
+<div class="admin-page-head">
+    <div>
+        <a asp-action="Index" class="back-link">← Danh sách suất chiếu</a>
+        <h1 class="page-title">@ViewData["Title"]</h1>
+    </div>
+</div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="col-lg-6">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form admin-form-narrow">
+    <div asp-validation-summary="ModelOnly"></div>
 
     <div class="mb-3">
         <label asp-for="MovieId" class="form-label"></label>
@@ -18,27 +23,34 @@
     </div>
     <div class="mb-3">
         <label asp-for="RoomId" class="form-label"></label>
+        @* Phòng gom nhóm theo "Thành phố · Chi nhánh" (optgroup) — chọn phòng là chọn luôn chi nhánh. *@
         <select asp-for="RoomId" asp-items="Model.Rooms" class="form-select">
             <option value="0">— Chọn phòng —</option>
         </select>
         <span asp-validation-for="RoomId" class="text-danger small"></span>
     </div>
     <div class="row">
-        <div class="col mb-3">
+        <div class="col-sm-7 mb-3">
             <label asp-for="StartTimeLocal" class="form-label"></label>
             <input asp-for="StartTimeLocal" type="datetime-local" class="form-control" />
             <span asp-validation-for="StartTimeLocal" class="text-danger small"></span>
         </div>
-        <div class="col mb-3">
+        <div class="col-sm-5 mb-3">
             <label asp-for="BasePrice" class="form-label"></label>
-            <input asp-for="BasePrice" class="form-control" />
+            <input asp-for="BasePrice" class="form-control" step="1000" />
             <span asp-validation-for="BasePrice" class="text-danger small"></span>
         </div>
     </div>
-    <p class="form-text">Giờ kết thúc tự tính theo thời lượng phim. Giờ nhập theo giờ rạp.</p>
+    <ul class="form-text admin-hints">
+        <li>Giờ nhập theo giờ rạp; giờ kết thúc tự tính theo thời lượng phim.</li>
+        <li>Hai suất cùng phòng phải cách nhau ít nhất @CinemaBooking.Web.Areas.Admin.Controllers.ShowtimesController.CleaningBuffer.TotalMinutes phút để dọn phòng.</li>
+        <li>Mỗi chi nhánh xếp lịch và đặt giá riêng.</li>
+    </ul>
 
-    <button type="submit" class="btn btn-primary">Lưu</button>
-    <a asp-action="Index" class="btn btn-link">Quay lại</a>
+    <div class="admin-form-actions">
+        <button type="submit" class="btn btn-primary">Lưu</button>
+        <a asp-action="Index" class="btn btn-link">Hủy</a>
+    </div>
 </form>
 
 @section Scripts {

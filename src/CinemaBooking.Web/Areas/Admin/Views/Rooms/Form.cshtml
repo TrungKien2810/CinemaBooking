@@ -4,41 +4,90 @@
     ViewData["Title"] = (isEdit ? "Sửa phòng" : "Thêm phòng") + " — " + Model.TheaterName;
 }
 
-<h1 class="h3 mb-3">@ViewData["Title"]</h1>
+<div class="admin-page-head">
+    <div>
+        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="back-link">← Phòng chiếu · @Model.TheaterName</a>
+        <h1 class="page-title">@(isEdit ? "Sửa phòng" : "Thêm phòng")</h1>
+    </div>
+</div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="col-lg-6">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form">
+    <div asp-validation-summary="ModelOnly"></div>
     <input asp-for="TheaterId" type="hidden" />
 
-    <div class="mb-3">
-        <label asp-for="RoomName" class="form-label"></label>
-        <input asp-for="RoomName" class="form-control" />
-        <span asp-validation-for="RoomName" class="text-danger small"></span>
-    </div>
-    <div class="row">
-        <div class="col mb-3">
-            <label asp-for="TotalRows" class="form-label"></label>
-            <input asp-for="TotalRows" class="form-control" />
-            <span asp-validation-for="TotalRows" class="text-danger small"></span>
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="mb-3">
+                <label asp-for="RoomName" class="form-label"></label>
+                <input asp-for="RoomName" class="form-control" placeholder="Phòng 1" />
+                <span asp-validation-for="RoomName" class="text-danger small"></span>
+            </div>
+            <div class="row">
+                <div class="col mb-3">
+                    <label asp-for="TotalRows" class="form-label"></label>
+                    <input asp-for="TotalRows" class="form-control" />
+                    <span asp-validation-for="TotalRows" class="text-danger small"></span>
+                </div>
+                <div class="col mb-3">
+                    <label asp-for="TotalColumns" class="form-label"></label>
+                    <input asp-for="TotalColumns" class="form-control" />
+                    <span asp-validation-for="TotalColumns" class="text-danger small"></span>
+                </div>
+            </div>
+            <p class="form-text">
+                Ghế được sinh tự động theo số hàng × số ghế mỗi hàng.
+                @if (isEdit)
+                {
+                    <text>Đổi số hàng hoặc số ghế sẽ sinh lại toàn bộ sơ đồ — chỉ làm được khi phòng chưa có vé nào được đặt.</text>
+                }
+            </p>
         </div>
-        <div class="col mb-3">
-            <label asp-for="TotalColumns" class="form-label"></label>
-            <input asp-for="TotalColumns" class="form-control" />
-            <span asp-validation-for="TotalColumns" class="text-danger small"></span>
-        </div>
-    </div>
-    <p class="form-text">
-        Ghế được sinh tự động theo số hàng × số ghế mỗi hàng.
-        @if (isEdit)
-        {
-            <text>Đổi số hàng hoặc số ghế sẽ sinh lại toàn bộ sơ đồ — chỉ làm được khi phòng chưa có vé nào được đặt.</text>
-        }
-    </p>
 
-    <button type="submit" class="btn btn-primary">Lưu</button>
-    <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="btn btn-link">Quay lại</a>
+        <div class="col-lg-7">
+            <div class="form-label">Xem trước sơ đồ ghế</div>
+            <div data-seat-preview data-url="@Url.Action("SeatPreview")" aria-live="polite">
+                <partial name="_SeatPreview" model="SeatPreviewModel.For(Model.TotalRows, Model.TotalColumns)" />
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-form-actions">
+        <button type="submit" class="btn btn-primary">Lưu</button>
+        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="btn btn-link">Hủy</a>
+    </div>
 </form>
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        // Vẽ lại sơ đồ khi đổi số hàng/số ghế. Debounce để gõ "12" không bắn 2 request,
+        // và bỏ qua phản hồi cũ về muộn (gõ nhanh 8 → 10, request "8" về sau "10").
+        (function () {
+            var box = document.querySelector('[data-seat-preview]');
+            var rows = document.getElementById('@Html.IdFor(m => m.TotalRows)');
+            var cols = document.getElementById('@Html.IdFor(m => m.TotalColumns)');
+            if (!box || !rows || !cols) return;
+
+            var timer, latest = 0;
+
+            function refresh() {
+                var r = parseInt(rows.value, 10), c = parseInt(cols.value, 10);
+                if (!(r > 0) || !(c > 0)) return;
+
+                var ticket = ++latest;
+                var url = box.dataset.url + '?rows=' + r + '&columns=' + c;
+                fetch(url, { headers: { 'X-Requested-With': 'fetch' } })
+                    .then(function (res) { return res.ok ? res.text() : Promise.reject(res.status); })
+                    .then(function (html) { if (ticket === latest) box.innerHTML = html; })
+                    .catch(function () { /* giữ sơ đồ cũ, lỗi mạng không đáng chặn form */ });
+            }
+
+            [rows, cols].forEach(function (input) {
+                input.addEventListener('input', function () {
+                    clearTimeout(timer);
+                    timer = setTimeout(refresh, 250);
+                });
+            });
+        })();
+    </script>
 }
