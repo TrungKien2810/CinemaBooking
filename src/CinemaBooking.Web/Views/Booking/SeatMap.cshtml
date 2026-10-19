@@ -1,33 +1,73 @@
 @model SeatMapViewModel
 @{
     ViewData["Title"] = $"Chọn ghế — {Model.MovieTitle}";
+    var seatColumns = Model.TotalColumns;
 }
 
-<h1 class="h3">@Model.MovieTitle</h1>
-<p class="cb-muted">
-    @Model.TheaterName (@Model.City) · @Model.RoomName · @Model.StartLocal.ToString("HH:mm dd/MM/yyyy")
-</p>
+<div class="page-head">
+    <h1 class="page-title">@Model.MovieTitle</h1>
+    <p class="page-subtitle cb-muted">
+        @Model.TheaterName (@Model.City) · @Model.RoomName · @Model.StartLocal.ToString("HH:mm dd/MM/yyyy")
+    </p>
+</div>
 
-@* Lưới tối giản để kiểm tra dữ liệu; Dev C vẽ lại bằng CSS Grid + SignalR (C3.1–C3.10). *@
-<div id="seat-map" data-showtime-id="@Model.ShowtimeId" data-hold-seconds="@Model.HoldSeconds">
-    @foreach (var row in Model.Rows)
-    {
-        <div class="d-flex gap-1 mb-1" data-row="@row.Label">
-            @foreach (var seat in row.Seats)
+<div class="seat-map-shell cb-card" id="seat-map"
+     data-showtime-id="@Model.ShowtimeId"
+     data-hold-seconds="@Model.HoldSeconds">
+    <div class="seat-screen" aria-hidden="true"><span>Màn hình</span></div>
+
+    <div class="seat-rows" style="--seat-cols: @seatColumns">
+        <div class="seat-row seat-row-head" aria-hidden="true">
+            <span class="seat-row-label"></span>
+            @for (var col = 1; col <= seatColumns; col++)
             {
-                if (seat is null)
-                {
-                    <span class="d-inline-block" style="width: 2.5rem"></span>
-                    continue;
-                }
-                <button type="button" class="btn btn-sm @(seat.IsBooked ? "btn-danger" : "btn-outline-secondary")"
-                        style="width: 2.5rem" disabled="@seat.IsBooked"
-                        data-seat-id="@seat.SeatId" data-seat-type="@seat.Type" data-price="@seat.Price">
-                    @seat.Label
-                </button>
+                <span class="seat-col-label">@col</span>
             }
         </div>
-    }
+
+        @foreach (var row in Model.Rows)
+        {
+            <div class="seat-row">
+                <span class="seat-row-label" aria-hidden="true">@row.Label</span>
+                @foreach (var seat in row.Seats)
+                {
+                    if (seat is null)
+                    {
+                        <span class="seat seat-gap" aria-hidden="true"></span>
+                        continue;
+                    }
+
+                    <button type="button"
+                            class="seat @(seat.IsBooked ? "is-booked" : "is-free")"
+                            data-seat-id="@seat.SeatId"
+                            data-seat-label="@seat.Label"
+                            data-seat-price="@seat.Price.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                            data-seat-type="@seat.Type"
+                            aria-pressed="@(seat.IsBooked ? "true" : "false")"
+                            aria-label="Ghế @seat.Label, @seat.Type, @seat.Price.ToString("N0") đ@(seat.IsBooked ? ", đã được đặt" : "")"
+                            title="Ghế @seat.Label · @seat.Type · @seat.Price.ToString("N0") đ"
+                            disabled="@seat.IsBooked">
+                        <span class="seat-label">@seat.Label</span>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    <ul class="seat-legend" aria-label="Chú thích trạng thái ghế">
+        <li><span class="seat-swatch is-free" aria-hidden="true"></span>Trống</li>
+        <li><span class="seat-swatch is-mine" aria-hidden="true"></span>Bạn đang giữ</li>
+        <li><span class="seat-swatch is-held" aria-hidden="true"></span>Người khác đang giữ</li>
+        <li><span class="seat-swatch is-booked" aria-hidden="true"></span>Đã đặt</li>
+    </ul>
+</div>
+
+<div class="seat-summary" id="seat-summary" aria-live="polite">
+    <div class="seat-summary-info">
+        <span id="seat-selected-list" class="cb-muted">Chưa chọn ghế nào</span>
+        <span id="seat-hold-timer" class="seat-timer" hidden></span>
+    </div>
+    <div class="seat-total">Tổng: <strong id="seat-total">0 ₫</strong></div>
 </div>
 
 @if (TempData["Error"] is string error)
@@ -36,12 +76,20 @@
 }
 
 @*
-    Contract cho JS của Dev C: sau khi SignalR kết nối, ghi connection id vào input connectionId;
-    với mỗi ghế đang giữ, thêm một <input type="hidden" name="seatIds" value="{seatId}"> vào form.
+    Contract cho JS: ghi connection id vào input connectionId và thêm một
+    <input type="hidden" name="seatIds" value="{seatId}"> cho mỗi ghế đang giữ.
     Server kiểm tra lại toàn bộ bằng SeatLockManager trước khi lưu Session.
 *@
 <form asp-action="SelectSeats" method="post" id="seat-selection-form" class="mt-3">
     <input type="hidden" name="showtimeId" value="@Model.ShowtimeId" />
     <input type="hidden" name="connectionId" id="seat-connection-id" />
-    <button type="submit" class="btn btn-primary">Tiếp tục</button>
+    <div id="seat-selected-inputs"></div>
+    <button type="submit" class="btn btn-primary" id="seat-continue" disabled>Tiếp tục thanh toán</button>
 </form>
+
+<div id="seat-toasts" class="seat-toasts" aria-live="polite" aria-atomic="true"></div>
+
+@section Scripts {
+    <script src="~/lib/signalr/signalr.min.js"></script>
+    <script src="~/js/seat-map.js" asp-append-version="true"></script>
+}
