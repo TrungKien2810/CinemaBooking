@@ -1,0 +1,31 @@
+@model SeatMapViewModel
+@{
+    ViewData["Title"] = $"Chọn ghế — {Model.MovieTitle}";
+}
+
+<h1 class="h3">@Model.MovieTitle</h1>
+<p class="cb-muted">
+    @Model.TheaterName (@Model.City) · @Model.RoomName · @Model.StartLocal.ToString("HH:mm dd/MM/yyyy")
+</p>
+
+@* Lưới tối giản để kiểm tra dữ liệu; Dev C vẽ lại bằng CSS Grid + SignalR (C3.1–C3.10). *@
+<div id="seat-map" data-showtime-id="@Model.ShowtimeId" data-hold-seconds="@Model.HoldSeconds">
+    @foreach (var row in Model.Rows)
+    {
+        <div class="d-flex gap-1 mb-1" data-row="@row.Label">
+            @foreach (var seat in row.Seats)
+            {
+                if (seat is null)
+                {
+                    <span class="d-inline-block" style="width: 2.5rem"></span>
+                    continue;
+                }
+                <button type="button" class="btn btn-sm @(seat.IsBooked ? "btn-danger" : "btn-outline-secondary")"
+                        style="width: 2.5rem" disabled="@seat.IsBooked"
+                        data-seat-id="@seat.SeatId" data-seat-type="@seat.Type" data-price="@seat.Price">
+                    @seat.Label
+                </button>
+            }
+        </div>
+    }
+</div>
