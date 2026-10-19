@@ -15,8 +15,14 @@
                 @User.Identity?.Name
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
+                @if (User.IsInRole(AppRoles.Admin))
+                {
+                    @* Role nằm sẵn trong claim của cookie — kiểm tra không tốn query. *@
+                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Movies" asp-action="Index">Trang quản trị</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                }
                 <li>
-                    <form asp-controller="Account" asp-action="Logout" method="post">
+                    <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
                         <button type="submit" class="dropdown-item">Đăng xuất</button>
                     </form>
                 </li>
@@ -26,10 +32,10 @@
     else
     {
         <li class="nav-item">
-            <a class="nav-link" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+            <a class="nav-link" asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a>
         </li>
         <li class="nav-item">
-            <a class="btn btn-primary btn-sm nav-cta" asp-controller="Account" asp-action="Register">Đăng ký</a>
+            <a class="btn btn-primary btn-sm nav-cta" asp-area="" asp-controller="Account" asp-action="Register">Đăng ký</a>
         </li>
     }
 </ul>
