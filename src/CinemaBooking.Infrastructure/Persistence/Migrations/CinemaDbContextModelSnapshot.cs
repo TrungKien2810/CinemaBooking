@@ -199,12 +199,20 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("TheaterId")
+                        .HasColumnType("int");
+
                     b.Property<int>("TicketsSold")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("MovieId");
+
+                    b.HasIndex("TheaterId");
+
+                    b.HasIndex("ReportDate", "TheaterId", "MovieId")
+                        .IsUnique();
 
                     b.ToTable("DailyRevenueReports");
                 });
@@ -641,7 +649,15 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("CinemaBooking.Domain.Entities.Theater", "Theater")
+                        .WithMany()
+                        .HasForeignKey("TheaterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Movie");
+
+                    b.Navigation("Theater");
                 });
 
             modelBuilder.Entity("CinemaBooking.Domain.Entities.Payment", b =>
