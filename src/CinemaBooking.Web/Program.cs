@@ -96,6 +96,12 @@ app.UseCinemaRequestLogScope();
 
 app.MapStaticAssets();
 
+// --- Dev A: khu quản trị (/Admin/...) — phải map trước route default ---
+app.MapControllerRoute(
+    name: "admin",
+    pattern: "{area:exists}/{controller=Movies}/{action=Index}/{id?}")
+    .WithStaticAssets();
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
