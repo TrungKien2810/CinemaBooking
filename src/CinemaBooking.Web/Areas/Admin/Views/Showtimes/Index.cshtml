@@ -1,0 +1,72 @@
+@model ShowtimesIndexViewModel
+@{
+    ViewData["Title"] = "Quản lý suất chiếu";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Suất chiếu</h1>
+    <a asp-action="Create" class="btn btn-primary">Thêm suất chiếu</a>
+</div>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-auto">
+        <label for="date" class="form-label">Ngày</label>
+        <input id="date" name="date" type="date" value="@Model.Date.ToString("yyyy-MM-dd")" class="form-control" />
+    </div>
+    <div class="col-auto">
+        <label for="theaterId" class="form-label">Chi nhánh</label>
+        <select id="theaterId" name="theaterId" class="form-select"
+                asp-items="@(new SelectList(Model.Theaters, "Value", "Text", Model.TheaterId))">
+            <option value="">Tất cả chi nhánh</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">Lọc</button>
+    </div>
+</form>
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<table class="table table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Giờ</th>
+            <th>Phim</th>
+            <th>Chi nhánh</th>
+            <th>Phòng</th>
+            <th class="text-end">Giá vé</th>
+            <th class="text-end">Số đơn</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var s in Model.Items)
+        {
+            <tr>
+                <td>@s.StartLocal.ToString("HH:mm") – @s.EndLocal.ToString("HH:mm")</td>
+                <td>@s.MovieTitle</td>
+                <td>@s.TheaterName</td>
+                <td>@s.RoomName</td>
+                <td class="text-end">@s.BasePrice.ToString("N0")</td>
+                <td class="text-end">@s.BookingCount</td>
+                <td class="text-end">
+                    <a asp-action="Edit" asp-route-id="@s.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
+                    @if (s.BookingCount == 0)
+                    {
+                        <form asp-action="Delete" asp-route-id="@s.Id" method="post" class="d-inline"
+                              onsubmit="return confirm('Xóa suất chiếu này?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        @if (Model.Items.Count == 0)
+        {
+            <tr><td colspan="7" class="text-center text-muted">Không có suất chiếu nào trong ngày này.</td></tr>
+        }
+    </tbody>
+</table>
