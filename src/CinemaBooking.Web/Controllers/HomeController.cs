@@ -1,42 +1,39 @@
 using System.Diagnostics;
-using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Models;
+using CinemaBooking.Web.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CinemaBooking.Web.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly CinemaDbContext _db;
+    private readonly IMovieCatalogService _catalog;
     private readonly ILogger<HomeController> _logger;
 
-    public HomeController(CinemaDbContext db, ILogger<HomeController> logger)
+    public HomeController(IMovieCatalogService catalog, ILogger<HomeController> logger)
     {
-        _db = db;
+        _catalog = catalog;
         _logger = logger;
     }
 
-    public async Task<IActionResult> Index(CancellationToken ct)
+    /// <param name="q">Từ khóa tìm theo tên phim hoặc thể loại.</param>
+    /// <param name="genre">Lọc đúng một thể loại.</param>
+    public async Task<IActionResult> Index(string? q, string? genre, CancellationToken ct)
     {
-        // AsNoTracking: trang chỉ đọc, không cần change tracker giữ lại entity.
-        // Select trước ToListAsync để SQL chỉ kéo về đúng cột cần vẽ.
-        var movies = await _db.Movies
-            .AsNoTracking()
-            .Where(m => m.IsActive)
-            .OrderByDescending(m => m.ReleaseDate)
-            .ThenBy(m => m.Title)
-            .Select(m => new MovieCardViewModel(
-                m.Id, m.Title, m.Genre, m.DurationMinutes, m.ReleaseDate, m.PosterUrl))
-            .ToListAsync(ct);
+        // Lọc chạy trong SQL ở service của Dev B (ADR 0001) — controller chỉ map sang view model.
+        var query = new MovieSearchQuery(q, genre).Normalized();
+        var movies = await _catalog.SearchAsync(query, ct);
+        var genres = await _catalog.GetGenresAsync(ct);
 
-        if (movies.Count == 0)
+        if (movies.Count == 0 && query == MovieSearchQuery.All)
         {
-            // Trang chủ trắng trơn gần như luôn là do chưa seed, không phải lỗi view.
+            // Trang chủ trắng trơn khi KHÔNG lọc gần như luôn là do chưa seed, không phải lỗi view.
             _logger.LogWarning("Không có phim nào đang hoạt động — kiểm tra seed catalog đã chạy chưa.");
         }
 
-        return View(new HomeIndexViewModel(movies));
+        return View(new HomeIndexViewModel(
+            movies.Select(MovieCardViewModel.FromListItem).ToList(),
+            query.Keyword, query.Genre, genres));
     }
 
     public IActionResult Privacy()

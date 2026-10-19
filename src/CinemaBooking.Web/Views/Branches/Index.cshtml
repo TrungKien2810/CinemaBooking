@@ -1,0 +1,41 @@
+@using CinemaBooking.Web.Services
+@model List<IGrouping<string, BranchListItem>>
+@{
+    ViewData["Title"] = "Hệ thống rạp";
+}
+
+<section class="page-head">
+    <h1 class="page-title">Hệ thống rạp</h1>
+    <p class="cb-muted page-subtitle">
+        @Model.Sum(g => g.Count()) chi nhánh ở @Model.Count thành phố. Chọn phim ở trang chủ để xem suất chiếu theo chi nhánh.
+    </p>
+</section>
+
+@if (Model.Count == 0)
+{
+    <div class="cb-card empty-state">
+        <p class="empty-title">Chưa có chi nhánh nào mở cửa</p>
+        <p class="cb-muted">Quay lại sau nhé.</p>
+    </div>
+}
+else
+{
+    @foreach (var city in Model)
+    {
+        <section class="city-group" aria-labelledby="city-@city.First().Id">
+            <h2 class="section-title" id="city-@city.First().Id">
+                @city.Key <span class="branch-city">@city.Count() chi nhánh</span>
+            </h2>
+            <ul class="branch-grid">
+                @foreach (var b in city)
+                {
+                    <li class="cb-card branch-card">
+                        <h3 class="branch-name">@b.Name</h3>
+                        <p class="cb-muted mb-2">@(b.Address ?? "Đang cập nhật địa chỉ")</p>
+                        <p class="branch-rooms">@b.RoomCount phòng chiếu</p>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+}

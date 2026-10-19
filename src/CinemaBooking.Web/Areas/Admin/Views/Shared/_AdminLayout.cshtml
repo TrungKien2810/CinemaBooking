@@ -1,0 +1,40 @@
+@{
+    // Lồng trong layout chung: giữ nguyên navbar, footer, css và script của site,
+    // chỉ chia phần thân thành sidebar + nội dung.
+    Layout = "/Views/Shared/_Layout.cshtml";
+
+    var current = ViewContext.RouteData.Values["controller"] as string;
+
+    // Phòng chiếu không có mục riêng: phòng luôn đi từ một chi nhánh, nên sáng mục Chi nhánh.
+    string ActiveIf(params string[] controllers) =>
+        controllers.Contains(current, StringComparer.OrdinalIgnoreCase) ? "active" : string.Empty;
+}
+
+<div class="admin-shell">
+    <aside class="admin-sidebar cb-card" aria-label="Menu quản trị">
+        <div class="admin-sidebar-title">Quản trị</div>
+        <nav class="admin-nav">
+            <a asp-area="Admin" asp-controller="Movies" asp-action="Index"
+               class="admin-nav-link @ActiveIf("Movies")">Phim</a>
+            <a asp-area="Admin" asp-controller="Theaters" asp-action="Index"
+               class="admin-nav-link @ActiveIf("Theaters", "Rooms")">Chi nhánh &amp; phòng</a>
+            <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
+               class="admin-nav-link @ActiveIf("Showtimes")">Suất chiếu</a>
+            <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
+               class="admin-nav-link @ActiveIf("Bookings")">Đặt vé</a>
+            <a asp-area="Admin" asp-controller="Revenue" asp-action="Index"
+               class="admin-nav-link @ActiveIf("Revenue")">Doanh thu</a>
+        </nav>
+        <div class="admin-sidebar-foot">
+            <a asp-area="" asp-controller="Home" asp-action="Index" class="admin-nav-link">← Về trang khách</a>
+        </div>
+    </aside>
+
+    <section class="admin-content">
+        @RenderBody()
+    </section>
+</div>
+
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
+}
