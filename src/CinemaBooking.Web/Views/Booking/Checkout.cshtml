@@ -1,0 +1,21 @@
+@model CheckoutViewModel
+@{
+    ViewData["Title"] = "Xác nhận ghế";
+}
+
+<h1 class="h3">@Model.MovieTitle</h1>
+<p class="cb-muted">@Model.TheaterName · @Model.RoomName · @Model.StartLocal.ToString("HH:mm dd/MM/yyyy")</p>
+
+<table class="table table-sm col-lg-6">
+    <thead>
+        <tr><th>Ghế</th><th>Loại</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var seat in Model.Seats)
+        {
+            <tr><td>@seat.Label</td><td>@seat.Type</td></tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="SeatMap" asp-route-id="@Model.ShowtimeId" class="btn btn-link">Chọn lại ghế</a>
