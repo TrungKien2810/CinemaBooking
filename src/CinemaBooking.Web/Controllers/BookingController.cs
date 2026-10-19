@@ -1,11 +1,13 @@
 using System.Security.Claims;
 using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Domain.Entities;
+using CinemaBooking.Domain.Enums;
 using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Hubs;
 using CinemaBooking.Web.Models;
 using CinemaBooking.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -87,29 +89,20 @@ public class BookingController : Controller
         return RedirectToAction(nameof(Checkout));
     }
 
-    /// <summary>Tóm tắt giỏ ghế trong Session. Form thông tin khách và thanh toán thuộc Sprint 4.</summary>
+    /// <summary>
+    /// Tóm tắt giỏ ghế trong Session + form liên hệ. Khách đã đăng nhập được điền sẵn
+    /// họ tên/email để không phải gõ lại.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> Checkout(CancellationToken ct)
     {
         var selection = HttpContext.Session.GetSeatSelection();
         if (selection is null) return RedirectToAction("Index", "Home");
 
-        var showtime = await FindBookableShowtimeAsync(selection.ShowtimeId, ct);
-        if (showtime is null)
-        {
-            HttpContext.Session.ClearSeatSelection();
-            return NotFound();
-        }
+        var page = await BuildCheckoutPageAsync(selection, await BuildCheckoutFormAsync(ct), ct);
+        if (page is null) return RedirectToAction("Index", "Home");
 
-        var seats = showtime.Room!.Seats
-            .Where(s => selection.SeatIds.Contains(s.Id))
-            .OrderBy(s => s.RowNumber).ThenBy(s => s.ColumnNumber)
-            .Select(s => new CheckoutSeatItem(s.Label, s.SeatType))
-            .ToList();
-
-        return View(new CheckoutViewModel(
-            showtime.Id, showtime.Movie!.Title, showtime.Room.Theater!.Name, showtime.Room.RoomName,
-            _tz.ToLocalTime(showtime.StartTimeUtc), seats));
+        return View(page);
     }
 
     /// <summary>
@@ -123,10 +116,12 @@ public class BookingController : Controller
         var selection = HttpContext.Session.GetSeatSelection();
         if (selection is null) return RedirectToAction("Index", "Home");
 
+        // Giữ lại form + lỗi từng trường thay vì redirect làm mất ModelState.
         if (!ModelState.IsValid)
         {
-            TempData["Error"] = "Vui lòng kiểm tra lại thông tin liên hệ.";
-            return RedirectToAction(nameof(Checkout));
+            var invalid = await BuildCheckoutPageAsync(selection, form, ct);
+            if (invalid is null) return RedirectToAction("Index", "Home");
+            return View(invalid);
         }
 
         var result = await _bookings.PlaceAsync(new BookingRequest(
@@ -148,8 +143,151 @@ public class BookingController : Controller
         await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatBooked(selection.SeatIds.ToList());
 
         HttpContext.Session.ClearSeatSelection();
-        TempData["BookingCode"] = result.BookingCode;
-        return RedirectToAction("Index", "Home");
+        return RedirectToAction(nameof(Confirmation), new { code = result.BookingCode });
+    }
+
+    /// <summary>Trang xác nhận sau khi đặt vé — mã vé là thứ khách cần lưu lại.</summary>
+    [HttpGet]
+    public async Task<IActionResult> Confirmation(string? code, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return View("BookingNotFound", (string?)null);
+
+        var booking = await FindBookingAsync(code, ct);
+        if (booking is null)
+            return View("BookingNotFound", code.Trim());
+
+        return View(ToDetails(booking));
+    }
+
+    /// <summary>Tra cứu vé theo mã, dùng được cho cả khách không đăng nhập.</summary>
+    [HttpGet]
+    public async Task<IActionResult> Lookup(string? code, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return View(new BookingLookupViewModel(null, null, null));
+
+        var booking = await FindBookingAsync(code, ct);
+        if (booking is null)
+        {
+            return View(new BookingLookupViewModel(
+                code.Trim(),
+                "Không tìm thấy vé với mã này. Vui lòng kiểm tra lại email xác nhận.",
+                null));
+        }
+
+        return View(new BookingLookupViewModel(booking.BookingCode, null, ToDetails(booking)));
+    }
+
+    /// <summary>Vé của tài khoản đang đăng nhập, mới nhất trước.</summary>
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> MyBookings(CancellationToken ct)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null) return Challenge();
+
+        var bookings = await _db.Bookings.AsNoTracking()
+            .Where(b => b.UserId == userId)
+            .Include(b => b.Showtime!).ThenInclude(s => s.Movie)
+            .Include(b => b.Showtime!).ThenInclude(s => s.Room!).ThenInclude(r => r.Theater)
+            .Include(b => b.Seats).ThenInclude(bs => bs.Seat)
+            .Include(b => b.Payment)
+            .AsSplitQuery()
+            .OrderByDescending(b => b.BookingTimeUtc)
+            .ToListAsync(ct);
+
+        return View(new MyBookingsViewModel(bookings.Select(ToDetails).ToList()));
+    }
+
+    /// <summary>Dựng lại tóm tắt đơn từ Session; trả null nếu suất không còn bán (đã xóa Session).</summary>
+    private async Task<CheckoutPageViewModel?> BuildCheckoutPageAsync(
+        SeatSelection selection, CheckoutFormModel form, CancellationToken ct)
+    {
+        var showtime = await FindBookableShowtimeAsync(selection.ShowtimeId, ct);
+        if (showtime is null)
+        {
+            HttpContext.Session.ClearSeatSelection();
+            return null;
+        }
+
+        var seats = showtime.Room!.Seats
+            .Where(s => selection.SeatIds.Contains(s.Id))
+            .OrderBy(s => s.RowNumber).ThenBy(s => s.ColumnNumber)
+            .Select(s => new CheckoutSeatItem(
+                s.Label, s.SeatType, _pricing.PriceFor(showtime.BasePrice, s.SeatType)))
+            .ToList();
+
+        var summary = new CheckoutViewModel(
+            showtime.Id,
+            showtime.Movie!.Title,
+            showtime.Room.Theater!.Name,
+            showtime.Room.Theater.City,
+            showtime.Room.RoomName,
+            _tz.ToLocalTime(showtime.StartTimeUtc),
+            seats,
+            seats.Sum(s => s.Price));
+
+        return new CheckoutPageViewModel(summary, form);
+    }
+
+    private async Task<CheckoutFormModel> BuildCheckoutFormAsync(CancellationToken ct)
+    {
+        var form = new CheckoutFormModel();
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null) return form;
+
+        var user = await _db.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => new { u.FullName, u.Email })
+            .FirstOrDefaultAsync(ct);
+
+        if (user is null) return form;
+
+        form.CustomerName = user.FullName ?? user.Email ?? string.Empty;
+        form.CustomerEmail = user.Email ?? string.Empty;
+        return form;
+    }
+
+    private Task<Booking?> FindBookingAsync(string code, CancellationToken ct)
+    {
+        var normalized = code.Trim().ToUpperInvariant();
+        return _db.Bookings.AsNoTracking()
+            .Include(b => b.Showtime!).ThenInclude(s => s.Movie)
+            .Include(b => b.Showtime!).ThenInclude(s => s.Room!).ThenInclude(r => r.Theater)
+            .Include(b => b.Seats).ThenInclude(bs => bs.Seat)
+            .Include(b => b.Payment)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(b => b.BookingCode == normalized, ct);
+    }
+
+    private BookingTicketViewModel ToDetails(Booking booking)
+    {
+        var showtime = booking.Showtime!;
+
+        var seats = booking.Seats
+            .Where(bs => bs.Seat is not null)
+            .OrderBy(bs => bs.Seat!.RowNumber).ThenBy(bs => bs.Seat!.ColumnNumber)
+            .Select(bs => new BookingSeatLine(bs.Seat!.Label, bs.Seat.SeatType, bs.PriceAtBooking))
+            .ToList();
+
+        return new BookingTicketViewModel(
+            booking.BookingCode,
+            showtime.Movie?.Title ?? string.Empty,
+            showtime.Room?.Theater?.Name ?? string.Empty,
+            showtime.Room?.Theater?.City ?? string.Empty,
+            showtime.Room?.RoomName ?? string.Empty,
+            _tz.ToLocalTime(showtime.StartTimeUtc),
+            _tz.ToLocalTime(booking.BookingTimeUtc),
+            booking.Status,
+            booking.Payment?.Status ?? PaymentStatus.Pending,
+            booking.Payment?.PaymentMethod ?? "Mock",
+            booking.Payment?.TransactionId,
+            booking.CustomerName,
+            booking.CustomerEmail,
+            booking.CustomerPhone,
+            booking.TotalAmount,
+            seats);
     }
 
     private async Task<string?> ValidateSelectionAsync(Showtime showtime, List<int> ids, string? connectionId, CancellationToken ct)

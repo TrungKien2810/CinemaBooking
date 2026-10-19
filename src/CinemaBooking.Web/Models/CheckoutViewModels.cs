@@ -8,11 +8,16 @@ public sealed record CheckoutViewModel(
     int ShowtimeId,
     string MovieTitle,
     string TheaterName,
+    string City,
     string RoomName,
     DateTime StartLocal,
-    IReadOnlyList<CheckoutSeatItem> Seats);
+    IReadOnlyList<CheckoutSeatItem> Seats,
+    decimal TotalAmount);
 
-public sealed record CheckoutSeatItem(string Label, SeatType Type);
+public sealed record CheckoutSeatItem(string Label, SeatType Type, decimal Price);
+
+/// <summary>Trang thanh toán: tóm tắt đơn (đọc từ Session) + form thông tin khách.</summary>
+public sealed record CheckoutPageViewModel(CheckoutViewModel Summary, CheckoutFormModel Form);
 
 /// <summary>
 /// Thông tin liên hệ của khách trên form thanh toán. Danh sách ghế KHÔNG nằm ở đây —

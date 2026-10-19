@@ -1,21 +1,62 @@
-@model CheckoutViewModel
+@model CheckoutPageViewModel
 @{
-    ViewData["Title"] = "Xác nhận ghế";
+    ViewData["Title"] = "Thanh toán";
 }
 
-<h1 class="h3">@Model.MovieTitle</h1>
-<p class="cb-muted">@Model.TheaterName · @Model.RoomName · @Model.StartLocal.ToString("HH:mm dd/MM/yyyy")</p>
+<section class="page-head">
+    <h1 class="page-title">Thanh toán</h1>
+    <p class="cb-muted page-subtitle">Kiểm tra lại ghế và điền thông tin liên hệ để nhận vé qua email.</p>
+</section>
 
-<table class="table table-sm col-lg-6">
-    <thead>
-        <tr><th>Ghế</th><th>Loại</th></tr>
-    </thead>
-    <tbody>
-        @foreach (var seat in Model.Seats)
-        {
-            <tr><td>@seat.Label</td><td>@seat.Type</td></tr>
-        }
-    </tbody>
-</table>
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger" role="alert">@error</div>
+}
 
-<a asp-action="SeatMap" asp-route-id="@Model.ShowtimeId" class="btn btn-link">Chọn lại ghế</a>
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="cb-card checkout-card">
+            <h2 class="checkout-heading">Thông tin khách</h2>
+            <partial name="_CheckoutForm" model="Model.Form" />
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <aside class="cb-card checkout-summary" aria-label="Tóm tắt đơn hàng">
+            <h2 class="checkout-heading">@Model.Summary.MovieTitle</h2>
+            <p class="cb-muted mb-1">@Model.Summary.TheaterName (@Model.Summary.City) · @Model.Summary.RoomName</p>
+            <p class="cb-muted">@Model.Summary.StartLocal.ToString("HH:mm dd/MM/yyyy")</p>
+
+            <div class="table-responsive">
+                <table class="table table-sm checkout-table">
+                    <thead>
+                        <tr><th>Ghế</th><th>Loại</th><th class="text-end">Giá</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var seat in Model.Summary.Seats)
+                        {
+                            <tr>
+                                <td>@seat.Label</td>
+                                <td>@seat.Type</td>
+                                <td class="text-end">@seat.Price.ToString("N0") ₫</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="2">Tổng cộng</th>
+                            <th class="text-end">@Model.Summary.TotalAmount.ToString("N0") ₫</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <a asp-controller="Booking" asp-action="SeatMap" asp-route-id="@Model.Summary.ShowtimeId"
+               class="btn btn-outline-secondary w-100 mt-2">Chọn lại ghế</a>
+        </aside>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

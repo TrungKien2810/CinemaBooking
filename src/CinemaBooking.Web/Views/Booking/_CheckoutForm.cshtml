@@ -1,0 +1,36 @@
+@model CheckoutFormModel
+
+<form asp-controller="Booking" asp-action="Checkout" method="post" class="checkout-form">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="mb-3">
+        <label asp-for="CustomerName" class="form-label"></label>
+        <input asp-for="CustomerName" class="form-control" autocomplete="name" placeholder="Nguyễn Văn A" />
+        <span asp-validation-for="CustomerName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="CustomerEmail" class="form-label"></label>
+        <input asp-for="CustomerEmail" class="form-control" autocomplete="email" placeholder="ban@example.com" />
+        <span asp-validation-for="CustomerEmail" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="CustomerPhone" class="form-label"></label>
+        <input asp-for="CustomerPhone" class="form-control" autocomplete="tel" placeholder="09xx xxx xxx" />
+        <span asp-validation-for="CustomerPhone" class="text-danger"></span>
+    </div>
+
+    <div class="checkout-payment">
+        <div class="checkout-payment-title">Phương thức thanh toán</div>
+        <div class="checkout-payment-option">
+            <span class="checkout-radio" aria-hidden="true"></span>
+            <div>
+                <strong>Thanh toán mô phỏng</strong>
+                <div class="cb-muted">Cổng thanh toán giả lập của đồ án — không phát sinh giao dịch thật.</div>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 mt-3">Xác nhận và thanh toán</button>
+</form>
