@@ -35,6 +35,8 @@ public class AdminAuthorizationTests
         Assert.Contains(typeof(TheatersController), AdminControllers);
         Assert.Contains(typeof(RoomsController), AdminControllers);
         Assert.Contains(typeof(ShowtimesController), AdminControllers);
+        Assert.Contains(typeof(BookingsController), AdminControllers);
+        Assert.Contains(typeof(RevenueController), AdminControllers);
     }
 
     [Theory]

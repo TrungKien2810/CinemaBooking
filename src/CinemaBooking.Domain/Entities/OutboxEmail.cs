@@ -20,11 +20,14 @@ public class OutboxEmail
     public DateTime? SentUtc { get; set; }
 }
 
-/// <summary>Báo cáo doanh thu cuối ngày do Worker tổng hợp.</summary>
+/// <summary>Báo cáo doanh thu cuối ngày do Worker tổng hợp — một dòng mỗi (ngày, chi nhánh, phim).</summary>
 public class DailyRevenueReport
 {
     public int Id { get; set; }
     public DateOnly ReportDate { get; set; }
+    /// <summary>Chi nhánh — giá vé và lịch chiếu đi theo chi nhánh nên doanh thu cũng chia theo đó (AD-4).</summary>
+    public int TheaterId { get; set; }
+    public Theater? Theater { get; set; }
     public int MovieId { get; set; }
     public Movie? Movie { get; set; }
     public int TicketsSold { get; set; }

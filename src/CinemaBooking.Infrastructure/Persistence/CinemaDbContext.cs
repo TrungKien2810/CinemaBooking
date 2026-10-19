@@ -63,5 +63,10 @@ public class CinemaDbContext : IdentityDbContext<ApplicationUser>
             .OnDelete(DeleteBehavior.Restrict);
 
         b.Entity<OutboxEmail>().HasIndex(x => new { x.Status, x.CreatedUtc });
+
+        // Worker chạy lại cho cùng một ngày không được sinh dòng trùng.
+        b.Entity<DailyRevenueReport>()
+            .HasIndex(x => new { x.ReportDate, x.TheaterId, x.MovieId })
+            .IsUnique();
     }
 }
