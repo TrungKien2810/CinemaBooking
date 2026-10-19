@@ -27,3 +27,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (img.complete && img.naturalWidth === 0) applyPosterFallback(img);
     });
 });
+
+// Form có data-confirm: hỏi lại trước khi submit (ẩn phim, đóng chi nhánh, xóa suất…).
+// Thay cho onsubmit="return confirm('…')" viết tay: nội dung câu hỏi chứa tên phim/chi nhánh
+// do admin nhập, nhét vào chuỗi JS inline thì một dấu nháy đơn là vỡ cú pháp. Để trong
+// attribute thường thì Razor encode an toàn, đọc lại bằng dataset là ra đúng chữ.
+document.addEventListener('submit', function (event) {
+    var form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+
+    var message = form.dataset.confirm;
+    if (message && !window.confirm(message)) event.preventDefault();
+});

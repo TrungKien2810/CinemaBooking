@@ -14,11 +14,11 @@
 <div class="seat-map-shell cb-card" id="seat-map"
      data-showtime-id="@Model.ShowtimeId"
      data-hold-seconds="@Model.HoldSeconds">
-    <div class="seat-screen" aria-hidden="true"><span>Màn hình</span></div>
+    <div class="seat-map-screen" aria-hidden="true"><span>Màn hình</span></div>
 
     <div class="seat-rows" style="--seat-cols: @seatColumns">
         <div class="seat-row seat-row-head" aria-hidden="true">
-            <span class="seat-row-label"></span>
+            <span class="seat-map-row-label"></span>
             @for (var col = 1; col <= seatColumns; col++)
             {
                 <span class="seat-col-label">@col</span>
@@ -28,7 +28,7 @@
         @foreach (var row in Model.Rows)
         {
             <div class="seat-row">
-                <span class="seat-row-label" aria-hidden="true">@row.Label</span>
+                <span class="seat-map-row-label" aria-hidden="true">@row.Label</span>
                 @foreach (var seat in row.Seats)
                 {
                     if (seat is null)
@@ -54,7 +54,7 @@
         }
     </div>
 
-    <ul class="seat-legend" aria-label="Chú thích trạng thái ghế">
+    <ul class="seat-map-legend" aria-label="Chú thích trạng thái ghế">
         <li><span class="seat-swatch is-free" aria-hidden="true"></span>Trống</li>
         <li><span class="seat-swatch is-mine" aria-hidden="true"></span>Bạn đang giữ</li>
         <li><span class="seat-swatch is-held" aria-hidden="true"></span>Người khác đang giữ</li>
