@@ -32,6 +32,15 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-area="" asp-controller="Branches" asp-action="Index">Hệ thống rạp</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Booking" asp-action="Lookup">Tra cứu vé</a>
+                        </li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Booking" asp-action="MyBookings">Vé của tôi</a>
+                            </li>
+                        }
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>

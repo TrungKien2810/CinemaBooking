@@ -1,0 +1,29 @@
+@model BookingTicketViewModel
+@{
+    ViewData["Title"] = $"Vé {Model.BookingCode}";
+}
+
+<section class="page-head">
+    <h1 class="page-title">Đặt vé thành công</h1>
+    <p class="cb-muted page-subtitle">
+        Cảm ơn @Model.CustomerName! Vé đã được xác nhận và email sẽ được gửi tới @Model.CustomerEmail.
+    </p>
+</section>
+
+<div class="cb-card booking-confirmation">
+    <div class="booking-code-block">
+        <span class="cb-muted">Mã vé</span>
+        <strong class="booking-code">@Model.BookingCode</strong>
+    </div>
+
+    <partial name="_BookingDetails" model="Model" />
+
+    <div class="booking-actions">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Về trang chủ</a>
+        <a asp-controller="Booking" asp-action="Lookup" class="btn btn-outline-secondary">Tra cứu vé khác</a>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a asp-controller="Booking" asp-action="MyBookings" class="btn btn-link">Vé của tôi</a>
+        }
+    </div>
+</div>

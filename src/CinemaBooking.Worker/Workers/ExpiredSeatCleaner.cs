@@ -1,5 +1,7 @@
 using CinemaBooking.Domain.Abstractions;
+using CinemaBooking.Infrastructure;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Options;
 
 namespace CinemaBooking.Worker.Workers;
 
@@ -12,19 +14,19 @@ namespace CinemaBooking.Worker.Workers;
 public sealed class ExpiredSeatCleaner : BackgroundService
 {
     private readonly ISeatLockManager _locks;
-    private readonly IConfiguration _config;
+    private readonly SeatHoldOptions _hold;
     private readonly ILogger<ExpiredSeatCleaner> _log;
 
-    public ExpiredSeatCleaner(ISeatLockManager locks, IConfiguration config, ILogger<ExpiredSeatCleaner> log)
+    public ExpiredSeatCleaner(ISeatLockManager locks, IOptions<SeatHoldOptions> hold, ILogger<ExpiredSeatCleaner> log)
     {
         _locks = locks;
-        _config = config;
+        _hold = hold.Value;
         _log = log;
     }
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        var interval = TimeSpan.FromSeconds(_config.GetValue("SeatHold:CleanupIntervalSeconds", 10));
+        var interval = _hold.CleanupInterval;
         using var timer = new PeriodicTimer(interval);
 
         while (await timer.WaitForNextTickAsync(ct))

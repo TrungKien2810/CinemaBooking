@@ -20,6 +20,10 @@
                class="admin-nav-link @ActiveIf("Theaters", "Rooms")">Chi nhánh &amp; phòng</a>
             <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
                class="admin-nav-link @ActiveIf("Showtimes")">Suất chiếu</a>
+            <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
+               class="admin-nav-link @ActiveIf("Bookings")">Đặt vé</a>
+            <a asp-area="Admin" asp-controller="Revenue" asp-action="Index"
+               class="admin-nav-link @ActiveIf("Revenue")">Doanh thu</a>
         </nav>
         <div class="admin-sidebar-foot">
             <a asp-area="" asp-controller="Home" asp-action="Index" class="admin-nav-link">← Về trang khách</a>
