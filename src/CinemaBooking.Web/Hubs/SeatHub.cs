@@ -76,6 +76,19 @@ public class SeatHub : Hub<ISeatClient>
         return Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupName(showtimeId));
     }
 
+    /// <summary>
+    /// Lối vào cho Worker: nó chạy NGOÀI process web nên không giữ <c>IHubContext</c>, mà mở một
+    /// HubConnection rồi gọi method này để phát SeatUnlocked cho group của suất (xem
+    /// ExpiredSeatCleaner). Không phải thao tác của khách nên không kiểm lock.
+    /// </summary>
+    public Task NotifySeatsReleased(int showtimeId, int[] seatIds)
+    {
+        if (showtimeId <= 0 || seatIds.Length == 0) return Task.CompletedTask;
+
+        var ordered = seatIds.OrderBy(id => id).ToList();
+        return Clients.Group(GroupName(showtimeId)).SeatUnlocked(ordered);
+    }
+
     public async Task SelectSeat(int showtimeId, int seatId)
     {
         // Chưa join thì client sẽ không nhận SeatUnlocked/SeatLocked của suất này — giữ ghế
