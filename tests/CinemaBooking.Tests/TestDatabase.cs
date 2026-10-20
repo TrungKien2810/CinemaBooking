@@ -20,9 +20,13 @@ internal static class TestDatabase
     }
 
     /// <summary>Một rạp, một phòng — đủ cho các truy vấn catalog không cần sơ đồ ghế.</summary>
-    public static Room SeedRoom(this CinemaDbContext db, string theaterName = "CGV Vincom", string roomName = "Phòng 1")
+    public static Room SeedRoom(
+        this CinemaDbContext db,
+        string theaterName = "CGV Vincom",
+        string roomName = "Phòng 1",
+        string city = "Hà Nội")
     {
-        var theater = new Theater { Name = theaterName };
+        var theater = new Theater { Name = theaterName, City = city };
         var room = new Room { Theater = theater, RoomName = roomName, TotalRows = 5, TotalColumns = 8 };
         db.Theaters.Add(theater);
         db.Rooms.Add(room);
