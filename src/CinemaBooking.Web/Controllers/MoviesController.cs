@@ -61,7 +61,7 @@ public class MoviesController : Controller
         var groups = new List<BranchShowtimesViewModel>();
         if (selected is { } day)
         {
-            var items = await _showtimes.GetForMovieOnDateAsync(id, day, ct);
+            var items = await _showtimes.GetForMovieOnDateAsync(id, day, ct: ct);
 
             // ShowtimeListItem chưa có City/TheaterId (việc B2.11), nên tra theo tên chi nhánh —
             // tên là unique index nên tra không nhầm. Chi nhánh đã đóng không có trong danh bạ

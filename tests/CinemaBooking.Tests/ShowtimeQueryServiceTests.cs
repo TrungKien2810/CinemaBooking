@@ -135,8 +135,8 @@ public class ShowtimeQueryServiceTests
         var day = new DateOnly(2026, 10, 10);
 
         var all = await sut.GetForMovieOnDateAsync(movie.Id, day);
-        var hanoi = await sut.GetForMovieOnDateAsync(movie.Id, day, new ShowtimeFilter(City: "Hà Nội"));
-        var oneBranch = await sut.GetForMovieOnDateAsync(movie.Id, day, new ShowtimeFilter(TheaterId: hanoiB.TheaterId));
+        var hanoi = await sut.GetForMovieOnDateAsync(movie.Id, day, new ShowtimeQueryFilter(City: "Hà Nội"));
+        var oneBranch = await sut.GetForMovieOnDateAsync(movie.Id, day, new ShowtimeQueryFilter(TheaterId: hanoiB.TheaterId));
 
         Assert.Equal(3, all.Count);
         Assert.Equal(new[] { "Vincom Bà Triệu", "Aeon Long Biên" }, hanoi.Select(s => s.TheaterName));
