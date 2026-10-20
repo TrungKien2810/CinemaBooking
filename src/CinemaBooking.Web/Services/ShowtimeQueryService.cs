@@ -19,7 +19,7 @@ public sealed class ShowtimeQueryService : IShowtimeQueryService
     }
 
     public async Task<IReadOnlyList<ShowtimeListItem>> GetForMovieOnDateAsync(
-        int movieId, DateOnly localDate, ShowtimeFilter? filter = null, CancellationToken ct = default)
+        int movieId, DateOnly localDate, ShowtimeQueryFilter? filter = null, CancellationToken ct = default)
     {
         // Đổi "một ngày ở giờ rạp" thành nửa khoảng UTC trước khi truy vấn: so sánh trở thành
         // một range scan chạy được trên index (RoomId, StartTimeUtc), thay vì phải đọc cả bảng
@@ -45,7 +45,7 @@ public sealed class ShowtimeQueryService : IShowtimeQueryService
     }
 
     public async Task<IReadOnlyList<DateOnly>> GetAvailableDatesAsync(
-        int movieId, DateOnly fromLocalDate, int dayCount = 7, ShowtimeFilter? filter = null,
+        int movieId, DateOnly fromLocalDate, int dayCount = 7, ShowtimeQueryFilter? filter = null,
         CancellationToken ct = default)
     {
         var startTimes = await UpcomingInWindow(ForMovie(movieId, filter), fromLocalDate, dayCount)
@@ -61,22 +61,22 @@ public sealed class ShowtimeQueryService : IShowtimeQueryService
             .ToList();
     }
 
-    public async Task<IReadOnlyList<BranchOption>> GetBranchesForMovieAsync(
+    public async Task<IReadOnlyList<ShowtimeBranchOption>> GetBranchesForMovieAsync(
         int movieId, DateOnly fromLocalDate, int dayCount = 7, CancellationToken ct = default)
     {
         // Anonymous type thay vì record: EF dịch được DISTINCT + ORDER BY trên nó, còn thuộc tính
         // của record tạo qua constructor thì không map ngược lại thành cột được.
-        var rows = await UpcomingInWindow(ForMovie(movieId, ShowtimeFilter.None), fromLocalDate, dayCount)
+        var rows = await UpcomingInWindow(ForMovie(movieId, ShowtimeQueryFilter.None), fromLocalDate, dayCount)
             .Select(s => new { s.Room!.TheaterId, s.Room!.Theater!.Name, s.Room!.Theater!.City })
             .Distinct()
             .OrderBy(b => b.City).ThenBy(b => b.Name)
             .ToListAsync(ct);
 
-        return rows.Select(b => new BranchOption(b.TheaterId, b.Name, b.City)).ToList();
+        return rows.Select(b => new ShowtimeBranchOption(b.TheaterId, b.Name, b.City)).ToList();
     }
 
     /// <summary>Suất của một phim ở chi nhánh còn hoạt động, đã áp bộ lọc — mọi điều kiện đều dịch ra SQL.</summary>
-    private IQueryable<Showtime> ForMovie(int movieId, ShowtimeFilter? filter)
+    private IQueryable<Showtime> ForMovie(int movieId, ShowtimeQueryFilter? filter)
     {
         var query = _db.Showtimes.AsNoTracking()
             .Where(s => s.MovieId == movieId && s.Room!.Theater!.IsActive);
