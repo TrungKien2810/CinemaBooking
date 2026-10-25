@@ -1,0 +1,174 @@
+/* ==========================================================================
+   A — MARQUEE / Design tokens
+   CinemaBooking.Smart / static UI prototype
+   Every colour, size, radius, shadow and duration used by this variant is
+   declared here. screens.css may only reference var(--token).
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* ---------------------------------------------------------------------
+     1. INK & SURFACES
+     Elevation goes lighter, never darker (A4). Background is the darkest
+     surface; raised panels sit above it.
+     --------------------------------------------------------------------- */
+  --ink:              #0B0E13;   /* page ground — deep cinema dark        */
+  --ink-deep:         #06080B;   /* letterbox band, footer well          */
+  --surface:          #151A22;   /* default panel                         */
+  --surface-raised:   #1C222C;   /* raised panel / control surface        */
+  --surface-sunken:   #10141B;   /* wells: input, seat arena, code block  */
+
+  /* ---------------------------------------------------------------------
+     2. MARQUEE GOLD — the single accent
+     --------------------------------------------------------------------- */
+  --gold:             #E3B23C;
+  --gold-soft:        #F2CE79;   /* hover / focus                         */
+  --gold-deep:        #9E7519;   /* pressed, gold-on-gold border          */
+  --gold-ink:         #17120A;   /* text drawn ON gold                    */
+  --gold-wash:        rgba(227, 178, 60, .12);
+  --gold-wash-strong: rgba(227, 178, 60, .22);
+
+  /* ---------------------------------------------------------------------
+     3. PAPER — warm off-white lettering
+     --------------------------------------------------------------------- */
+  --paper:            #F4EFE6;   /* primary text                          */
+  --paper-muted:      #A79E8E;   /* secondary text, meta                  */
+  --paper-dim:        #948C7E;   /* de-emphasised text (5.8:1 trên ink)    */
+  --paper-on-ink:     rgba(244, 239, 230, .06); /* faint fill on ink    */
+
+  /* ---------------------------------------------------------------------
+     4. CURTAIN RED — danger only (booked seat / warning / error)
+     --------------------------------------------------------------------- */
+  --curtain:          #C0392B;
+  --curtain-text:     #F0877A;   /* legible tint of the same hue on ink  */
+  --curtain-wash:     rgba(192, 57, 43, .16);
+  --curtain-line:     rgba(240, 135, 122, .42);
+
+  /* ---------------------------------------------------------------------
+     5. HAIRLINES — the only separation mechanism on flat surfaces (B2)
+     --------------------------------------------------------------------- */
+  --hairline:         rgba(244, 239, 230, .14);
+  --hairline-strong:  rgba(244, 239, 230, .28);
+  --gold-hairline:    rgba(227, 178, 60, .38);
+
+  /* ---------------------------------------------------------------------
+     6. SEAT STATES — colour is never the only signal
+     free | mine (✓) | held-by-other (hatch) | booked (×)
+     --------------------------------------------------------------------- */
+  --seat-free-bg:       #1C222C;
+  --seat-free-line:     rgba(244, 239, 230, .34);
+  --seat-free-ink:      #A79E8E;
+  --seat-mine-bg:       #E3B23C;
+  --seat-mine-line:     #F2CE79;
+  --seat-mine-ink:      #17120A;
+  --seat-held-bg:       #151A22;
+  --seat-held-line:     rgba(244, 239, 230, .22);
+  --seat-held-ink:      #F4EFE6;
+  --seat-booked-bg:     #0C0F14;
+  --seat-booked-line:   rgba(244, 239, 230, .16);
+  --seat-booked-ink:    #948C7E;
+
+  /* ---------------------------------------------------------------------
+     7. POSTER FIELDS — one colour per film, drawn from the same world
+     --------------------------------------------------------------------- */
+  --poster-dune:      #1F3A44;
+  --poster-mat-biec:  #3A2338;
+  --poster-nha-banu:  #2E3A22;
+  --poster-inside:    #24304A;
+  --poster-dia-dao:   #42261F;
+
+  /* ---------------------------------------------------------------------
+     8. TYPE
+     Display = Bungee (signage). Body = Be Vietnam Pro (Vietnamese).
+     Bungee is used only for Latin / numeric signage so a missing Vietnamese
+     glyph can never occur mid-word; Be Vietnam Pro carries every Vietnamese
+     string and every diacritic.
+     --------------------------------------------------------------------- */
+  --font-display: 'Bungee', 'Arial Black', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-mono: 'Consolas', 'SFMono-Regular', 'Courier New', monospace;
+
+  --fs-display: 3.75rem;   /* 60px — marquee sign                       */
+  --fs-h1:      2.5rem;    /* 40px                                     */
+  --fs-h2:      1.75rem;   /* 28px                                     */
+  --fs-h3:      1.25rem;   /* 20px                                     */
+  --fs-lead:    1.0625rem; /* 17px — body copy                         */
+  --fs-body:    1rem;      /* 16px — UI text                           */
+  --fs-small:   .875rem;   /* 14px — meta                              */
+  --fs-tiny:    .75rem;    /* 12px — legal / seat code                 */
+
+  /* Narrow-viewport companions of the display sizes */
+  --fs-display-sm: 2.5rem; /* 40px */
+  --fs-h1-sm:      1.875rem;
+
+  --lh-display: 1.02;
+  --lh-heading: 1.14;
+  --lh-body:    1.6;
+
+  --ls-display: -0.02em;
+  --ls-heading: -0.012em;
+  --ls-body:    0;
+  --ls-label:   0.055em;   /* tracked small signage                    */
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semibold:600;
+  --fw-bold:    700;
+  --fw-black:   800;
+
+  --measure: 64ch;
+
+  /* ---------------------------------------------------------------------
+     9. SPACE — one scale, three density tiers (1 : 2 : 4)
+     --------------------------------------------------------------------- */
+  --space-1:  0.25rem;   /*  4px  — inside a control                  */
+  --space-2:  0.5rem;    /*  8px  — tight group                      */
+  --space-3:  0.75rem;   /* 12px  — related items                    */
+  --space-4:  1rem;      /* 16px  — group                            */
+  --space-5:  1.5rem;    /* 24px  — block gap                        */
+  --space-6:  2rem;      /* 32px  — band                             */
+  --space-7:  3rem;      /* 48px  — section                          */
+  --space-8:  4rem;      /* 64px  — section / feature                */
+  --space-9:  6rem;      /* 96px  — page band                        */
+
+  /* ---------------------------------------------------------------------
+     10. SHAPE — radius belongs to element size (B1)
+     --------------------------------------------------------------------- */
+  --radius-sharp: 0;      /* posters, ticket edges                    */
+  --radius-xs:    2px;    /* codes, chips, seat squares                */
+  --radius-sm:    6px;    /* buttons, inputs                          */
+  --radius-md:    10px;   /* panels                                   */
+  --radius-pill:  999px;  /* genuinely pill-shaped things only        */
+
+  --border-hairline: 1px solid var(--hairline);
+  --border-strong:   1px solid var(--hairline-strong);
+  --border-gold:     1px solid var(--gold-hairline);
+
+  /* ---------------------------------------------------------------------
+     11. ELEVATION — one level only, on the signature object
+     --------------------------------------------------------------------- */
+  --shadow-ticket: 0 18px 44px -26px rgba(0, 0, 0, .98);
+
+  /* ---------------------------------------------------------------------
+     12. MOTION — duration by role (F2)
+     --------------------------------------------------------------------- */
+  --dur-fast:   90ms;   /* press feedback                            */
+  --dur-base:   160ms;  /* hover, focus, colour                      */
+  --ease-out:   cubic-bezier(.22, .68, .32, 1);
+
+  /* ---------------------------------------------------------------------
+     13. LAYOUT CONSTANTS
+     --------------------------------------------------------------------- */
+  --shell-max:      1180px;
+  --shell-pad:      var(--space-4);
+  --focus-ring:     3px solid var(--gold);
+  --focus-offset:   2px;
+  --tap:            44px;   /* minimum touch target                    */
+  --seat-size:      44px;
+  --poster-ratio:   2 / 3;
+  --bulb-size:      7px;
+  --stub-notch:     14px;
+  --punch:          var(--ink);        /* punched notch shows the ground behind */
+  --punch-raised:   var(--surface-raised);
+}

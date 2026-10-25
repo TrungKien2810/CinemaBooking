@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dune: Part Two — Lịch chiếu | CineSmart</title>
+<meta name="description" content="Lịch chiếu Dune: Part Two trong 7 ngày tại 4 chi nhánh CineSmart: giờ, phòng, giá vé và số ghế còn trống.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+<a class="skip-link" href="#noi-dung">Bỏ qua tới nội dung chính</a>
+
+<header class="masthead">
+  <div class="page masthead__inner">
+    <a class="brand" href="home.html">
+      <span class="brand__mark" aria-hidden="true"></span>
+      <span class="brand__name">CineSmart</span>
+    </a>
+    <nav class="masthead__nav" aria-label="Điều hướng chính">
+      <a href="home.html">Trang chủ</a>
+      <a href="home.html#danhmuc-phim">Phim</a>
+      <a href="movie.html" aria-current="page">Lịch chiếu</a>
+    </nav>
+  </div>
+</header>
+
+<main id="noi-dung">
+
+  <!-- Tiêu đề phim -->
+  <section class="page">
+    <div class="feature feature--media">
+      <figure class="poster poster--3 poster--hero">
+        <div class="poster__title">Dune: Part Two</div>
+        <div class="poster__genre">Khoa học viễn tưởng</div>
+      </figure>
+      <div>
+        <span class="status status--now">Đang chiếu</span>
+        <h1 class="feature__title">Dune: Part Two</h1>
+        <div class="metarow">
+          <span>Thể loại <b>Khoa học viễn tưởng</b></span>
+          <span>Thời lượng <b>166 phút</b></span>
+          <span>Khởi chiếu <b>01/03/2024</b></span>
+          <span>Giá từ <b>80.000 ₫</b></span>
+        </div>
+        <p class="feature__lede">Paul Atreides liên minh với người Fremen để trả thù những kẻ đã hủy diệt gia tộc mình.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bảng lịch -->
+  <section class="page section" aria-labelledby="tieu-de-lich-chieu">
+    <div class="section__head">
+      <h2 id="tieu-de-lich-chieu">Lịch chiếu</h2>
+      <p>7 ngày từ hôm nay, số ghế còn trống cập nhật theo từng ngày</p>
+    </div>
+
+    <div class="daytabs" id="daytabs" role="tablist" aria-label="Chọn ngày xem phim">
+      <button type="button" class="daytab" role="tab" id="daytab-1" data-day="1" aria-selected="true" aria-controls="bang-lich">
+        <span class="daytab__num">1</span>
+        <span class="daytab__dow">Thứ Tư</span>
+        <span class="daytab__date">21/10</span>
+      </button>
+      <button type="button" class="daytab" role="tab" id="daytab-2" data-day="2" aria-selected="false" aria-controls="bang-lich">
+        <span class="daytab__num">2</span>
+        <span class="daytab__dow">Thứ Năm</span>
+        <span class="daytab__date">22/10</span>
+      </button>
+      <button type="button" class="daytab" role="tab" id="daytab-3" data-day="3" aria-selected="false" aria-controls="bang-lich">
+        <span class="daytab__num">3</span>
+        <span class="daytab__dow">Thứ Sáu</span>
+        <span class="daytab__date">23/10</span>
+      </button>
+      <button type="button" class="daytab" role="tab" id="daytab-4" data-day="4" aria-selected="false" aria-controls="bang-lich">
+        <span class="daytab__num">4</span>
+        <span class="daytab__dow">Thứ Bảy</span>
+        <span class="daytab__date">24/10</span>
+      </button>
+      <button type="button" class="daytab" role="tab" id="daytab-5" data-day="5" aria-selected="false" aria-controls="bang-lich">
+        <span class="daytab__num">5</span>
+        <span class="daytab__dow">Chủ Nhật</span>
+        <span class="daytab__date">25/10</span>
+      </button>
+      <button type="button" class="daytab" role="tab" id="daytab-6" data-day="6" aria-selected="false" aria-controls="bang-lich">
+        <span class="daytab__num">6</span>
+        <span class="daytab__dow">Thứ Hai</span>
+        <span class="daytab__date">26/10</span>
+      </button>
+      <button type="button" class="daytab" role="tab" id="daytab-7" data-day="7" aria-selected="false" aria-controls="bang-lich">
+        <span class="daytab__num">7</span>
+        <span class="daytab__dow">Thứ Ba</span>
+        <span class="daytab__date">27/10</span>
+      </button>
+    </div>
+
+    <div class="filterbar mt-4">
+      <div class="field">
+        <span class="field__label" id="nhan-loc-thanh-pho">Lọc theo thành phố</span>
+        <div class="chips" id="city-chips" role="group" aria-labelledby="nhan-loc-thanh-pho">
+          <button type="button" class="chip" data-city="all" aria-pressed="true">Tất cả thành phố</button>
+          <button type="button" class="chip" data-city="hcmc" aria-pressed="false">TP. Hồ Chí Minh</button>
+          <button type="button" class="chip" data-city="hn" aria-pressed="false">Hà Nội</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="field__label" id="nhan-loc-chi-nhanh">Lọc theo chi nhánh</span>
+        <div class="chips" id="branch-chips" role="group" aria-labelledby="nhan-loc-chi-nhanh">
+          <button type="button" class="chip" data-branch="all" aria-pressed="true">Tất cả chi nhánh</button>
+          <button type="button" class="chip" data-branch="nguyen-hue" aria-pressed="false">Nguyễn Huệ</button>
+          <button type="button" class="chip" data-branch="thao-dien" aria-pressed="false">Thảo Điền</button>
+          <button type="button" class="chip" data-branch="cau-giay" aria-pressed="false">Cầu Giấy</button>
+          <button type="button" class="chip" data-branch="hoan-kiem" aria-pressed="false">Hoàn Kiếm</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-5">
+      <div class="board__dayhead">
+        <div>
+          <div class="board__branch" id="board-day">Thứ Tư 21/10</div>
+          <div class="board__address">Số ghế còn trống tính riêng cho từng suất chiếu</div>
+        </div>
+        <div class="board__count" id="board-count">0 suất chiếu</div>
+      </div>
+      <div class="board" id="bang-lich" role="tabpanel" aria-labelledby="daytab-1">
+        <!-- Các nhóm chi nhánh và hàng bảng lịch được dựng bằng app.js từ dữ liệu suất chiếu -->
+      </div>
+    </div>
+
+    <p class="summary__empty mt-4" id="board-empty" hidden>
+      Không có suất chiếu nào cho bộ lọc này. Hãy bỏ bớt điều kiện lọc hoặc chọn ngày khác.
+    </p>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="page footer__inner">
+    <span>CineSmart — dữ liệu demo theo CatalogSeeder. Bản prototype tĩnh, hướng C — Bảng lịch.</span>
+    <span><a href="index.html">Giới thiệu hướng thiết kế</a> · <a href="../index.html">Về trang so sánh 3 hướng</a></span>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

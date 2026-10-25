@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thanh toán — Dune: Part Two | CineSmart</title>
+<meta name="description" content="Hoàn tất đặt vé Dune: Part Two. Thanh toán nhanh, không cần đăng nhập.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+<a class="skip-link" href="#noi-dung">Bỏ qua tới nội dung chính</a>
+
+<header class="masthead">
+  <div class="page masthead__inner">
+    <a class="brand" href="home.html">
+      <span class="brand__mark" aria-hidden="true"></span>
+      <span class="brand__name">CineSmart</span>
+    </a>
+    <nav class="masthead__nav" aria-label="Điều hướng chính">
+      <a href="home.html">Trang chủ</a>
+      <a href="movie.html">Lịch chiếu</a>
+      <a href="seatmap.html">Chọn ghế</a>
+    </nav>
+  </div>
+</header>
+
+<main id="noi-dung">
+  <section class="page">
+    <div class="section__head">
+      <h1>Thanh toán</h1>
+      <p>Không cần đăng nhập. Vé sẽ gửi qua email và SMS.</p>
+    </div>
+
+    <div class="seatmap">
+      <!-- Cột trái: biểu mẫu -->
+      <div>
+        <div class="notice notice--warn" id="checkout-empty" role="status" hidden>
+          <div class="notice__title">Chưa có ghế nào được chọn</div>
+          <p class="notice__body">Hãy quay lại sơ đồ ghế và chọn ít nhất một ghế trước khi thanh toán.</p>
+          <a class="btn btn--secondary btn--sm" href="seatmap.html">Quay lại chọn ghế</a>
+        </div>
+
+        <div class="notice notice--error" id="server-error" role="alert" tabindex="-1" hidden>
+          <div class="notice__title">Không thể hoàn tất thanh toán</div>
+          <p class="notice__body">Cổng thanh toán đang tạm thời không phản hồi. Bạn chưa bị trừ tiền. Vui lòng thử lại sau 30 giây.</p>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel__title">Thông tin người nhận vé</h2>
+          <form id="checkout-form" novalidate>
+            <div class="field">
+              <label class="field__label" for="name">Họ và tên</label>
+              <input class="field__input" id="name" name="name" type="text" autocomplete="name" required>
+              <p class="field__error" id="field-name" role="alert"></p>
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="email">Email nhận vé</label>
+              <input class="field__input" id="email" name="email" type="email" autocomplete="email" required>
+              <p class="field__error" id="field-email" role="alert"></p>
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="phone">Số điện thoại</label>
+              <input class="field__input" id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required>
+              <p class="field__error" id="field-phone" role="alert"></p>
+            </div>
+
+            <fieldset class="fieldset">
+              <legend class="fieldset__legend">Phương thức thanh toán</legend>
+              <label class="choice">
+                <input type="radio" name="payment" value="momo" checked>
+                <span class="choice__label">Ví MoMo</span>
+                <span class="choice__note">Xác nhận trong ứng dụng MoMo</span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="payment" value="bank">
+                <span class="choice__label">Chuyển khoản ngân hàng</span>
+                <span class="choice__note">QR Napas, xác nhận trong 5 phút</span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="payment" value="card">
+                <span class="choice__label">Thẻ tín dụng</span>
+                <span class="choice__note">Visa, Mastercard</span>
+              </label>
+            </fieldset>
+
+            <div id="card-fields" hidden>
+              <div class="field">
+                <label class="field__label" for="card">Số thẻ</label>
+                <input class="field__input" id="card" name="card" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="4242 4242 4242 4242">
+                <p class="field__error" id="field-card" role="alert"></p>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label class="field__label" for="expiry">Ngày hết hạn</label>
+                  <input class="field__input" id="expiry" name="expiry" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY">
+                  <p class="field__error" id="field-expiry" role="alert"></p>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="cvv">Mã CVV</label>
+                  <input class="field__input" id="cvv" name="cvv" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123">
+                </div>
+              </div>
+            </div>
+
+            <div class="checkline-wrap">
+              <label class="checkline">
+                <input type="checkbox" name="terms" id="terms" required>
+                <span>Tôi đồng ý với điều khoản hoàn tiền của CineSmart.</span>
+              </label>
+              <p class="field__error" id="field-terms" role="alert"></p>
+            </div>
+
+            <button type="submit" class="btn btn--block" id="submit-order">Thanh toán</button>
+
+            <label class="checkline checkline--sim">
+              <input type="checkbox" id="simulate-error">
+              <span>Mô phỏng lỗi máy chủ khi thanh toán (chỉ dùng khi demo)</span>
+            </label>
+          </form>
+        </div>
+      </div>
+
+      <!-- Cột phải: tóm tắt đơn -->
+      <aside class="seatmap__aside" aria-label="Tóm tắt đơn hàng">
+        <div class="summary">
+          <h2 class="summary__title">Tóm tắt đơn</h2>
+          <dl class="summary__meta">
+            <div class="summary__row"><dt class="summary__key">Phim</dt><dd class="summary__val">Dune: Part Two</dd></div>
+            <div class="summary__row"><dt class="summary__key">Chi nhánh</dt><dd class="summary__val" id="sum-branch">CineSmart Nguyễn Huệ</dd></div>
+            <div class="summary__row"><dt class="summary__key">Phòng</dt><dd class="summary__val" id="sum-room">Phòng 1</dd></div>
+            <div class="summary__row"><dt class="summary__key">Suất</dt><dd class="summary__val summary__val--num" id="sum-show">18:45</dd></div>
+          </dl>
+
+          <div class="summary__block">
+            <h3 class="summary__label">Ghế</h3>
+            <ul class="summary__list" id="sum-seats"></ul>
+            <p class="summary__empty" id="sum-seats-empty" hidden>Chưa có ghế nào được chọn.</p>
+          </div>
+
+          <div class="summary__total">
+            <span class="summary__key">Tổng tiền</span>
+            <span class="summary__total-value" id="sum-total">0 ₫</span>
+          </div>
+
+          <p class="summary__hint">Giá đã gồm phí đặt vé. Không có phí ẩn, không phí hoàn tiền khi đổi suất.</p>
+        </div>
+      </aside>
+    </div>
+
+    <div class="panel panel--ok" id="order-success" role="status" tabindex="-1" hidden>
+      <div class="panel__title">Đặt vé thành công</div>
+      <p class="panel__body">Mã đơn <b id="order-code">CB-2026-1024</b>. Vé đã gửi tới email và số điện thoại của bạn.</p>
+      <p class="panel__body">Vui lòng đến rạp trước 15 phút để nhận vé và ăn uống tại quầy.</p>
+      <a class="btn" href="home.html">Về trang chủ</a>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="page footer__inner">
+    <span>CineSmart — dữ liệu demo theo CatalogSeeder. Bản prototype tĩnh, hướng C — Bảng lịch.</span>
+    <span><a href="index.html">Giới thiệu hướng thiết kế</a> · <a href="../index.html">Về trang so sánh 3 hướng</a></span>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

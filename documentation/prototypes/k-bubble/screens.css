@@ -1,0 +1,45 @@
+@charset "UTF-8";
+/* CinemaBooking.Smart — hướng K "Bong bóng" — screens.css
+   Pastel tím, bo góc lớn, card mềm, Nunito, mobile-first. */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui); }
+.hero { padding: 2rem 1rem 1rem; text-align: center; }
+.hero__title { font-size: 2rem; font-weight: 800; margin: 0 0 0.25rem; }
+.hero__sub { color: var(--muted); margin: 0 0 1rem; }
+.nav { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; }
+.nav a { text-decoration: none; color: var(--ink); padding: 0.5rem 1rem; border-radius: 999px; background: var(--surface); font-weight: 600; font-size: 0.9rem; }
+.nav a[aria-current="page"] { background: var(--accent); color: var(--on-accent); }
+.hero--small { padding: 1.5rem 1rem; }
+.main { padding: 1.5rem 1rem; max-width: 480px; margin: 0 auto; }
+.card { background: var(--surface); border-radius: var(--r-xl); padding: 2rem 1.5rem; text-align: center; box-shadow: var(--shadow); }
+.card__emoji { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.card__title { font-size: 1.5rem; font-weight: 800; margin: 0 0 0.25rem; }
+.card__meta { color: var(--muted); margin: 0 0 1rem; }
+.btn { display: inline-block; padding: 0.7rem 1.5rem; border-radius: var(--r-xl); background: var(--accent); color: var(--on-accent); text-decoration: none; font-weight: 700; }
+.btn--ghost { background: var(--surface); color: var(--accent); }
+.poster-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+.poster__card { background: var(--surface); border-radius: var(--r-xl); padding: 1.5rem; box-shadow: var(--shadow); }
+.poster__tag { display: inline-block; background: var(--accent); color: var(--on-accent); padding: 0.2rem 0.7rem; border-radius: var(--r-xl); font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem; }
+.poster__title { font-size: 1.25rem; font-weight: 800; margin: 0.5rem 0; }
+.poster__meta { color: var(--muted); margin: 0.5rem 0 1rem; }
+.screen-glow { text-align: center; font-weight: 700; padding: 1rem; border-radius: var(--r-xl); background: var(--accent); color: var(--on-accent); margin-bottom: 1rem; box-shadow: var(--shadow); }
+.seat-grid { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+.seat-row { display: flex; gap: 0.5rem; align-items: center; }
+.row-label { width: 1.5rem; color: var(--muted); font-weight: 700; }
+.seat { width: 2.5rem; height: 2.5rem; border: none; border-radius: var(--r-md); background: var(--surface); color: var(--ink); cursor: pointer; font-weight: 700; box-shadow: var(--shadow); }
+.seat--taken { background: var(--muted); color: var(--surface); cursor: not-allowed; }
+.seat--mine { background: var(--accent); color: var(--on-accent); }
+.legend { display: flex; gap: 1rem; justify-content: center; margin: 1rem 0; color: var(--muted); font-size: 0.85rem; }
+.dot { display: inline-block; width: 0.75rem; height: 0.75rem; margin-right: 0.25rem; vertical-align: middle; border-radius: 50%; }
+.dot--free { background: var(--surface); box-shadow: var(--shadow); }
+.dot--taken { background: var(--muted); }
+.dot--mine { background: var(--accent); }
+.actions { display: flex; justify-content: center; margin-top: 1rem; }
+.receipt-card { background: var(--surface); border-radius: var(--r-xl); padding: 1.5rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+.receipt-card__row { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--line); }
+.receipt-card__row--total { font-weight: 800; color: var(--accent); border-bottom: none; padding-top: 0.8rem; }
+.form { display: flex; flex-direction: column; gap: 0.75rem; }
+.field { display: flex; flex-direction: column; gap: 0.25rem; }
+.field input { padding: 0.7rem; border: none; border-radius: var(--r-md); background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.field span { color: var(--muted); font-size: 0.85rem; }

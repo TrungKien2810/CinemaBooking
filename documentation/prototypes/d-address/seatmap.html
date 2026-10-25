@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chọn ghế — CineSmart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body data-page="seatmap">
+<a class="skip" href="#main">Bỏ qua điều hướng</a>
+
+<header class="mast">
+  <div class="wrap mast__in">
+    <a class="wordmark" href="index.html">Cine<span class="wordmark__b">Smart</span></a>
+    <nav class="mast__nav" aria-label="Chính">
+      <a href="home.html">Hôm nay</a>
+      <a href="movie.html" aria-current="page">Phim</a>
+    </nav>
+    <p class="mast__where" id="mast-where">
+      <a href="home.html"><span class="mast__where-k">Đang ở</span><span data-branch-name>CineSmart Nguyễn Huệ</span></a>
+    </p>
+  </div>
+</header>
+
+<main id="main">
+
+  <div class="wrap seat-head">
+    <a class="link link--back" href="movie.html">Quay lại chọn suất</a>
+    <h1 class="seat-head__title">Chọn ghế</h1>
+    <p class="seat-head__venue">CineSmart Nguyễn Huệ · Phòng 1 · 8×12 · 19:15</p>
+  </div>
+
+  <div class="wrap seat-layout">
+
+    <section class="seatmap" aria-labelledby="map-title">
+      <h2 class="vh" id="map-title">Sơ đồ ghế phòng 1, 8 hàng 12 cột</h2>
+
+      <div class="map">
+        <div class="screen"><span class="screen__label">Màn hình</span></div>
+        <p class="scroll-hint">Kéo ngang trong khung để xem hết 12 cột.</p>
+
+        <div class="seatframe" id="seatframe" tabindex="0" role="group"
+             aria-label="Sơ đồ ghế, 8 hàng 12 cột. Dùng phím Tab hoặc phím mũi tên để di chuyển.">
+          <div class="seatgrid" id="seatgrid"></div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend__group">
+          <h3 class="legend__title">Loại ghế</h3>
+          <ul class="legend__list">
+            <li class="legend__item">
+              <span class="key key--std" aria-hidden="true"></span>
+              <span>Thường</span>
+              <span class="legend__price" data-legend-price="std">95.000 ₫</span>
+            </li>
+            <li class="legend__item">
+              <span class="key key--vip" aria-hidden="true"></span>
+              <span>VIP</span>
+              <span class="legend__price" data-legend-price="vip">114.000 ₫</span>
+            </li>
+            <li class="legend__item">
+              <span class="key key--couple" aria-hidden="true"></span>
+              <span>Đôi</span>
+              <span class="legend__price" data-legend-price="couple">190.000 ₫</span>
+            </li>
+          </ul>
+        </div>
+        <div class="legend__group">
+          <h3 class="legend__title">Trạng thái</h3>
+          <ul class="legend__list">
+            <li class="legend__item"><span class="key key--free" aria-hidden="true"></span><span>Còn trống</span></li>
+            <li class="legend__item"><span class="key key--mine" aria-hidden="true"></span><span>Bạn đang giữ</span></li>
+            <li class="legend__item"><span class="key key--held" aria-hidden="true"></span><span>Người khác đang giữ</span></li>
+            <li class="legend__item"><span class="key key--booked" aria-hidden="true"><span class="key__strike"></span></span><span>Đã bán</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <aside class="summary" aria-labelledby="sum-title">
+      <div class="summary__timer">
+        <p class="timer__label" id="timer-label">Giữ ghế còn</p>
+        <p class="timer" id="clock" aria-labelledby="timer-label">05:00</p>
+      </div>
+
+      <dl class="summary__rows">
+        <div class="summary__row"><dt>Phim</dt><dd>Dune: Part Two</dd></div>
+        <div class="summary__row"><dt>Suất</dt><dd id="summary-date">22/10, 19:15</dd></div>
+        <div class="summary__row"><dt>Ghế</dt><dd id="picked">C3, C4</dd></div>
+        <div class="summary__row summary__row--total">
+          <dt>Tổng</dt>
+          <dd id="total" aria-live="polite">190.000 ₫</dd>
+        </div>
+      </dl>
+
+      <p class="summary__note">Hệ thống giữ ghế trong 5 phút. Bấm lại một ghế để gỡ ghế đó; thanh toán bằng ví, thẻ hoặc tại quầy.</p>
+
+      <a class="cta" id="to-checkout" href="checkout.html">Tiếp tục thanh toán</a>
+
+      <p class="summary__msg" id="expire-msg" role="status" hidden>Đã hết 5 phút giữ ghế. Ghế bạn chọn đã được trả lại sơ đồ, mời chọn lại.</p>
+
+      <button class="linkbtn" type="button" id="simulate">Mô phỏng hết 5 phút giữ ghế</button>
+    </aside>
+
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <p>CineSmart — rạp là thứ được chọn trước, phim là thứ lọc sau.</p>
+    <p class="foot__note">Prototype tĩnh, dữ liệu demo từ CatalogSeeder.</p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+@charset "UTF-8";
+/* CinemaBooking.Smart — hướng H "Đèn neon" — screens.css
+   Full-bleed tối, poster toàn màn hình, chữ Orbitron/Rajdhani,
+   điều hướng thanh dưới (tab bar), viền neon phát sáng. */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui); }
+.hero { position: relative; padding: 2rem 1rem; text-align: center; background: linear-gradient(180deg, #1a0a2e 0%, var(--bg) 100%); }
+.hero__title { font-family: var(--font-display); font-size: 2.5rem; letter-spacing: 0.1em; margin: 0; text-shadow: 0 0 12px var(--accent); }
+.hero__title .accent { color: var(--accent); text-shadow: 0 0 16px var(--accent); }
+.hero__sub { color: var(--muted); margin: 0.5rem 0 1rem; }
+.tabbar { display: flex; justify-content: center; gap: 0.5rem; }
+.tabbar a { color: var(--muted); text-decoration: none; padding: 0.5rem 1rem; border: 1px solid var(--line); border-radius: var(--r); }
+.tabbar a[aria-current="page"] { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.hero--small { padding: 1rem; }
+.main { padding: 1.5rem 1rem; max-width: 900px; margin: 0 auto; }
+.poster { display: flex; justify-content: center; }
+.poster__card { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 1.5rem; background: var(--surface); box-shadow: 0 0 20px rgba(255,45,149,0.15); max-width: 360px; width: 100%; }
+.poster__tag { display: inline-block; background: var(--accent); color: var(--on-accent); padding: 0.2rem 0.6rem; border-radius: var(--r); font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem; }
+.poster__title { font-family: var(--font-display); font-size: 1.5rem; margin: 0.5rem 0; }
+.poster__meta { color: var(--muted); margin: 0.5rem 0 1rem; }
+.poster-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+.screen-glow { text-align: center; color: var(--accent); font-family: var(--font-display); letter-spacing: 0.2em; padding: 1rem; border-bottom: 1px solid var(--line); margin-bottom: 1rem; text-shadow: 0 0 8px var(--accent); }
+.seat-grid { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+.seat-row { display: flex; gap: 0.5rem; align-items: center; }
+.row-label { width: 1.5rem; color: var(--muted); font-family: var(--font-display); }
+.seat { width: 2.5rem; height: 2.5rem; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--ink); cursor: pointer; }
+.seat--free:hover { border-color: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.seat--taken { background: #333; color: var(--muted); cursor: not-allowed; }
+.seat--mine { background: var(--accent); color: var(--on-accent); border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.legend { display: flex; gap: 1rem; justify-content: center; margin: 1rem 0; color: var(--muted); font-size: 0.85rem; }
+.dot { display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 50%; margin-right: 0.25rem; vertical-align: middle; }
+.dot--free { background: var(--surface); border: 1px solid var(--line); }
+.dot--taken { background: #333; }
+.dot--mine { background: var(--accent); }
+.actions { display: flex; justify-content: center; margin-top: 1rem; }
+.btn { display: inline-block; padding: 0.6rem 1.2rem; border-radius: var(--r); text-decoration: none; font-weight: 600; cursor: pointer; border: 1px solid var(--line); }
+.btn--primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.btn--ghost { background: transparent; color: var(--accent); border-color: var(--accent); }
+.receipt-card { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 1rem; background: var(--surface); margin-bottom: 1rem; }
+.receipt-card__row { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--line); }
+.receipt-card__row--total { font-weight: 700; color: var(--accent); border-bottom: none; }
+.form { display: flex; flex-direction: column; gap: 0.75rem; }
+.field { display: flex; flex-direction: column; gap: 0.25rem; }
+.field input { padding: 0.6rem; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--ink); }
+.field span { color: var(--muted); font-size: 0.85rem; }

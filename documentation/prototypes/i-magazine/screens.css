@@ -1,0 +1,46 @@
+@charset "UTF-8";
+/* CinemaBooking.Smart — hướng I "Tạp chí" — screens.css
+   Serif lớn, khoảng trắng rộng, burgundy accent, layout editorial. */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui); }
+.hero { padding: 4rem 2rem 2rem; text-align: center; }
+.kicker { font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin: 0 0 1rem; }
+.hero__title { font-family: var(--font-display); font-size: 3.5rem; font-weight: 600; margin: 0 0 0.5rem; letter-spacing: -0.02em; }
+.hero__sub { color: var(--muted); margin: 0 0 1.5rem; font-style: italic; }
+.nav { display: flex; justify-content: center; gap: 2rem; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 0.75rem 0; }
+.nav a { text-decoration: none; color: var(--ink); font-size: 0.9rem; }
+.nav a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+.hero--small { padding: 2rem 1rem; }
+.main { padding: 3rem 2rem; max-width: 900px; margin: 0 auto; }
+.feature { padding: 3rem 0; border-bottom: 1px solid var(--line); }
+.feature__kicker { font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin: 0 0 1rem; }
+.feature__title { font-family: var(--font-display); font-size: 2.5rem; font-weight: 600; margin: 0 0 0.5rem; }
+.feature__meta { color: var(--muted); margin: 0 0 1.5rem; }
+.btn { display: inline-block; padding: 0.7rem 1.4rem; background: var(--accent); color: var(--on-accent); text-decoration: none; font-weight: 500; }
+.btn--ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.poster-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2rem; }
+.poster__card { padding: 1.5rem 0; border-bottom: 1px solid var(--line); }
+.poster__tag { display: inline-block; color: var(--accent); font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.poster__title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; margin: 0.5rem 0; }
+.poster__meta { color: var(--muted); margin: 0.5rem 0 1rem; }
+.screen-glow { font-family: var(--font-display); font-size: 1.25rem; text-align: center; padding: 1.5rem 0; border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; color: var(--accent); }
+.seat-grid { display: flex; flex-direction: column; gap: 0.75rem; align-items: center; }
+.seat-row { display: flex; gap: 0.75rem; align-items: center; }
+.row-label { width: 1.5rem; color: var(--muted); font-family: var(--font-display); }
+.seat { width: 2.5rem; height: 2.5rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font-family: var(--font-display); }
+.seat--taken { background: var(--surface); color: var(--muted); text-decoration: line-through; cursor: not-allowed; }
+.seat--mine { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.legend { display: flex; gap: 1.5rem; justify-content: center; margin: 1.5rem 0; color: var(--muted); font-size: 0.85rem; }
+.dot { display: inline-block; width: 0.75rem; height: 0.75rem; margin-right: 0.25rem; vertical-align: middle; border: 1px solid var(--line); }
+.dot--free { background: var(--surface); }
+.dot--taken { background: var(--muted); }
+.dot--mine { background: var(--accent); border-color: var(--accent); }
+.actions { display: flex; justify-content: center; margin-top: 1.5rem; }
+.receipt-card { border: 1px solid var(--line); padding: 1.5rem; margin-bottom: 1.5rem; }
+.receipt-card__row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--line); }
+.receipt-card__row--total { font-weight: 700; color: var(--accent); border-bottom: none; padding-top: 1rem; }
+.form { display: flex; flex-direction: column; gap: 1rem; }
+.field { display: flex; flex-direction: column; gap: 0.25rem; }
+.field input { padding: 0.7rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-family: var(--font-ui); }
+.field span { color: var(--muted); font-size: 0.85rem; font-style: italic; }
