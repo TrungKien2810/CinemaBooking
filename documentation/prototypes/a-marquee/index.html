@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hướng A — Marquee, CineSmart prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&amp;family=Be+Vietnam+Pro:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="shell masthead__inner">
+    <a class="wordmark" href="index.html">CINE<b>SMART</b></a>
+    <nav class="masthead__nav" aria-label="Điều hướng chính">
+      <a href="home.html">Trang chủ</a>
+      <a href="movie.html">Lịch chiếu</a>
+      <a href="seatmap.html">Chọn ghế</a>
+      <a href="checkout.html">Thanh toán</a>
+      <a href="../index.html" title="Về trang so sánh 3 hướng">← So sánh hướng</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ==================== Ý TƯỞNG ==================== -->
+  <section class="shell page-intro">
+    <div>
+      <h1 class="page-intro__title sign sign--display">Marquee</h1>
+      <p class="lead">Hướng A lấy cảm hứng từ biển hiệu rạp phim cổ điển buổi tối: nền mực sâu, chữ vàng đèn rìn, và mọi thông tin đặt vé được in như một tấm vé xé có đường rách.</p>
+      <p class="lead">Một quyết định duy nhất định hình cả bộ: <b>suất chiếu là vé xé</b>. Giờ chiếu in ở cỡ biển hiệu, mã vé và giá nằm ở phần rách, sơ đồ ghế nằm trong khung vé có góc gấp, và phần tóm tắt ở bước thanh toán dùng lại đúng ngôn ngữ đó.</p>
+    </div>
+    <div class="page-intro__meta">
+      <dl class="spec">
+        <div class="spec__item">
+          <dt class="spec__key">Tính từ</dt>
+          <dd class="spec__val">Cổ điển, sắc, ấm</dd>
+        </div>
+        <div class="spec__item">
+          <dt class="spec__key">Không phải</dt>
+          <dd class="spec__val">Phẳng, chung chung, hoạt hình</dd>
+        </div>
+        <div class="spec__item">
+          <dt class="spec__key">Chữ</dt>
+          <dd class="spec__val">Bungee cho biển hiệu, Be Vietnam Pro cho nội dung</dd>
+        </div>
+        <div class="spec__item">
+          <dt class="spec__key">Ảnh</dt>
+          <dd class="spec__val">Không dùng ảnh, poster dựng bằng typography</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ==================== BẢNG MÀU ==================== -->
+  <section class="shell band--tight" aria-labelledby="swatch-title">
+    <div class="section-head">
+      <h2 class="h2" id="swatch-title">Bảng màu</h2>
+      <p class="section-head__note">Mực sâu giữ nền, vàng marquee giữ điểm nhấn, đỏ rèm chỉ dành cho ghế đã đặt và thông báo lỗi</p>
+    </div>
+    <div class="swatches">
+      <div class="swatch">
+        <span class="swatch__chip" style="background:#0B0E13"></span>
+        <span class="swatch__name">Nền mực sâu</span>
+        <span class="swatch__hex">#0B0E13</span>
+      </div>
+      <div class="swatch">
+        <span class="swatch__chip" style="background:#151A22"></span>
+        <span class="swatch__name">Bề mặt</span>
+        <span class="swatch__hex">#151A22</span>
+      </div>
+      <div class="swatch">
+        <span class="swatch__chip" style="background:#1C222C"></span>
+        <span class="swatch__name">Bề mặt nâng</span>
+        <span class="swatch__hex">#1C222C</span>
+      </div>
+      <div class="swatch">
+        <span class="swatch__chip" style="background:#E3B23C"></span>
+        <span class="swatch__name">Vàng marquee</span>
+        <span class="swatch__hex">#E3B23C</span>
+      </div>
+      <div class="swatch">
+        <span class="swatch__chip" style="background:#F4EFE6"></span>
+        <span class="swatch__name">Chữ ngà</span>
+        <span class="swatch__hex">#F4EFE6</span>
+      </div>
+      <div class="swatch">
+        <span class="swatch__chip" style="background:#A79E8E"></span>
+        <span class="swatch__name">Chữ mờ</span>
+        <span class="swatch__hex">#A79E8E</span>
+      </div>
+      <div class="swatch">
+        <span class="swatch__chip" style="background:#C0392B"></span>
+        <span class="swatch__name">Đỏ rèm</span>
+        <span class="swatch__hex">#C0392B</span>
+      </div>
+      <div class="swatch">
+        <span class="swatch__chip" style="background:rgba(244,239,230,.14)"></span>
+        <span class="swatch__name">Đường kẻ</span>
+        <span class="swatch__hex">rgba(244,239,230,.14)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== TYPE SPECIMEN ==================== -->
+  <section class="shell band--tight" aria-labelledby="type-title">
+    <div class="section-head">
+      <h2 class="h2" id="type-title">Chữ</h2>
+      <p class="section-head__note">Bungee chỉ dùng cho chữ Latin và số, mọi tiếng Việt đều đi qua Be Vietnam Pro</p>
+    </div>
+    <div class="specimen">
+      <div class="specimen__row">
+        <span class="specimen__label">Bungee / display</span>
+        <span class="sign sign--display">Dune 19:15</span>
+      </div>
+      <div class="specimen__row">
+        <span class="specimen__label">Be Vietnam Pro / h1</span>
+        <span class="h1">Chọn ghế</span>
+      </div>
+      <div class="specimen__row">
+        <span class="specimen__label">Be Vietnam Pro / h2</span>
+        <span class="h2">Lịch chiếu hôm nay</span>
+      </div>
+      <div class="specimen__row">
+        <span class="specimen__label">Be Vietnam Pro / lead</span>
+        <span class="lead">Paul Atreides liên minh với người Fremen để trả thù những kẻ đã hủy diệt gia tộc mình.</span>
+      </div>
+      <div class="specimen__row">
+        <span class="specimen__label">Be Vietnam Pro / body</span>
+        <span>Ghế đã chọn, tổng tiền và đồng hồ giữ ghế nằm cùng một khối vé.</span>
+      </div>
+      <div class="specimen__row">
+        <span class="specimen__label">Be Vietnam Pro / small</span>
+        <span class="small">Chú thích sơ đồ ghế và điều kiện thanh toán.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 4 MÀN HÌNH ==================== -->
+  <section class="shell band--tight" aria-labelledby="screens-title">
+    <div class="section-head">
+      <h2 class="h2" id="screens-title">Bốn màn hình</h2>
+      <p class="section-head__note">Mở trực tiếp từ file, không cần máy chủ</p>
+    </div>
+    <div class="screen-links">
+      <a class="screen-link" href="home.html">
+        <span class="screen-link__name">Trang chủ</span>
+        <span class="screen-link__note">Khối chủ đạo lệch, tìm kiếm, lọc thể loại và băng phim đang chiếu</span>
+      </a>
+      <a class="screen-link" href="movie.html">
+        <span class="screen-link__name">Chi tiết phim</span>
+        <span class="screen-link__note">Poster, thông tin phim, chọn ngày và dãy vé suất chiếu theo chi nhánh</span>
+      </a>
+      <a class="screen-link" href="seatmap.html">
+        <span class="screen-link__name">Chọn ghế</span>
+        <span class="screen-link__note">Sơ đồ 8 hàng 12 cột, bốn trạng thái ghế và đồng hồ giữ ghế 5 phút</span>
+      </a>
+      <a class="screen-link" href="checkout.html">
+        <span class="screen-link__name">Thanh toán</span>
+        <span class="screen-link__note">Khách vãng, kiểm tra form, lỗi máy chủ và vé tóm tắt</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ==================== 3 ĐIỀU CẦN CHÚ Ý ==================== -->
+  <section class="shell band--tight" aria-labelledby="notice-title">
+    <div class="section-head">
+      <h2 class="h2" id="notice-title">Ba điều khách hàng nên chú ý</h2>
+    </div>
+    <div class="notice-list">
+      <div class="notice-list__item">
+        <span class="notice-list__index" aria-hidden="true"></span>
+        <p>Mỗi suất chiếu là một tấm vé xé: giờ chiếu in ở cỡ biển hiệu, mã vé và giá nằm ở phần rách, đường kẻ đứt và lỗ khuyết ở giữa cho biết đâu là chỗ rách. Cùng ngôn ngữ đó được dùng lại ở sơ đồ ghế và ở phần tóm tắt đơn hàng.</p>
+      </div>
+      <div class="notice-list__item">
+        <span class="notice-list__index" aria-hidden="true"></span>
+        <p>Trạng thái ghế không bao giờ chỉ dựa vào màu: ghế bạn giữ có dấu ✓, ghế đã đặt có dấu ×, ghế người khác đang giữ có nét gạch chéo, ghế VIP có gạch vàng ở đáy và ghế đôi chiếm hai cột.</p>
+      </div>
+      <div class="notice-list__item">
+        <span class="notice-list__index" aria-hidden="true"></span>
+        <p>Đồng hồ giữ ghế chạy từ 05:00 và tổng tiền luôn hiện bằng chữ vàng trong khung vé. Hết giờ thì ghế được trả về rạp, thông báo bằng khung đỏ và nút thanh toán tự tắt.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="colophon">
+  <div class="shell colophon__inner">
+    <p>CineSmart, prototype hướng A — Marquee. Dữ liệu mẫu lấy từ CatalogSeeder.</p>
+    <p><a href="home.html">Vào trang chủ</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

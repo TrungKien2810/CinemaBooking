@@ -1,0 +1,46 @@
+@charset "UTF-8";
+/* CinemaBooking.Smart — hướng H: "Đèn neon" (neon marquee) */
+
+:root {
+  color-scheme: dark;
+  --bg: #0a0a14;
+  --surface: #12121f;
+  --ink: #f0f0ff;
+  --muted: #8a8aa8;
+  --line: #2a2a40;
+  --accent: #ff2d95;
+  --on-accent: #0a0a14;
+
+  --font-ui: "Rajdhani", "Orbitron", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Orbitron", "Rajdhani", ui-monospace, Consolas, monospace;
+
+  --fs-2xs: 0.6875rem; --fs-xs: 0.75rem; --fs-sm: 0.8125rem; --fs-base: 0.9375rem;
+  --fs-md: 1.0625rem; --fs-lg: 1.3125rem; --fs-xl: 1.75rem; --fs-2xl: 2.375rem; --fs-3xl: 3.375rem;
+
+  --lh-none: 1; --lh-tight: 1.05; --lh-snug: 1.25; --lh-body: 1.6;
+  --track-tight: -0.01em; --track-mono: 0.08em; --track-wide: 0.16em;
+  --w-reg: 400; --w-med: 500; --w-semi: 600; --w-bold: 700;
+
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px;
+  --s6: 24px; --s7: 32px; --s8: 40px; --s9: 56px; --s10: 72px;
+  --page: 1160px; --gutter: 24px;
+
+  --hair: 1px solid var(--line);
+  --hair-ink: 1px solid var(--accent);
+  --rule-mid: 1px solid var(--muted);
+  --rule-heavy: 2px solid var(--accent);
+  --r-0: 2px; --r-1: 6px;
+  --shadow: 0 0 18px rgba(255,45,149,0.25);
+
+  --hatch: repeating-linear-gradient(135deg, var(--accent) 0 1px, transparent 1px 7px);
+  --hatch-soft: repeating-linear-gradient(135deg, var(--line) 0 1px, transparent 1px 7px);
+
+  --dur: 160ms; --ease: cubic-bezier(0.2,0,0,1);
+  --t-color: color var(--dur) var(--ease), background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+
+  --seat: 46px; --seat-gap: 6px; --aisle: 22px; --dim-gutter: 44px;
+  --screen-h: 60px; --grid-cols: 12; --grid-rows: 8;
+  --bar-h: 64px;
+}
+@media (max-width:720px){:root{--gutter:16px;--fs-3xl:2.5rem;--fs-2xl:2rem;}}
+@media (prefers-reduced-motion:reduce){:root{--dur:0ms;--t-color:none;--shadow:none;}}

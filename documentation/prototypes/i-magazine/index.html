@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hướng I “Tạp chí” — CinemaBooking.Smart</title>
+<meta name="description" content="Prototype tĩnh: chỗ ngồi là quyết định, không phải con số. Ngôn ngữ bản vẽ kỹ thuật.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body class="page--index">
+<a class="skip" href="#main">Tới nội dung</a>
+
+<header class="topbar">
+  <div class="wrap topbar__in">
+    <a class="wordmark" href="index.html"><span class="wordmark__mark" aria-hidden="true"></span>CinemaBooking.Smart</a>
+    <nav class="nav" aria-label="Bốn màn hình">
+      <a class="nav__link" href="home.html">Trang chủ</a>
+      <a class="nav__link" href="movie.html">Phim</a>
+      <a class="nav__link" href="seatmap.html">Chọn ghế</a>
+      <a class="nav__link" href="checkout.html">Thanh toán</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap main">
+
+  <section class="intro" aria-labelledby="dir-title">
+    <div class="intro__body">
+      <h1 class="h1 intro__title" id="dir-title">Hướng I, “Tạp chí”</h1>
+            <p class="lead">Tạp chí điện ảnh: giấy ấm, serif lớn, khoảng trắng rộng, nhấn burgundy. Mỗi phim là một bài viết, mỗi suất chiếu là một dòng mục lục.</p>
+      <p class="lead">Chỉ trang tổng quan được phép phức tạp; ba màn còn lại giữ editorial, vẫn một thứ mực trên một thứ giấy.</p>
+    </div>
+    <div class="typetest">
+      <span class="typetest__tag">Signature</span>
+      <p class="typetest__line">Sơ đồ ghế là một bản vẽ: lưới mảnh, đường kích thước có mũi nhọn hai đầu ghi 8 hàng và 12 cột, đường màn hình cong phía trên, mã ghế in mono.</p>
+      <span class="typetest__tag">Chỉ sơ đồ ghế được phức tạp</span>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="screens-title">
+    <div class="section__head">
+      <h2 class="h2" id="screens-title">Bốn màn hình</h2>
+      <p class="note mono">375 / 768 / 1440</p>
+    </div>
+    <ul class="index-links">
+      <li>
+        <a class="index-link" href="home.html">
+          <span class="index-link__no">01</span>
+          <span>
+            <span class="index-link__name">Trang chủ</span>
+            <span class="index-link__desc">Phim nổi bật, tìm kiếm, 5 thể loại, mỗi phim một vạch chia độ số ghế còn trống.</span>
+          </span>
+          <span class="index-link__file">home.html</span>
+        </a>
+      </li>
+      <li>
+        <a class="index-link" href="movie.html">
+          <span class="index-link__no">02</span>
+          <span>
+            <span class="index-link__name">Chi tiết phim</span>
+            <span class="index-link__desc">Dune: Part Two, 7 ngày, lọc thành phố và chi nhánh, mỗi suất một vạch ghế còn trên tổng.</span>
+          </span>
+          <span class="index-link__file">movie.html</span>
+        </a>
+      </li>
+      <li>
+        <a class="index-link" href="seatmap.html">
+          <span class="index-link__no">03</span>
+          <span>
+            <span class="index-link__name">Chọn ghế</span>
+            <span class="index-link__desc">Bản vẽ 8 hàng × 12 cột, ghế 46px, bốn trạng thái khác nhau về hình dạng, đồng hồ 5:00.</span>
+          </span>
+          <span class="index-link__file">seatmap.html</span>
+        </a>
+      </li>
+      <li>
+        <a class="index-link" href="checkout.html">
+          <span class="index-link__no">04</span>
+          <span>
+            <span class="index-link__name">Thanh toán</span>
+            <span class="index-link__desc">Phiếu kẻ dòng, ba phương thức, lỗi tại chỗ, trạng thái đang xử lý và banner lỗi máy chủ.</span>
+          </span>
+          <span class="index-link__file">checkout.html</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+
+  <section class="section" aria-labelledby="palette-title">
+    <div class="section__head">
+      <h2 class="h2" id="palette-title">Bảng màu và tỉ lệ tương phản</h2>
+      <p class="note mono">đo theo WCAG 2.1</p>
+    </div>
+    <div class="palette">
+      <div class="palette__row">
+        <span class="palette__chip palette__chip--bg" aria-hidden="true"></span>
+        <span class="palette__name">Nền sứ lạnh</span>
+        <span class="palette__val">#FAF6F0 — nền trang</span>
+      </div>
+      <div class="palette__row">
+        <span class="palette__chip palette__chip--surface" aria-hidden="true"></span>
+        <span class="palette__name">Mặt giấy</span>
+        <span class="palette__val">#FFFFFF — mặt bản vẽ, phiếu</span>
+      </div>
+      <div class="palette__row">
+        <span class="palette__chip palette__chip--ink" aria-hidden="true"></span>
+        <span class="palette__name">Mực</span>
+        <span class="palette__val">#1C1A16 — mực chính</span>
+      </div>
+      <div class="palette__row">
+        <span class="palette__chip palette__chip--muted" aria-hidden="true"></span>
+        <span class="palette__name">Mực phụ</span>
+        <span class="palette__val">#6B6358 — mực phụ</span>
+      </div>
+      <div class="palette__row">
+        <span class="palette__chip palette__chip--line" aria-hidden="true"></span>
+        <span class="palette__name">Đường kẻ</span>
+        <span class="palette__val">#E5DDD0 — đường phân cách</span>
+      </div>
+      <div class="palette__row">
+        <span class="palette__chip palette__chip--accent" aria-hidden="true"></span>
+        <span class="palette__name">Nhấn</span>
+        <span class="palette__val">#7A1F2E — nhấn</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="type-title">
+    <div class="section__head">
+      <h2 class="h2" id="type-title">Kiểm font tiếng Việt</h2>
+      <p class="note mono">Inter 400–700, Space Mono 400/700</p>
+    </div>
+    <div class="typetest">
+      <span class="typetest__tag">Inter — câu kiểm nguyên văn</span>
+      <p class="typetest__line">Phòng 1 · 8 hàng × 12 cột — ệ ữ ỡ</p>
+      <span class="typetest__tag">Space Mono — cùng câu</span>
+      <p class="typetest__line typetest__line--mono">Phòng 1 · 8 hàng × 12 cột — ệ ữ ỡ</p>
+      <span class="typetest__tag">Dấu chồng: Ạ Ả Ấ Ầ Ẩ Ẫ Ậ Ắ Ằ Ẳ Ẵ Ặ Ẹ Ẻ Ẽ Ế Ề Ể Ễ Ệ Ỉ Ị Ọ Ỏ Ố Ồ Ổ Ỗ Ộ Ớ Ờ Ở Ỡ Ợ Ụ Ủ Ứ Ừ Ử Ữ Ự Ỳ Ỵ</span>
+      <p class="typetest__line typetest__line--mono">Ạ Ả Ấ Ầ Ẩ Ẫ Ậ Ắ Ằ Ẳ Ẵ Ặ Ẹ Ẻ Ẽ Ế Ề Ể Ễ Ệ Ỉ Ị Ọ Ỏ Ố Ồ Ổ Ỗ Ộ Ớ Ờ Ở Ỡ Ợ Ụ Ủ Ứ Ừ Ử Ữ Ự Ỳ Ỵ</p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="audit-title">
+    <div class="section__head">
+      <h2 class="h2" id="audit-title">Ba lỗi audit hướng này trả lời</h2>
+    </div>
+    <dl class="spec spec--prose">
+      <div>
+        <dt>K4 — bốn trạng thái chỉ khác màu</dt>
+        <dd>Trống là viền liền, người khác giữ là viền đứt, đã đặt là nét chéo và khoá hẳn, của bạn là nền đỏ kèm dấu ✓. Bỏ màu đi vẫn đọc được.</dd>
+      </div>
+      <div>
+        <dt>K5 — ghế 33,6px</dt>
+        <dd>Ghế vẽ đúng 46 × 46px và không co lại ở 375: bản vẽ cuộn trong khung riêng, mục tiêu chạm giữ nguyên.</dd>
+      </div>
+      <div>
+        <dt>K2 — số ghế trống chỉ là chữ</dt>
+        <dd>Mỗi suất có một vạch chia độ: số vạch đặc trên tổng số vạch chính là số chỗ còn trống, nhìn ra ngay trước khi đọc số.</dd>
+      </div>
+    </dl>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <span>CinemaBooking.Smart — prototype tĩnh hướng I, dữ liệu demo từ CatalogSeeder.</span>
+    <span class="mono">4 màn, 1 hướng, 0 thư viện</span>
+  </div>
+</footer>
+
+</body>
+</html>

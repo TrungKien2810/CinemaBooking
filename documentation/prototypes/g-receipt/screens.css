@@ -1,0 +1,67 @@
+@charset "UTF-8";
+/* CinemaBooking.Smart — hướng G "Biên nhận" — screens.css
+   Một cột duy nhất, max-width 520px, mọi thứ monospace,
+   đường phân cách chấm chấm, bo góc 0, mực đen trên giấy nhiệt. */
+
+:root { --r-0: 0px; --r-1: 0px; --r-2: 0px; --r-3: 0px; }
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.receipt-page { padding: 24px 16px; }
+
+.receipt {
+  max-width: 520px;
+  margin: 0 auto;
+  background: var(--surface);
+  padding: 24px 20px;
+  border: 1px dashed var(--line);
+}
+
+.receipt__head, .receipt__foot { text-align: center; }
+.receipt__store { font-weight: 700; letter-spacing: 0.08em; font-size: 13px; margin: 0 0 2px; }
+.receipt__addr, .receipt__date { font-size: 12px; color: var(--muted); margin: 0; }
+.receipt__rule { border-top: 1px dashed var(--line); margin: 12px 0; }
+.receipt__kicker { font-size: 11px; letter-spacing: 0.12em; color: var(--muted); margin: 0 0 4px; }
+.receipt__title { font-size: 26px; font-weight: 700; letter-spacing: 0.02em; margin: 0 0 8px; text-transform: uppercase; }
+.receipt__desc { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+.receipt__spec { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin: 0 0 12px; font-size: 12px; }
+.receipt__spec dt { color: var(--muted); font-size: 10px; letter-spacing: 0.08em; margin: 0; }
+.receipt__spec dd { margin: 0; font-weight: 600; }
+.receipt__line { font-size: 12px; font-weight: 600; margin: 8px 0; }
+.receipt__act { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.receipt__btn {
+  display: block; text-align: center; padding: 10px 12px;
+  background: var(--ink); color: var(--surface); text-decoration: none;
+  font-weight: 700; letter-spacing: 0.06em; font-size: 12px; border: 1px solid var(--ink);
+}
+.receipt__btn:hover { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.receipt__link { display: block; text-align: center; padding: 8px 12px; color: var(--ink); text-decoration: underline; font-size: 12px; }
+.receipt__nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; margin: 8px 0; font-size: 11px; }
+.receipt__nav a { color: var(--ink); text-decoration: none; }
+.receipt__nav a:hover { color: var(--accent); }
+.receipt__fine { font-size: 10px; color: var(--muted); margin: 8px 0 0; }
+
+.seatmap-receipt { max-width: 520px; margin: 0 auto; }
+.seatmap-receipt .seat-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+.seatmap-receipt .seat-row__label { width: 24px; font-weight: 700; }
+.seatmap-receipt .seat {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 30px; height: 24px; padding: 0 6px;
+  border: 1px solid var(--ink); background: var(--surface); color: var(--ink);
+  font-size: 11px; border-radius: 0; cursor: pointer;
+}
+.seatmap-receipt .seat--taken { background: var(--line); color: var(--muted); cursor: not-allowed; text-decoration: line-through; }
+.seatmap-receipt .seat--mine { background: var(--ink); color: var(--surface); }
+.seatmap-receipt .seat--held { border-style: dashed; }
+.skip { position: absolute; left: -9999px; }
+.skip:focus { left: 8px; top: 8px; background: var(--ink); color: var(--surface); padding: 6px 10px; }

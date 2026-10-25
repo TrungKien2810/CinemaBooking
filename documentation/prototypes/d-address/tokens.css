@@ -1,0 +1,205 @@
+/* ==========================================================================
+   d-address / tokens.css  —  "Địa chỉ" (venue-first)
+   Hệ thống duy nhất cho 4 màn. screens.css CHỈ được dùng var(--...) từ đây.
+
+   TỈ LỆ TƯƠNG PHẢN (WCAG 2.1, đo bằng công thức relative luminance)
+   ---------------------------------------------------------------------------
+   ink      #1B1A15 trên paper   #F3EDE3 = 14.96 : 1
+   ink      #1B1A15 trên surface #FFFCF6 = 17.02 : 1
+   muted    #6C6A5E trên paper          =  4.67 : 1   (AA chuẩn, chỉ cho chữ >= 13px)
+   muted    #6C6A5E trên surface        =  5.31 : 1
+   accent   #1F5B4A trên paper          =  6.80 : 1
+   accent   #1F5B4A trên surface        =  7.73 : 1
+   surface  #FFFCF6 trên accent         =  7.73 : 1   (chữ trắng trên CTA)
+   paper    #F3EDE3 trên accent         =  6.80 : 1
+   soldout  #8C2F2F trên paper          =  7.04 : 1
+   soldout  #8C2F2F trên surface        =  8.00 : 1
+   rule     #D9D1C2 trên paper          =  1.30 : 1   <-- ĐƯỜNG KẺ, KHÔNG BAO GIỜ LÀ CHỮ
+   rule     #D9D1C2 trên surface        =  1.48 : 1   <-- kể cả chữ lớn: 1.3 không đọc được
+   muted    #6C6A5E trên rule           =  3.59 : 1   <-- KHÔNG dùng cặp này cho chữ nhỏ
+
+   LUẬT MÀU (không thương lượng)
+   - accent #1F5B4A CHỈ dùng cho 3 việc: chi nhánh đang chọn, CTA, gạch chân
+     trạng thái (tab/chip active, sill của cửa đang chọn). Không dùng làm nền
+     lớn, không dùng cho chữ phụ, không dùng trang trí.
+   - soldout #8C2F2F CHỈ dùng cho chữ/viền báo trạng thái từ chối: "hết chỗ",
+     lỗi nhập liệu, lỗi cổng thanh toán. Không làm nền lớn, không dùng trang trí.
+   - rule #D9D1C2 KHÔNG dùng cho chữ ở bất kỳ cỡ nào (1.30:1).
+   - muted #6C6A5E không dùng cho chữ < 13px, không dùng trên nền accent.
+   - Poster grounds (--c-poster-*) là bề mặt nội dung: chỉ làm nền khối poster,
+     chữ trên đó luôn là --c-paper (tương phản 7.98 - 10.67 : 1). Không dùng
+     cho UI chrome.
+
+   LUẬT HÌNH (restraint)
+   - Chỉ ".door" được phép nổi: surface + 1px viền + bậu cửa 2px.
+   - Không gradient, không đổ bóng (kể cả inset), không kính mờ.
+   - border-radius: 0 cho mọi khối; 2px chỉ cho ô nhập/ghế.
+   - Không hover nâng thẻ: hover chỉ đổi màu đường kẻ.
+
+   MỘT theme. color-scheme: light khai báo để control native không vẽ nền tối.
+
+   NGOẠI LỆ DUY NHẤT: breakpoint trong @media không nhận var() (đặc tả CSS),
+   nên chúng nằm thẳng trong screens.css: 640 / 700 / 720 / 767 / 900 / 1023 /
+   1024 / 1100. Mọi giá trị khác đều là var(--...).
+   ========================================================================== */
+
+/* ai-tells-ignore project:A6 — bảng màu do brief chỉ định (#F3EDE3 nền, #FFFCF6 mặt cửa);
+   không có nhãn mono uppercase nào trong bộ này. */
+:root {
+  color-scheme: light;
+
+  /* --- Bề mặt ------------------------------------------------------------ */
+  --c-paper: #f3ede3;
+  --c-surface: #fffcf6;
+  --c-ink: #1b1a15;
+  --c-muted: #6c6a5e;
+  --c-rule: #d9d1c2;
+  --c-accent: #1f5b4a;
+  --c-soldout: #8c2f2f;
+
+  /* --- Poster typography: nền riêng cho từng phim (CONTENT-SPEC) --------- */
+  --c-poster-matbiec: #4a3730;
+  --c-poster-nhabanu: #5a4322;
+  --c-poster-dune: #2f3a33;
+  --c-poster-insideout: #43395c;
+  --c-poster-diadao: #3a332c;
+
+  /* --- Chữ --------------------------------------------------------------- */
+  --font-display: "Archivo", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Public Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+
+  --fs-100: 11px;
+  --fs-200: 13px;
+  --fs-300: 14px;
+  --fs-400: 15px;
+  --fs-500: 17px;
+  --fs-600: 20px;
+  --fs-700: 26px;
+  --fs-800: 34px;
+  --fs-900: 44px;
+  --fs-1000: 60px;
+
+  --lh-solid: 0.98;
+  --lh-tight: 1.06;
+  --lh-snug: 1.24;
+  --lh-body: 1.55;
+
+  --track-display: -0.035em;
+  --track-title: -0.02em;
+  --track-normal: 0;
+  --track-wide: 0.06em;
+
+  --weight-body: 400;
+  --weight-medium: 500;
+  --weight-semi: 600;
+  --weight-bold: 700;
+  --weight-black: 800;
+
+  /* --- Khoảng cách (một thang, 4px gốc) ---------------------------------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 40px;
+  --s-9: 56px;
+  --s-10: 72px;
+  --s-11: 96px;
+  --s-12: 128px;
+
+  /* --- Khung ------------------------------------------------------------- */
+  --w-page: 1344px;
+  --w-prose: 62ch;
+  --w-specs: 544px;
+  --w-aside: 336px;
+  --w-search: 264px;
+  --w-specs-label: 104px;
+  --w-branch-head: 300px;
+  --w-slot-min: 150px;
+  --w-rules-label: 160px;
+  --w-swatch-min: 160px;
+  --w-show-time: var(--target);
+  --w-poster: 232px;
+  --col-no: 48px;
+  --col-dur: 112px;
+  --col-price: 128px;
+  --col-status: 116px;
+  --mark: 8px;
+  --pad-x: var(--s-4);
+  --pad-section: var(--s-9);
+
+  /* --- Hình học ---------------------------------------------------------- */
+  --r-0: 0px;
+  --r-1: 2px;
+  --bw-1: 1px;
+  --bw-2: 2px;
+  --line-1: var(--bw-1) solid var(--c-rule);
+  --line-1-ink: var(--bw-1) solid var(--c-ink);
+  --line-1-muted: var(--bw-1) dashed var(--c-muted);
+  --line-2-rule: var(--bw-2) solid var(--c-rule);
+  --line-2-ink: var(--bw-2) solid var(--c-ink);
+  --line-2-accent: var(--bw-2) solid var(--c-accent);
+  --focus: var(--bw-2) solid var(--c-ink);
+  --focus-offset: 2px;
+
+  /* --- Mục tiêu chạm / ghế ---------------------------------------------- */
+  --target: 44px;
+  --seat: 44px;
+  --seat-gap: 4px;
+  --aisle-w: 16px;
+  --rowlabel-w: 20px;
+
+  /* --- Chuyển động ------------------------------------------------------- */
+  --dur-fast: 120ms;
+  --dur-medium: 220ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --angle-strike: -45deg;
+
+  /* --- Tầng -------------------------------------------------------------- */
+  --z-rowlabel: 2;
+  --z-sticky: 20;
+  --z-nav: 30;
+
+  /* --- Tỉ lệ ------------------------------------------------------------- */
+  --ratio-poster: 2 / 3;
+  --ratio-thumb: 3 / 4;
+}
+
+/* Điện thoại hẹp: mọi thứ nhỏ lại một bậc, không đổi bố cục. */
+@media (max-width: 767px) {
+  :root {
+    --fs-900: 30px;
+    --fs-1000: 34px;
+    --fs-800: 26px;
+    --fs-700: 21px;
+    --pad-x: var(--s-4);
+    --pad-section: var(--s-8);
+    --w-poster: 168px;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --pad-x: var(--s-7);
+    --fs-1000: 48px;
+    --fs-900: 38px;
+  }
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --pad-x: var(--s-9);
+    --fs-1000: 60px;
+    --fs-900: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-medium: 0ms;
+  }
+}

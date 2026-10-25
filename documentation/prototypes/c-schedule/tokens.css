@@ -1,0 +1,156 @@
+/* ==========================================================================
+   C — Bảng lịch · Design tokens
+   Hệ thống duy nhất cho hướng C. Mọi màu / khoảng cách / cỡ chữ / bo góc /
+   chuyển động dùng trong screens.css đều lấy từ đây.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* ---------- Màu: bảng lịch giấy lạnh ---------- */
+  --paper: #F7F7F5;          /* nền trang */
+  --paper-raised: #FFFFFF;   /* nền nổi trên nền trang: ô nhập, thẻ phim */
+  --paper-sunken: #ECEDEA;   /* nền lõm: khối ghế, dải chú thích */
+  --paper-tint: #F1F2F0;     /* nền dải phân cách nhẹ */
+
+  --ink: #101418;            /* mực — tiêu đề, chữ chính */
+  --ink-soft: #2C333B;       /* mực nhạt — chữ phụ đậm hơn mức muted */
+  --text-muted: #5B626B;     /* chữ mờ */
+  --text-faint: #858B93;     /* chữ rất mờ — ghi chú, đường kẻ phụ */
+
+  --rule: #DCDDE0;           /* đường kẻ chuẩn */
+  --rule-strong: #B6B9BF;    /* đường kẻ đậm — kẻ bảng, viền nút */
+
+  --cobalt: #1F3F8F;         /* nhấn chính */
+  --cobalt-deep: #16305E;    /* nhấn khi nhấn/hover */
+  --cobalt-wash: #E7EBF6;    /* nền nhạt của nhấn */
+  --cobalt-rule: #AEBBDD;    /* viền nhạt của nhấn */
+
+  --amber: #A15C00;          /* cảnh báo, hết hạn */
+  --amber-deep: #7A4600;
+  --amber-wash: #F8EEDD;
+
+  --green: #1F6B4A;          /* thành công, còn chỗ */
+  --green-wash: #E3EFE8;
+
+  --brick: #97281F;          /* lỗi (mở rộng từ bảng màu: cần trạng thái lỗi) */
+  --brick-wash: #F6E7E5;
+
+  /* ---------- Màu poster typographic (mỗi phim một nền) ---------- */
+  --poster-1: #E7EBF6;  /* Mắt Biếc */
+  --poster-2: #F8EEDD;  /* Nhà Bà Nữ */
+  --poster-3: #101418;  /* Dune: Part Two — nền mực, chữ giấy */
+  --poster-4: #E3EFE8;  /* Inside Out 2 */
+  --poster-5: #ECEDEA;  /* Địa Đạo */
+
+  /* ---------- Màu ghế ---------- */
+  --seat-free-bg: #FFFFFF;
+  --seat-free-border: #B6B9BF;
+  --seat-free-fg: #101418;
+  --seat-mine-bg: #1F3F8F;
+  --seat-mine-border: #16305E;
+  --seat-mine-fg: #FFFFFF;
+  --seat-held-bg: #F8EEDD;
+  --seat-held-border: #A15C00;
+  --seat-held-fg: #7A4600;
+  --seat-taken-bg: #E3E4E1;
+  --seat-taken-border: #C4C6C9;
+  --seat-taken-fg: #8A9097;
+
+  /* ---------- Chữ ---------- */
+  /* Đã bỏ Bodoni Moda: font này KHÔNG có subset tiếng Việt (đã kiểm tra
+     unicode-range U+1EA0-1EF9 trong CSS của Google Fonts) — tên phim tiếng Việt
+     sẽ rơi về font kế tiếp và trộn 2 typeface. Playfair Display cùng họ serif
+     tương phản cao, có đủ dấu tiếng Việt. */
+  --font-display: "Playfair Display", "Bodoni MT", Didot, "Times New Roman", serif;
+  --font-sans: "IBM Plex Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --fs-3xs: 0.75rem;    /* 12 */
+  --fs-2xs: 0.875rem;   /* 14 */
+  --fs-xs: 1rem;        /* 16 — cỡ chữ cơ thể */
+  --fs-sm: 1.25rem;     /* 20 */
+  --fs-md: 1.5rem;      /* 24 */
+  --fs-lg: 2rem;        /* 32 */
+  --fs-xl: 2.75rem;     /* 44 */
+  --fs-2xl: 3.5rem;     /* 56 */
+
+  --lh-tight: 1.08;
+  --lh-snug: 1.25;
+  --lh-body: 1.6;
+
+  --ls-display: -0.015em;
+  --ls-tight: -0.005em;
+  --ls-wide: 0.04em;
+
+  --measure: 62ch;
+  --measure-tight: 44ch;
+
+  /* ---------- Không gian (thang ~1:2:4) ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  /* ---------- Bo góc (nhỏ, cứng) ---------- */
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+
+  /* ---------- Đổ bóng: không dùng đổ bóng mềm, chỉ 1 vòng focus ---------- */
+  --shadow-none: none;
+  --focus-ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--cobalt);
+
+  /* ---------- Chuyển động ---------- */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ---------- Bố cục ---------- */
+  --page-max: 1180px;
+  --page-pad: var(--space-5);
+  --tap-min: 44px;
+
+  /* Bề rộng lưới ghế: nhãn hàng (26) + 6 cột ghế + lối đi (30) + 6 cột ghế + 13 khe (4) */
+  --seat-grid-w: 636px;
+}
+
+/* Mọi kích thước chữ trên đây theo rem trên gốc 16px; đặt rõ để tránh lệch
+   khi người dùng đổi cỡ chữ trình duyệt. */
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Nền giấy lạnh cho mọi trang, khai báo color-scheme để trình duyệt không
+   tự vẽ control tối. */
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (max-width: 480px) {
+  :root {
+    /* nhãn hàng 22 + lối đi 24 → lưới hẹp hơn 10px */
+    --seat-grid-w: 626px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 1ms;
+    --dur-base: 1ms;
+    --dur-slow: 1ms;
+  }
+}

@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dune: Part Two — suất chiếu | CinemaBooking.Smart</title>
+<meta name="description" content="Chọn ngày, thành phố và chi nhánh. Mỗi suất ghi rõ số ghế còn trống trên tổng số ghế của phòng.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body class="page--movie">
+<a class="skip" href="#main">Tới nội dung</a>
+
+<header class="topbar">
+  <div class="wrap topbar__in">
+    <a class="wordmark" href="index.html"><span class="wordmark__mark" aria-hidden="true"></span>CinemaBooking.Smart</a>
+    <nav class="nav" aria-label="Điều hướng chính">
+      <a class="nav__link" href="home.html">Trang chủ</a>
+      <a class="nav__link" href="movie.html" aria-current="page">Phim</a>
+      <a class="nav__link" href="seatmap.html">Chọn ghế</a>
+      <a class="nav__link" href="checkout.html">Thanh toán</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap main">
+
+  <article class="filmhead" aria-labelledby="film-title">
+    <div class="poster poster--lg" aria-hidden="true">
+      <span class="poster__no mono">Phim 03 / 05</span>
+      <span class="poster__title">Dune:<br>Part Two</span>
+      <span class="poster__genre">Khoa học viễn tưởng<br>166 phút</span>
+    </div>
+
+    <div class="filmhead__body">
+      <h1 class="h1 filmhead__title" id="film-title">Dune: Part Two</h1>
+      <dl class="spec">
+        <div>
+          <dt>Thể loại</dt>
+          <dd>Khoa học viễn tưởng</dd>
+        </div>
+        <div>
+          <dt>Thời lượng</dt>
+          <dd class="mono">166 phút</dd>
+        </div>
+        <div>
+          <dt>Khởi chiếu</dt>
+          <dd class="mono">01/03/2024</dd>
+        </div>
+        <div>
+          <dt>Giá từ</dt>
+          <dd class="mono">80.000 ₫</dd>
+        </div>
+      </dl>
+      <p class="filmhead__desc">Paul Atreides liên minh với người Fremen để trả thù những kẻ đã hủy diệt gia tộc mình.</p>
+    </div>
+  </article>
+
+  <section class="section" aria-labelledby="slot-title">
+    <div class="section__head">
+      <h2 class="h2" id="slot-title">Chọn suất</h2>
+      <p class="note" id="slot-note">13 suất còn chỗ trong 4 chi nhánh</p>
+    </div>
+
+    <div class="daybar" id="daybar" role="group" aria-label="Chọn ngày chiếu">
+      <button class="day" type="button" aria-pressed="false">
+        <span class="day__dow">Hôm nay</span>
+        <span class="day__num">21/10</span>
+      </button>
+      <button class="day" type="button" aria-pressed="true">
+        <span class="day__dow">Thứ 5</span>
+        <span class="day__num">22/10</span>
+      </button>
+      <button class="day" type="button" aria-pressed="false">
+        <span class="day__dow">Thứ 6</span>
+        <span class="day__num">23/10</span>
+      </button>
+      <button class="day" type="button" aria-pressed="false">
+        <span class="day__dow">Thứ 7</span>
+        <span class="day__num">24/10</span>
+      </button>
+      <button class="day" type="button" aria-pressed="false">
+        <span class="day__dow">CN</span>
+        <span class="day__num">25/10</span>
+      </button>
+      <button class="day" type="button" aria-pressed="false">
+        <span class="day__dow">Thứ 2</span>
+        <span class="day__num">26/10</span>
+      </button>
+      <button class="day" type="button" aria-pressed="false">
+        <span class="day__dow">Thứ 3</span>
+        <span class="day__num">27/10</span>
+      </button>
+    </div>
+
+    <div class="filters">
+      <div class="chips" role="group" aria-label="Lọc theo thành phố">
+        <button class="chip" type="button" data-city-filter="all" aria-pressed="true">Cả hai thành phố</button>
+        <button class="chip" type="button" data-city-filter="hcm" aria-pressed="false">TP. Hồ Chí Minh</button>
+        <button class="chip" type="button" data-city-filter="hn" aria-pressed="false">Hà Nội</button>
+      </div>
+      <div class="field">
+        <label class="field__label" for="branch-select">Chi nhánh</label>
+        <select class="select" id="branch-select">
+          <option value="all">Tất cả chi nhánh</option>
+          <option value="nguyen-hue">CineSmart Nguyễn Huệ</option>
+          <option value="thao-dien">CineSmart Thảo Điền</option>
+          <option value="cau-giay">CineSmart Cầu Giấy</option>
+          <option value="hoan-kiem">CineSmart Hoàn Kiếm</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="branches" id="branches">
+
+      <section class="branch" data-branch="nguyen-hue" data-city="hcm" aria-labelledby="br-nh">
+        <div class="branch__head">
+          <div>
+            <h3 class="h3" id="br-nh">CineSmart Nguyễn Huệ</h3>
+            <p class="branch__addr">72 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh</p>
+          </div>
+          <p class="branch__addr">Phòng 1: 8 hàng × 12 cột, phòng 2: 6 hàng × 10 cột</p>
+        </div>
+        <ul class="shows">
+          <li>
+            <a class="show" href="seatmap.html">
+              <span class="show__time">09:00</span>
+              <span class="show__room">Phòng 1</span>
+              <span class="show__price">95.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="96" data-left="34"></span>
+                <span class="show__left">còn 34/96 ghế</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="show" href="seatmap.html">
+              <span class="show__time">12:15</span>
+              <span class="show__room">Phòng 2</span>
+              <span class="show__price">95.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="60" data-left="8"></span>
+                <span class="show__left">còn 8/60 ghế</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="show" href="seatmap.html">
+              <span class="show__time">15:30</span>
+              <span class="show__room">Phòng 1</span>
+              <span class="show__price">95.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="96" data-left="61"></span>
+                <span class="show__left">còn 61/96 ghế</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <span class="show show--full">
+              <span class="show__time">18:45</span>
+              <span class="show__room">Phòng 2</span>
+              <span class="show__price">95.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="60" data-left="0"></span>
+                <span class="show__left">hết chỗ</span>
+              </span>
+            </span>
+          </li>
+          <li>
+            <a class="show" href="seatmap.html">
+              <span class="show__time">19:15</span>
+              <span class="show__room">Phòng 1</span>
+              <span class="show__price">95.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="96" data-left="87"></span>
+                <span class="show__left">còn 87/96 ghế</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="show" href="seatmap.html">
+              <span class="show__time">22:00</span>
+              <span class="show__room">Phòng 1</span>
+              <span class="show__price">95.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="96" data-left="12"></span>
+                <span class="show__left">còn 12/96 ghế</span>
+              </span>
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      <section class="branch" data-branch="thao-dien" data-city="hcm" aria-labelledby="br-td">
+        <div class="branch__head">
+          <div>
+            <h3 class="h3" id="br-td">CineSmart Thảo Điền</h3>
+            <p class="branch__addr">12 Quốc Hương, Thảo Điền, TP. Hồ Chí Minh</p>
+          </div>
+          <p class="branch__addr">Phòng 1: 7 hàng × 10 cột</p>
+        </div>
+        <ul class="shows">
+          <li>
+            <a class="show" href="seatmap.html">
+              <span class="show__time">10:30</span>
+              <span class="show__room">Phòng 1</span>
+              <span class="show__price">85.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="70" data-left="52"></span>
+                <span class="show__left">còn 52/70 ghế</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="show" href="seatmap.html">
+              <span class="show__time">14:30</span>
+              <span class="show__room">Phòng 1</span>
+              <span class="show__price">85.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="70" data-left="19"></span>
+                <span class="show__left">còn 19/70 ghế</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <span class="show show--full">
+              <span class="show__time">19:00</span>
+              <span class="show__room">Phòng 1</span>
+              <span class="show__price">85.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="70" data-left="0"></span>
+                <span class="show__left">hết chỗ</span>
+              </span>
+            </span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="branch" data-branch="cau-giay" data-city="hn" aria-labelledby="br-cg">
+        <div class="branch__head">
+          <div>
+            <h3 class="h3" id="br-cg">CineSmart Cầu Giấy</h3>
+            <p class="branch__addr">15 Trần Duy Hưng, Hà Nội</p>
+          </div>
+          <p class="branch__addr">Phòng A: 10 hàng × 14 cột, phòng B: 5 hàng × 8 cột</p>
+        </div>
+        <ul class="shows">
+          <li>
+            <a class="show" href="seatmap.html">
+              <span class="show__time">09:30</span>
+              <span class="show__room">Phòng A</span>
+              <span class="show__price">90.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="140" data-left="96"></span>
+                <span class="show__left">còn 96/140 ghế</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="show" href="seatmap.html">
+              <span class="show__time">12:45</span>
+              <span class="show__room">Phòng B</span>
+              <span class="show__price">90.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="40" data-left="6"></span>
+                <span class="show__left">còn 6/40 ghế</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="show" href="seatmap.html">
+              <span class="show__time">16:00</span>
+              <span class="show__room">Phòng A</span>
+              <span class="show__price">90.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="140" data-left="118"></span>
+                <span class="show__left">còn 118/140 ghế</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <span class="show show--full">
+              <span class="show__time">19:15</span>
+              <span class="show__room">Phòng B</span>
+              <span class="show__price">90.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="40" data-left="0"></span>
+                <span class="show__left">hết chỗ</span>
+              </span>
+            </span>
+          </li>
+          <li>
+            <a class="show" href="seatmap.html">
+              <span class="show__time">22:30</span>
+              <span class="show__room">Phòng A</span>
+              <span class="show__price">90.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="140" data-left="44"></span>
+                <span class="show__left">còn 44/140 ghế</span>
+              </span>
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      <section class="branch" data-branch="hoan-kiem" data-city="hn" aria-labelledby="br-hk">
+        <div class="branch__head">
+          <div>
+            <h3 class="h3" id="br-hk">CineSmart Hoàn Kiếm</h3>
+            <p class="branch__addr">8 Tràng Tiền, Hà Nội</p>
+          </div>
+          <p class="branch__addr">Phòng 1: 6 hàng × 9 cột</p>
+        </div>
+        <ul class="shows">
+          <li>
+            <a class="show" href="seatmap.html">
+              <span class="show__time">11:00</span>
+              <span class="show__room">Phòng 1</span>
+              <span class="show__price">80.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="54" data-left="31"></span>
+                <span class="show__left">còn 31/54 ghế</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="show" href="seatmap.html">
+              <span class="show__time">17:00</span>
+              <span class="show__room">Phòng 1</span>
+              <span class="show__price">80.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="54" data-left="9"></span>
+                <span class="show__left">còn 9/54 ghế</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <span class="show show--full">
+              <span class="show__time">20:30</span>
+              <span class="show__room">Phòng 1</span>
+              <span class="show__price">80.000 ₫</span>
+              <span class="show__seats">
+                <span class="gauge" data-gauge data-total="54" data-left="0"></span>
+                <span class="show__left">hết chỗ</span>
+              </span>
+            </span>
+          </li>
+        </ul>
+      </section>
+
+    </div>
+
+    <p class="slots-empty" id="slots-empty" hidden>Không còn suất nào khớp bộ lọc. Chọn thành phố hoặc chi nhánh khác.</p>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <span>CinemaBooking.Smart — bản thử hướng F “Sơ đồ”.</span>
+    <span class="mono">7 ngày, 4 chi nhánh, 2 thành phố</span>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

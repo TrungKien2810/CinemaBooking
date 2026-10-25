@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thanh toán — đơn giữ ghế | CinemaBooking.Smart</title>
+<meta name="description" content="Phiếu thanh toán cho 2 ghế C3, C4 tại CineSmart Nguyễn Huệ.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body class="page--check">
+<a class="skip" href="#main">Tới nội dung</a>
+
+<header class="topbar">
+  <div class="wrap topbar__in">
+    <a class="wordmark" href="index.html"><span class="wordmark__mark" aria-hidden="true"></span>CinemaBooking.Smart</a>
+    <nav class="nav" aria-label="Điều hướng chính">
+      <a class="nav__link" href="home.html">Trang chủ</a>
+      <a class="nav__link" href="movie.html">Phim</a>
+      <a class="nav__link" href="seatmap.html">Chọn ghế</a>
+      <a class="nav__link" href="checkout.html" aria-current="page">Thanh toán</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap main">
+
+  <div class="checkhead">
+    <div>
+      <h1 class="h1">Thanh toán</h1>
+      <p class="note mono mt-2">Đơn giữ ghế CB-2210-1915, còn 4:12</p>
+    </div>
+    <a class="link-line" href="seatmap.html">Quay lại chọn ghế</a>
+  </div>
+
+  <div class="checkgrid">
+
+    <form class="sheet sheet--form" id="pay-form" novalidate>
+
+      <div class="sheet__cap">
+        <h2 class="h3">Thông tin liên hệ</h2>
+        <p class="note mono">Bắt buộc: 3 ô có dấu *</p>
+      </div>
+
+      <div class="form-body">
+
+        <div class="frow">
+          <label class="frow__label" for="f-name">Họ và tên <span class="frow__req" aria-hidden="true">*</span></label>
+          <div class="frow__field">
+            <input class="input--bare" id="f-name" name="name" type="text" required data-rule="name"
+                   autocomplete="name" aria-describedby="err-name" placeholder="Ví dụ: Nguyễn Minh Anh">
+            <p class="frow__err" id="err-name" role="alert"></p>
+          </div>
+        </div>
+
+        <div class="frow">
+          <label class="frow__label" for="f-email">Email <span class="frow__req" aria-hidden="true">*</span></label>
+          <div class="frow__field">
+            <input class="input--bare" id="f-email" name="email" type="email" required data-rule="email"
+                   autocomplete="email" aria-describedby="err-email" placeholder="Ví dụ: ten@example.com">
+            <p class="frow__err" id="err-email" role="alert"></p>
+          </div>
+        </div>
+
+        <div class="frow">
+          <label class="frow__label" for="f-phone">Số điện thoại <span class="frow__req" aria-hidden="true">*</span></label>
+          <div class="frow__field">
+            <input class="input--bare" id="f-phone" name="phone" type="tel" inputmode="tel" required data-rule="phone"
+                   autocomplete="tel" aria-describedby="err-phone" placeholder="Ví dụ: 0901234567">
+            <p class="frow__err" id="err-phone" role="alert"></p>
+          </div>
+        </div>
+
+        <div class="frow frow--last">
+          <span class="frow__label" id="pay-method-label">Phương thức</span>
+          <div class="pay-list" role="radiogroup" aria-labelledby="pay-method-label">
+            <label class="pay">
+              <input type="radio" name="method" value="wallet" checked>
+              <span class="pay__box" aria-hidden="true"></span>
+              <span class="pay__name">Ví điện tử</span>
+              <span class="pay__note">mô phỏng</span>
+            </label>
+            <label class="pay">
+              <input type="radio" name="method" value="card">
+              <span class="pay__box" aria-hidden="true"></span>
+              <span class="pay__name">Thẻ quốc tế</span>
+              <span class="pay__note">mô phỏng</span>
+            </label>
+            <label class="pay">
+              <input type="radio" name="method" value="counter">
+              <span class="pay__box" aria-hidden="true"></span>
+              <span class="pay__name">Thanh toán tại quầy</span>
+              <span class="pay__note">mô phỏng</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn--primary btn--block" type="submit" id="pay-submit"
+                  data-idle="Thanh toán 190.000 ₫">Thanh toán 190.000 ₫</button>
+          <p class="msg" id="pay-state" role="status" aria-live="polite"></p>
+          <div class="banner" id="server-error" role="alert" hidden>
+            <span class="banner__tag">Lỗi máy chủ</span>
+            <p class="banner__text">Cổng thanh toán không phản hồi. Ghế C3, C4 vẫn được giữ thêm 4:12, bạn chưa bị trừ tiền. Bấm thanh toán lại hoặc chọn phương thức khác.</p>
+          </div>
+        </div>
+
+      </div>
+    </form>
+
+    <aside class="sheet" aria-labelledby="order-title">
+      <div class="sheet__cap">
+        <h2 class="h3" id="order-title">Đơn của bạn</h2>
+        <p class="note mono">2 ghế</p>
+      </div>
+
+      <dl>
+        <div class="line-item">
+          <dt>Phim</dt>
+          <dd>Dune: Part Two</dd>
+        </div>
+        <div class="line-item">
+          <dt>Suất</dt>
+          <dd class="mono">19:15, 22/10</dd>
+        </div>
+        <div class="line-item">
+          <dt>Chi nhánh</dt>
+          <dd>CineSmart Nguyễn Huệ</dd>
+        </div>
+        <div class="line-item">
+          <dt>Phòng</dt>
+          <dd class="mono">Phòng 1, 8 × 12</dd>
+        </div>
+      </dl>
+
+      <ul class="seat-lines" aria-label="Ghế đã chọn">
+        <li class="seat-line">
+          <span><span class="seat-line__code">C3</span><span class="seat-line__kind">thường</span></span>
+          <span class="seat-line__price">95.000 ₫</span>
+        </li>
+        <li class="seat-line">
+          <span><span class="seat-line__code">C4</span><span class="seat-line__kind">thường</span></span>
+          <span class="seat-line__price">95.000 ₫</span>
+        </li>
+      </ul>
+
+      <div class="summary-block">
+        <div class="seat-line">
+          <span>Tạm tính</span>
+          <span class="seat-line__price">190.000 ₫</span>
+        </div>
+        <div class="seat-line">
+          <span>Phí đặt vé</span>
+          <span class="seat-line__price">0 ₫</span>
+        </div>
+        <div class="total-row">
+          <span class="total-row__label">Tổng tiền</span>
+          <span class="total-row__value" aria-live="polite">190.000 ₫</span>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <span>CinemaBooking.Smart — bản thử hướng I.</span>
+    <span class="mono">Thanh toán mô phỏng, không có giao dịch thật</span>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

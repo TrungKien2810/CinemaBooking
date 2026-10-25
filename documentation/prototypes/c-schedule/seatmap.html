@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chọn ghế — Dune: Part Two | CineSmart</title>
+<meta name="description" content="Chọn ghế cho suất chiếu Dune: Part Two tại CineSmart Nguyễn Huệ. Ghế được giữ trong 5 phút.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+<a class="skip-link" href="#noi-dung">Bỏ qua tới nội dung chính</a>
+
+<header class="masthead">
+  <div class="page masthead__inner">
+    <a class="brand" href="home.html">
+      <span class="brand__mark" aria-hidden="true"></span>
+      <span class="brand__name">CineSmart</span>
+    </a>
+    <nav class="masthead__nav" aria-label="Điều hướng chính">
+      <a href="home.html">Trang chủ</a>
+      <a href="movie.html">Lịch chiếu</a>
+      <a href="movie.html" aria-current="page">Chọn ghế</a>
+    </nav>
+  </div>
+</header>
+
+<main id="noi-dung">
+  <section class="page">
+
+    <div class="section__head">
+      <h1>Dune: Part Two</h1>
+      <p class="ctx" id="seat-context">
+        <span id="seat-when">Thứ Năm 22/10, suất 18:45</span>
+        <span id="seat-branch">CineSmart Nguyễn Huệ, Phòng 1 (8×12)</span>
+      </p>
+    </div>
+
+    <div class="seatmap">
+      <!-- Cột trái: sơ đồ ghế -->
+      <div>
+        <div class="seatstage">
+          <p class="seatstage__note">Hàng ghế được đánh số theo cột từ trái sang phải. Hàng H là hàng ghế đôi, mỗi ghế 2 chỗ ngồi.</p>
+        </div>
+
+        <div class="seatscroll" tabindex="0" role="region" aria-label="Sơ đồ ghế, cuộn ngang để xem đủ hàng">
+          <div class="seatstage__inner">
+            <div class="screen" aria-hidden="true">Màn hình</div>
+            <div class="seatgrid" id="seatgrid"></div>
+          </div>
+        </div>
+
+        <div class="legend" aria-label="Chú thích trạng thái ghế">
+          <span class="legend__item"><span class="legend__swatch legend__swatch--free" aria-hidden="true"></span>Ghế trống, 95.000 ₫</span>
+          <span class="legend__item"><span class="legend__swatch legend__swatch--mine" aria-hidden="true">✓</span>Bạn đang giữ</span>
+          <span class="legend__item"><span class="legend__swatch legend__swatch--held" aria-hidden="true">●</span>Người khác đang giữ</span>
+          <span class="legend__item"><span class="legend__swatch legend__swatch--taken" aria-hidden="true">×</span>Đã đặt</span>
+          <span class="legend__item"><span class="legend__swatch legend__swatch--vip" aria-hidden="true"></span>Hàng D, E, F là ghế VIP, 114.000 ₫</span>
+          <span class="legend__item"><span class="legend__swatch legend__swatch--double" aria-hidden="true"></span>Hàng H là ghế đôi, 190.000 ₫</span>
+        </div>
+
+        <p class="summary__empty" id="seats-empty" hidden>
+          Bạn chưa chọn ghế nào. Chọn trực tiếp trên sơ đồ để xem giá vé và tổng tiền.
+        </p>
+
+        <div class="simbar">
+          <span class="simbar__label">Mô phỏng (chỉ dùng khi demo):</span>
+          <button type="button" class="btn btn--secondary btn--sm" id="sample-seats">Chọn ghế mẫu C3, C4</button>
+          <button type="button" class="btn btn--secondary btn--sm" id="simulate-expire">Mô phỏng hết hạn giữ ghế</button>
+        </div>
+      </div>
+
+      <!-- Cột phải: đồng hồ giữ ghế và tóm tắt đơn -->
+      <aside class="seatmap__aside" aria-label="Tóm tắt đơn hàng">
+        <div class="timer" id="hold-timer">
+          <div class="timer__row">
+            <div class="timer__label" id="timer-label">thời gian giữ ghế</div>
+            <div class="timer__value" id="timer-value" role="timer" aria-live="off">5:00</div>
+          </div>
+          <div class="timer__bar"><span class="timer__fill" id="timer-fill"></span></div>
+          <p class="timer__note">Ghế được giữ trong 5 phút kể từ lúc bạn chọn. Hết giờ, ghế sẽ trả lại cho khách khác.</p>
+        </div>
+
+        <div class="notice notice--warn" id="hold-notice" role="alert" hidden>
+          <div class="notice__title">Hết thời gian giữ ghế</div>
+          <p class="notice__body" id="hold-notice-text">Ghế đã được trả lại cho khách khác.</p>
+          <button type="button" class="btn btn--secondary btn--sm" id="hold-restart">Chọn lại ghế</button>
+        </div>
+
+        <div class="summary">
+          <h2 class="summary__title">Đơn của bạn</h2>
+          <dl class="summary__meta">
+            <div class="summary__row"><dt class="summary__key">Phim</dt><dd class="summary__val">Dune: Part Two</dd></div>
+            <div class="summary__row"><dt class="summary__key">Suất</dt><dd class="summary__val summary__val--num" id="seat-showtime">18:45</dd></div>
+            <div class="summary__row"><dt class="summary__key">Ngày</dt><dd class="summary__val" id="seat-day">Thứ Năm 22/10</dd></div>
+            <div class="summary__row"><dt class="summary__key">Phòng</dt><dd class="summary__val">Phòng 1, CineSmart Nguyễn Huệ</dd></div>
+          </dl>
+
+          <div class="summary__block">
+            <h3 class="summary__label">Ghế đã chọn (<span id="selected-count">0 ghế</span>)</h3>
+            <ul class="summary__list" id="selected-seats"></ul>
+          </div>
+
+          <div class="summary__total">
+            <span class="summary__key">Tổng tiền</span>
+            <span class="summary__total-value" id="order-total">0 ₫</span>
+          </div>
+          <p class="u-sr" id="total-live" aria-live="polite"></p>
+
+          <button type="button" class="btn btn--block" id="checkout-btn" disabled>Tiếp tục thanh toán</button>
+          <p class="summary__hint">Thanh toán không cần đăng nhập. Vé sẽ được gửi qua email và SMS.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="page footer__inner">
+    <span>CineSmart — dữ liệu demo theo CatalogSeeder. Bản prototype tĩnh, hướng C — Bảng lịch.</span>
+    <span><a href="index.html">Giới thiệu hướng thiết kế</a> · <a href="../index.html">Về trang so sánh 3 hướng</a></span>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

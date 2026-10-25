@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dune: Part Two — chọn buổi tối</title>
+  <meta name="description" content="Suất chiếu của Dune: Part Two theo chi nhánh, vẽ trên trục buổi tối 17:00 → 23:30.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Work+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="screens.css">
+</head>
+<body class="page page--movie">
+  <a class="skip" href="#main">Bỏ qua điều hướng</a>
+  <header class="topbar">
+    <div class="shell topbar__inner">
+      <a class="brand" href="index.html">CinemaBooking<span class="brand__dot">.</span>Smart</a>
+      <nav class="nav" aria-label="Điều hướng chính">
+        <a href="home.html">Trang chủ</a>
+        <a href="movie.html" aria-current="page">Phim</a>
+        <a href="seatmap.html">Chọn ghế</a>
+        <a href="checkout.html">Thanh toán</a>
+      </nav>
+    </div>
+  </header>
+<main id="main" class="main">
+    <section class="filmhead shell" aria-labelledby="film-title">
+      <div class="filmhead__poster"><div class="poster poster--dune poster--hero" role="img" aria-label="Poster phim Dune: Part Two">
+      <span class="poster__genre">Khoa học viễn tưởng</span>
+      <span class="poster__lockup">
+        <span class="poster__title">Dune</span>
+        <span class="poster__sub">Part Two</span>
+      </span>
+      <span class="poster__foot">166 phút<br>2024</span>
+    </div></div>
+      <div class="filmhead__body">
+        <p class="kicker"><a class="kicker__link" href="home.html">Phim</a></p>
+        <h1 id="film-title">Dune: Part Two</h1>
+        <p class="filmhead__meta">Khoa học viễn tưởng, 166 phút, khởi chiếu 01/03/2024</p>
+        <p class="filmhead__lede">Paul Atreides liên minh với người Fremen để trả thù những kẻ đã hủy diệt gia tộc mình.</p>
+        <p class="filmhead__fact">Một suất của phim này dài 166 phút: vào lúc 19:15 thì ra lúc 22:01. Trục bên dưới vẽ đúng độ dài đó.</p>
+      </div>
+    </section>
+    <section class="picker shell" aria-labelledby="picker-title">
+      <h2 id="picker-title" class="picker__title">Chọn ngày và rạp</h2>
+      <div class="dates" role="tablist" aria-label="Ngày chiếu">
+        <button class="date" type="button" role="tab" aria-selected="true" data-date="21/10" data-index="0">
+          <span class="date__wd">Hôm nay</span>
+          <span class="date__num">21/10</span>
+        </button>
+        <button class="date" type="button" role="tab" aria-selected="false" data-date="22/10" data-index="1">
+          <span class="date__wd">Thứ Năm</span>
+          <span class="date__num">22/10</span>
+        </button>
+        <button class="date" type="button" role="tab" aria-selected="false" data-date="23/10" data-index="2">
+          <span class="date__wd">Thứ Sáu</span>
+          <span class="date__num">23/10</span>
+        </button>
+        <button class="date" type="button" role="tab" aria-selected="false" data-date="24/10" data-index="3">
+          <span class="date__wd">Thứ Bảy</span>
+          <span class="date__num">24/10</span>
+        </button>
+        <button class="date" type="button" role="tab" aria-selected="false" data-date="25/10" data-index="4">
+          <span class="date__wd">Chủ nhật</span>
+          <span class="date__num">25/10</span>
+        </button>
+        <button class="date" type="button" role="tab" aria-selected="false" data-date="26/10" data-index="5">
+          <span class="date__wd">Thứ Hai</span>
+          <span class="date__num">26/10</span>
+        </button>
+        <button class="date" type="button" role="tab" aria-selected="false" data-date="27/10" data-index="6">
+          <span class="date__wd">Thứ Ba</span>
+          <span class="date__num">27/10</span>
+        </button>
+      </div>
+      <div class="filters filters--selects">
+        <div class="field field--select">
+          <label for="city">Thành phố</label>
+          <select id="city">
+            <option value="all">Cả hai thành phố</option>
+            <option value="hcm">TP. Hồ Chí Minh</option>
+            <option value="hn">Hà Nội</option>
+          </select>
+        </div>
+        <div class="field field--select">
+          <label for="branch">Chi nhánh</label>
+          <select id="branch">
+            <option value="all">Tất cả chi nhánh</option>
+            <option value="nguyen-hue">CineSmart Nguyễn Huệ</option>
+            <option value="thao-dien">CineSmart Thảo Điền</option>
+            <option value="cau-giay">CineSmart Cầu Giấy</option>
+            <option value="hoan-kiem">CineSmart Hoàn Kiếm</option>
+          </select>
+        </div>
+      </div>
+    </section>
+    <section class="section shell" id="night" aria-labelledby="night-title">
+      <div class="section__head">
+        <h2 id="night-title">Buổi tối <span id="night-date">21/10</span></h2>
+        <p class="section__note">Mỗi khối dài đúng bằng 166 phút của phim. Trục chạy 17:00 → 23:30; suất muộn chạy tiếp qua nửa đêm. Vạch đỏ là 18:20, giờ hiện tại.</p>
+      </div>
+      <div class="axis axis--now" role="group" aria-labelledby="night-title">
+      <div class="axis__ruler" aria-hidden="true"><div class="axis__ruler-inner"><span class="tick is-first" style="--t:0" aria-hidden="true">17:00</span><span class="tick is-minor" style="--t:11.76" aria-hidden="true">18:00</span><span class="tick " style="--t:23.53" aria-hidden="true">19:00</span><span class="tick is-minor" style="--t:35.29" aria-hidden="true">20:00</span><span class="tick " style="--t:47.06" aria-hidden="true">21:00</span><span class="tick is-minor" style="--t:58.82" aria-hidden="true">22:00</span><span class="tick " style="--t:70.59" aria-hidden="true">23:00</span><span class="tick is-edge" style="--t:76.47" aria-hidden="true">23:30</span><span class="tick is-minor is-late" style="--t:82.35" aria-hidden="true">00:00</span><span class="tick is-minor is-late is-last" style="--t:94.12" aria-hidden="true">01:00</span></div></div>
+      <ol class="axis__lanes" aria-label="Suất chiếu theo chi nhánh">
+        
+      <li class="lane" data-city="hcm" data-branch="nguyen-hue">
+        <div class="lane__id">
+          <span class="lane__name">CineSmart Nguyễn Huệ</span>
+          <span class="lane__addr">72 Nguyễn Huệ, Quận 1</span>
+          <span class="lane__price">95.000 ₫ một ghế</span>
+        </div>
+        <div class="lane__track">
+          <div class="track__hours" aria-hidden="true"><span class="track__hour is-first" style="--t:0">17:00</span><span class="track__hour is-minor" style="--t:11.76">18:00</span><span class="track__hour " style="--t:23.53">19:00</span><span class="track__hour is-minor" style="--t:35.29">20:00</span><span class="track__hour " style="--t:47.06">21:00</span><span class="track__hour is-minor" style="--t:58.82">22:00</span><span class="track__hour " style="--t:70.59">23:00</span><span class="track__hour is-edge" style="--t:76.47">23:30</span><span class="track__hour is-minor is-late" style="--t:82.35">00:00</span><span class="track__hour is-minor is-late is-last" style="--t:94.12">01:00</span></div>
+          <span class="gridline" style="--t:11.76" aria-hidden="true"></span><span class="gridline" style="--t:23.53" aria-hidden="true"></span><span class="gridline" style="--t:35.29" aria-hidden="true"></span><span class="gridline" style="--t:47.06" aria-hidden="true"></span><span class="gridline" style="--t:58.82" aria-hidden="true"></span><span class="gridline" style="--t:70.59" aria-hidden="true"></span><span class="gridline gridline--edge" style="--t:76.47" aria-hidden="true"></span><span class="gridline" style="--t:82.35" aria-hidden="true"></span><span class="gridline" style="--t:94.12" aria-hidden="true"></span><span class="gridline gridline--now" style="--t:15.69" aria-hidden="true"></span>
+          <a class="slot" style="--s:20.59;--w:32.55" href="seatmap.html" aria-label="Suất 18:45 tại CineSmart Nguyễn Huệ, Phòng 1, 95.000 ₫, còn 81 ghế, tan lúc 21:31.">
+        <span class="slot__time slot__time--in"><span class="slot__lbl">vào</span><time datetime="18:45">18:45</time></span>
+        <span class="slot__time slot__time--out"><span class="slot__lbl">ra</span><time datetime="21:31">21:31</time></span>
+        <span class="slot__price">95.000 ₫</span>
+        <span class="slot__foot"><span class="slot__room">Phòng 1</span><span class="slot__seats">còn 81 ghế</span></span></a><a class="slot" style="--s:58.82;--w:32.55" href="seatmap.html" aria-label="Suất 22:00 tại CineSmart Nguyễn Huệ, Phòng 2, 95.000 ₫, còn 12 ghế, tan lúc 00:46.">
+        <span class="slot__time slot__time--in"><span class="slot__lbl">vào</span><time datetime="22:00">22:00</time></span>
+        <span class="slot__time slot__time--out"><span class="slot__lbl">ra</span><time datetime="00:46">00:46</time></span>
+        <span class="slot__price">95.000 ₫</span>
+        <span class="slot__foot"><span class="slot__room">Phòng 2</span><span class="slot__seats">còn 12 ghế</span></span></a>
+        </div>
+      </li>
+      <li class="lane" data-city="hcm" data-branch="thao-dien">
+        <div class="lane__id">
+          <span class="lane__name">CineSmart Thảo Điền</span>
+          <span class="lane__addr">12 Quốc Hương, Thảo Điền</span>
+          <span class="lane__price">85.000 ₫ một ghế</span>
+        </div>
+        <div class="lane__track">
+          <div class="track__hours" aria-hidden="true"><span class="track__hour is-first" style="--t:0">17:00</span><span class="track__hour is-minor" style="--t:11.76">18:00</span><span class="track__hour " style="--t:23.53">19:00</span><span class="track__hour is-minor" style="--t:35.29">20:00</span><span class="track__hour " style="--t:47.06">21:00</span><span class="track__hour is-minor" style="--t:58.82">22:00</span><span class="track__hour " style="--t:70.59">23:00</span><span class="track__hour is-edge" style="--t:76.47">23:30</span><span class="track__hour is-minor is-late" style="--t:82.35">00:00</span><span class="track__hour is-minor is-late is-last" style="--t:94.12">01:00</span></div>
+          <span class="gridline" style="--t:11.76" aria-hidden="true"></span><span class="gridline" style="--t:23.53" aria-hidden="true"></span><span class="gridline" style="--t:35.29" aria-hidden="true"></span><span class="gridline" style="--t:47.06" aria-hidden="true"></span><span class="gridline" style="--t:58.82" aria-hidden="true"></span><span class="gridline" style="--t:70.59" aria-hidden="true"></span><span class="gridline gridline--edge" style="--t:76.47" aria-hidden="true"></span><span class="gridline" style="--t:82.35" aria-hidden="true"></span><span class="gridline" style="--t:94.12" aria-hidden="true"></span><span class="gridline gridline--now" style="--t:15.69" aria-hidden="true"></span>
+          <span class="slot slot--gone" style="--s:23.53;--w:32.55" aria-label="Suất 19:00 tại CineSmart Thảo Điền, Phòng 1, 85.000 ₫, hết chỗ, tan lúc 21:46.">
+        <span class="slot__time slot__time--in"><span class="slot__lbl">vào</span><time datetime="19:00">19:00</time></span>
+        <span class="slot__time slot__time--out"><span class="slot__lbl">ra</span><time datetime="21:46">21:46</time></span>
+        <span class="slot__price">85.000 ₫</span>
+        <span class="slot__foot"><span class="slot__room">Phòng 1</span><span class="slot__seats">hết chỗ</span></span></span>
+        </div>
+      </li>
+      <li class="lane" data-city="hn" data-branch="cau-giay">
+        <div class="lane__id">
+          <span class="lane__name">CineSmart Cầu Giấy</span>
+          <span class="lane__addr">15 Trần Duy Hưng</span>
+          <span class="lane__price">90.000 ₫ một ghế</span>
+        </div>
+        <div class="lane__track">
+          <div class="track__hours" aria-hidden="true"><span class="track__hour is-first" style="--t:0">17:00</span><span class="track__hour is-minor" style="--t:11.76">18:00</span><span class="track__hour " style="--t:23.53">19:00</span><span class="track__hour is-minor" style="--t:35.29">20:00</span><span class="track__hour " style="--t:47.06">21:00</span><span class="track__hour is-minor" style="--t:58.82">22:00</span><span class="track__hour " style="--t:70.59">23:00</span><span class="track__hour is-edge" style="--t:76.47">23:30</span><span class="track__hour is-minor is-late" style="--t:82.35">00:00</span><span class="track__hour is-minor is-late is-last" style="--t:94.12">01:00</span></div>
+          <span class="gridline" style="--t:11.76" aria-hidden="true"></span><span class="gridline" style="--t:23.53" aria-hidden="true"></span><span class="gridline" style="--t:35.29" aria-hidden="true"></span><span class="gridline" style="--t:47.06" aria-hidden="true"></span><span class="gridline" style="--t:58.82" aria-hidden="true"></span><span class="gridline" style="--t:70.59" aria-hidden="true"></span><span class="gridline gridline--edge" style="--t:76.47" aria-hidden="true"></span><span class="gridline" style="--t:82.35" aria-hidden="true"></span><span class="gridline" style="--t:94.12" aria-hidden="true"></span><span class="gridline gridline--now" style="--t:15.69" aria-hidden="true"></span>
+          <a class="slot" style="--s:26.47;--w:32.55" href="seatmap.html" aria-label="Suất 19:15 tại CineSmart Cầu Giấy, Phòng A, 90.000 ₫, còn 3 ghế, tan lúc 22:01.">
+        <span class="slot__time slot__time--in"><span class="slot__lbl">vào</span><time datetime="19:15">19:15</time></span>
+        <span class="slot__time slot__time--out"><span class="slot__lbl">ra</span><time datetime="22:01">22:01</time></span>
+        <span class="slot__price">90.000 ₫</span>
+        <span class="slot__foot"><span class="slot__room">Phòng A</span><span class="slot__seats">còn 3 ghế</span></span></a><span class="slot slot--gone" style="--s:64.71;--w:32.55" aria-label="Suất 22:30 tại CineSmart Cầu Giấy, Phòng B, 90.000 ₫, hết chỗ, tan lúc 01:16.">
+        <span class="slot__time slot__time--in"><span class="slot__lbl">vào</span><time datetime="22:30">22:30</time></span>
+        <span class="slot__time slot__time--out"><span class="slot__lbl">ra</span><time datetime="01:16">01:16</time></span>
+        <span class="slot__price">90.000 ₫</span>
+        <span class="slot__foot"><span class="slot__room">Phòng B</span><span class="slot__seats">hết chỗ</span></span></span>
+        </div>
+      </li>
+      <li class="lane" data-city="hn" data-branch="hoan-kiem">
+        <div class="lane__id">
+          <span class="lane__name">CineSmart Hoàn Kiếm</span>
+          <span class="lane__addr">8 Tràng Tiền</span>
+          <span class="lane__price">80.000 ₫ một ghế</span>
+        </div>
+        <div class="lane__track">
+          <div class="track__hours" aria-hidden="true"><span class="track__hour is-first" style="--t:0">17:00</span><span class="track__hour is-minor" style="--t:11.76">18:00</span><span class="track__hour " style="--t:23.53">19:00</span><span class="track__hour is-minor" style="--t:35.29">20:00</span><span class="track__hour " style="--t:47.06">21:00</span><span class="track__hour is-minor" style="--t:58.82">22:00</span><span class="track__hour " style="--t:70.59">23:00</span><span class="track__hour is-edge" style="--t:76.47">23:30</span><span class="track__hour is-minor is-late" style="--t:82.35">00:00</span><span class="track__hour is-minor is-late is-last" style="--t:94.12">01:00</span></div>
+          <span class="gridline" style="--t:11.76" aria-hidden="true"></span><span class="gridline" style="--t:23.53" aria-hidden="true"></span><span class="gridline" style="--t:35.29" aria-hidden="true"></span><span class="gridline" style="--t:47.06" aria-hidden="true"></span><span class="gridline" style="--t:58.82" aria-hidden="true"></span><span class="gridline" style="--t:70.59" aria-hidden="true"></span><span class="gridline gridline--edge" style="--t:76.47" aria-hidden="true"></span><span class="gridline" style="--t:82.35" aria-hidden="true"></span><span class="gridline" style="--t:94.12" aria-hidden="true"></span><span class="gridline gridline--now" style="--t:15.69" aria-hidden="true"></span>
+          <a class="slot" style="--s:0;--w:32.55" href="seatmap.html" aria-label="Suất 17:00 tại CineSmart Hoàn Kiếm, Phòng 1, 80.000 ₫, còn 44 ghế, tan lúc 19:46.">
+        <span class="slot__time slot__time--in"><span class="slot__lbl">vào</span><time datetime="17:00">17:00</time></span>
+        <span class="slot__time slot__time--out"><span class="slot__lbl">ra</span><time datetime="19:46">19:46</time></span>
+        <span class="slot__price">80.000 ₫</span>
+        <span class="slot__foot"><span class="slot__room">Phòng 1</span><span class="slot__seats">còn 44 ghế</span></span></a><a class="slot" style="--s:41.18;--w:32.55" href="seatmap.html" aria-label="Suất 20:30 tại CineSmart Hoàn Kiếm, Phòng 1, 80.000 ₫, còn 9 ghế, tan lúc 23:16.">
+        <span class="slot__time slot__time--in"><span class="slot__lbl">vào</span><time datetime="20:30">20:30</time></span>
+        <span class="slot__time slot__time--out"><span class="slot__lbl">ra</span><time datetime="23:16">23:16</time></span>
+        <span class="slot__price">80.000 ₫</span>
+        <span class="slot__foot"><span class="slot__room">Phòng 1</span><span class="slot__seats">còn 9 ghế</span></span></a>
+        </div>
+      </li>
+      </ol>
+      <p class="axis__caption">Chạm vào một khối để giữ ghế cho suất đó.</p>
+    </div>
+    </section>
+    <section class="section shell" id="day" aria-labelledby="day-title">
+      <div class="section__head">
+        <h2 id="day-title">Suất ban ngày</h2>
+        <p class="section__note">Các suất trước 17:00, xếp thành bảng: giờ vào, phòng, giờ tan, giá và số ghế còn trống.</p>
+      </div>
+      <table class="daytable">
+        <thead>
+          <tr><th scope="col">Chi nhánh</th><th scope="col">Vào</th><th scope="col">Phòng</th><th scope="col">Tan</th><th scope="col">Giá</th><th scope="col">Ghế</th></tr>
+        </thead>
+        <tbody>
+        <tr data-city="hcm" data-branch="nguyen-hue">
+            <th scope="row">CineSmart Nguyễn Huệ</th>
+            <td data-label="Vào"><time datetime="09:00">09:00</time></td>
+            <td data-label="Phòng">Phòng 2</td>
+            <td data-label="Tan">11:46</td>
+            <td data-label="Giá">95.000 ₫</td>
+            <td data-label="Ghế">còn 34 ghế</td>
+          </tr>
+        <tr data-city="hcm" data-branch="nguyen-hue">
+            <th scope="row">CineSmart Nguyễn Huệ</th>
+            <td data-label="Vào"><time datetime="12:15">12:15</time></td>
+            <td data-label="Phòng">Phòng 1</td>
+            <td data-label="Tan">15:01</td>
+            <td data-label="Giá">95.000 ₫</td>
+            <td data-label="Ghế">còn 61 ghế</td>
+          </tr>
+        <tr data-city="hcm" data-branch="nguyen-hue">
+            <th scope="row">CineSmart Nguyễn Huệ</th>
+            <td data-label="Vào"><time datetime="15:30">15:30</time></td>
+            <td data-label="Phòng">Phòng 2</td>
+            <td data-label="Tan">18:16</td>
+            <td data-label="Giá">95.000 ₫</td>
+            <td data-label="Ghế">còn 8 ghế</td>
+          </tr>
+        <tr data-city="hcm" data-branch="thao-dien">
+            <th scope="row">CineSmart Thảo Điền</th>
+            <td data-label="Vào"><time datetime="10:30">10:30</time></td>
+            <td data-label="Phòng">Phòng 1</td>
+            <td data-label="Tan">13:16</td>
+            <td data-label="Giá">85.000 ₫</td>
+            <td data-label="Ghế">còn 41 ghế</td>
+          </tr>
+        <tr data-city="hcm" data-branch="thao-dien">
+            <th scope="row">CineSmart Thảo Điền</th>
+            <td data-label="Vào"><time datetime="14:30">14:30</time></td>
+            <td data-label="Phòng">Phòng 1</td>
+            <td data-label="Tan">17:16</td>
+            <td data-label="Giá">85.000 ₫</td>
+            <td data-label="Ghế">còn 6 ghế</td>
+          </tr>
+        <tr data-city="hn" data-branch="cau-giay">
+            <th scope="row">CineSmart Cầu Giấy</th>
+            <td data-label="Vào"><time datetime="09:30">09:30</time></td>
+            <td data-label="Phòng">Phòng A</td>
+            <td data-label="Tan">12:16</td>
+            <td data-label="Giá">90.000 ₫</td>
+            <td data-label="Ghế">còn 88 ghế</td>
+          </tr>
+        <tr data-city="hn" data-branch="cau-giay">
+            <th scope="row">CineSmart Cầu Giấy</th>
+            <td data-label="Vào"><time datetime="12:45">12:45</time></td>
+            <td data-label="Phòng">Phòng B</td>
+            <td data-label="Tan">15:31</td>
+            <td data-label="Giá">90.000 ₫</td>
+            <td data-label="Ghế">còn 19 ghế</td>
+          </tr>
+        <tr data-city="hn" data-branch="cau-giay">
+            <th scope="row">CineSmart Cầu Giấy</th>
+            <td data-label="Vào"><time datetime="16:00">16:00</time></td>
+            <td data-label="Phòng">Phòng A</td>
+            <td data-label="Tan">18:46</td>
+            <td data-label="Giá">90.000 ₫</td>
+            <td data-label="Ghế">còn 52 ghế</td>
+          </tr>
+        <tr data-city="hn" data-branch="hoan-kiem">
+            <th scope="row">CineSmart Hoàn Kiếm</th>
+            <td data-label="Vào"><time datetime="11:00">11:00</time></td>
+            <td data-label="Phòng">Phòng 1</td>
+            <td data-label="Tan">13:46</td>
+            <td data-label="Giá">80.000 ₫</td>
+            <td data-label="Ghế">còn 22 ghế</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+    </main>
+  <footer class="foot">
+    <div class="shell foot__inner">
+      <p class="foot__note">Prototype tĩnh, hướng E “Buổi tối”. Dữ liệu demo lấy từ CatalogSeeder.</p>
+      <a class="foot__link" href="index.html">Giới thiệu hướng này</a>
+    </div>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>

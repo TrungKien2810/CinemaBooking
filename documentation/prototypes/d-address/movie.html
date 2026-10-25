@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dune: Part Two — CineSmart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body data-page="movie">
+<a class="skip" href="#main">Bỏ qua điều hướng</a>
+
+<header class="mast">
+  <div class="wrap mast__in">
+    <a class="wordmark" href="index.html">Cine<span class="wordmark__b">Smart</span></a>
+    <nav class="mast__nav" aria-label="Chính">
+      <a href="home.html">Hôm nay</a>
+      <a href="movie.html" aria-current="page">Phim</a>
+    </nav>
+    <p class="mast__where" id="mast-where">
+      <a href="home.html"><span class="mast__where-k">Đang ở</span><span data-branch-name>CineSmart Nguyễn Huệ</span></a>
+    </p>
+  </div>
+</header>
+
+<main id="main">
+
+  <div class="wrap where">
+    <p class="where__line">Bạn đang ở cửa <strong data-branch-name>CineSmart Nguyễn Huệ</strong>. Suất bên dưới xếp theo cửa đó trước.</p>
+    <a class="link" href="home.html">Đổi cửa rạp</a>
+  </div>
+
+  <article class="movie wrap" aria-labelledby="movie-title">
+    <div class="poster poster--dune poster--movie" aria-hidden="true">
+      <span class="poster__brand">CineSmart</span>
+      <span class="poster__title">Dune<span class="poster__title-b">Part Two</span></span>
+      <span class="poster__foot">
+        <span class="poster__genre">Khoa học viễn tưởng</span>
+        <span class="poster__mins">166 phút</span>
+      </span>
+    </div>
+    <div class="movie__body">
+      <h1 class="movie__title" id="movie-title">Dune: Part Two</h1>
+      <p class="movie__lede">Paul Atreides liên minh với người Fremen để trả thù những kẻ đã hủy diệt gia tộc mình.</p>
+      <dl class="specs">
+        <div class="specs__row"><dt>Thể loại</dt><dd>Khoa học viễn tưởng</dd></div>
+        <div class="specs__row"><dt>Thời lượng</dt><dd>166 phút</dd></div>
+        <div class="specs__row"><dt>Khởi chiếu</dt><dd>01/03/2024</dd></div>
+        <div class="specs__row"><dt>Giá từ</dt><dd data-price>95.000 ₫</dd></div>
+      </dl>
+    </div>
+  </article>
+
+  <section class="showtimes wrap" aria-labelledby="st-title">
+    <div class="showtimes__head">
+      <h2 class="showtimes__title" id="st-title">Suất chiếu</h2>
+      <p class="showtimes__state" id="st-state">Ngày 21/10, cả 4 chi nhánh.</p>
+    </div>
+
+    <div class="dates" role="group" aria-label="Chọn ngày chiếu">
+      <button class="date" type="button" data-day="0" aria-pressed="true">
+        <span class="date__dow">Hôm nay</span><span class="date__d">21/10</span>
+      </button>
+      <button class="date" type="button" data-day="1" aria-pressed="false">
+        <span class="date__dow">T5</span><span class="date__d">22/10</span>
+      </button>
+      <button class="date" type="button" data-day="2" aria-pressed="false">
+        <span class="date__dow">T6</span><span class="date__d">23/10</span>
+      </button>
+      <button class="date" type="button" data-day="3" aria-pressed="false">
+        <span class="date__dow">T7</span><span class="date__d">24/10</span>
+      </button>
+      <button class="date" type="button" data-day="4" aria-pressed="false">
+        <span class="date__dow">CN</span><span class="date__d">25/10</span>
+      </button>
+      <button class="date" type="button" data-day="5" aria-pressed="false">
+        <span class="date__dow">T2</span><span class="date__d">26/10</span>
+      </button>
+      <button class="date" type="button" data-day="6" aria-pressed="false">
+        <span class="date__dow">T3</span><span class="date__d">27/10</span>
+      </button>
+    </div>
+
+    <div class="cities">
+      <span class="cities__label">Thành phố</span>
+      <div class="cities__tabs" role="group" aria-label="Lọc theo thành phố">
+        <button class="tab" type="button" data-city="hcm" aria-pressed="false">TP. Hồ Chí Minh</button>
+        <button class="tab" type="button" data-city="hanoi" aria-pressed="false">Hà Nội</button>
+      </div>
+      <p class="cities__state" id="city-state">Đang hiện cả 4 chi nhánh.</p>
+    </div>
+
+    <div class="branches" id="branches">
+
+      <section class="branch" data-city="hcm" data-branch="nguyen-hue" aria-labelledby="b1-name">
+        <div class="branch__head">
+          <span class="branch__no">01</span>
+          <h3 class="branch__name" id="b1-name">CineSmart Nguyễn Huệ</h3>
+          <p class="branch__addr">72 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh</p>
+          <p class="branch__rooms">Phòng 1 8×12, phòng 2 6×10</p>
+          <p class="branch__here" data-here="nguyen-hue" hidden>Bạn đang ở cửa này</p>
+        </div>
+        <div class="branch__slots">
+          <button class="slot" type="button" data-time="09:00" data-room="Phòng 1" data-left="21">
+            <span class="slot__t">09:00</span>
+            <span class="slot__room">Phòng 1</span>
+            <span class="slot__price">95.000 ₫</span>
+            <span class="slot__left">còn 21 ghế</span>
+          </button>
+          <button class="slot" type="button" data-time="18:45" data-room="Phòng 1" data-left="42">
+            <span class="slot__t">18:45</span>
+            <span class="slot__room">Phòng 1</span>
+            <span class="slot__price">95.000 ₫</span>
+            <span class="slot__left">còn 42 ghế</span>
+          </button>
+        </div>
+        <span class="branch__sill" aria-hidden="true"></span>
+      </section>
+
+      <section class="branch" data-city="hcm" data-branch="thao-dien" aria-labelledby="b2-name">
+        <div class="branch__head">
+          <span class="branch__no">02</span>
+          <h3 class="branch__name" id="b2-name">CineSmart Thảo Điền</h3>
+          <p class="branch__addr">12 Quốc Hương, Thảo Điền, TP. Hồ Chí Minh</p>
+          <p class="branch__rooms">Phòng 1 7×10</p>
+          <p class="branch__here" data-here="thao-dien" hidden>Bạn đang ở cửa này</p>
+        </div>
+        <div class="branch__slots">
+          <button class="slot" type="button" data-time="14:30" data-room="Phòng 1" data-left="18">
+            <span class="slot__t">14:30</span>
+            <span class="slot__room">Phòng 1</span>
+            <span class="slot__price">85.000 ₫</span>
+            <span class="slot__left">còn 18 ghế</span>
+          </button>
+          <button class="slot slot--out" type="button" data-time="19:00" data-room="Phòng 1" data-left="0" disabled>
+            <span class="slot__t">19:00</span>
+            <span class="slot__room">Phòng 1</span>
+            <span class="slot__price">85.000 ₫</span>
+            <span class="slot__left">hết chỗ</span>
+          </button>
+        </div>
+        <span class="branch__sill" aria-hidden="true"></span>
+      </section>
+
+      <section class="branch" data-city="hanoi" data-branch="cau-giay" aria-labelledby="b3-name">
+        <div class="branch__head">
+          <span class="branch__no">03</span>
+          <h3 class="branch__name" id="b3-name">CineSmart Cầu Giấy</h3>
+          <p class="branch__addr">15 Trần Duy Hưng, Hà Nội</p>
+          <p class="branch__rooms">Phòng A 10×14, phòng B 5×8</p>
+          <p class="branch__here" data-here="cau-giay" hidden>Bạn đang ở cửa này</p>
+        </div>
+        <div class="branch__slots">
+          <button class="slot" type="button" data-time="12:45" data-room="Phòng A" data-left="52">
+            <span class="slot__t">12:45</span>
+            <span class="slot__room">Phòng A</span>
+            <span class="slot__price">90.000 ₫</span>
+            <span class="slot__left">còn 52 ghế</span>
+          </button>
+          <button class="slot" type="button" data-time="19:15" data-room="Phòng A" data-left="12">
+            <span class="slot__t">19:15</span>
+            <span class="slot__room">Phòng A</span>
+            <span class="slot__price">90.000 ₫</span>
+            <span class="slot__left">còn 12 ghế</span>
+          </button>
+          <button class="slot" type="button" data-time="22:30" data-room="Phòng A" data-left="48">
+            <span class="slot__t">22:30</span>
+            <span class="slot__room">Phòng A</span>
+            <span class="slot__price">90.000 ₫</span>
+            <span class="slot__left">còn 48 ghế</span>
+          </button>
+        </div>
+        <span class="branch__sill" aria-hidden="true"></span>
+      </section>
+
+      <section class="branch" data-city="hanoi" data-branch="hoan-kiem" aria-labelledby="b4-name">
+        <div class="branch__head">
+          <span class="branch__no">04</span>
+          <h3 class="branch__name" id="b4-name">CineSmart Hoàn Kiếm</h3>
+          <p class="branch__addr">8 Tràng Tiền, Hà Nội</p>
+          <p class="branch__rooms">Phòng 1 6×9</p>
+          <p class="branch__here" data-here="hoan-kiem" hidden>Bạn đang ở cửa này</p>
+        </div>
+        <div class="branch__slots">
+          <button class="slot" type="button" data-time="11:00" data-room="Phòng 1" data-left="20">
+            <span class="slot__t">11:00</span>
+            <span class="slot__room">Phòng 1</span>
+            <span class="slot__price">80.000 ₫</span>
+            <span class="slot__left">còn 20 ghế</span>
+          </button>
+          <button class="slot" type="button" data-time="20:30" data-room="Phòng 1" data-left="9">
+            <span class="slot__t">20:30</span>
+            <span class="slot__room">Phòng 1</span>
+            <span class="slot__price">80.000 ₫</span>
+            <span class="slot__left">còn 9 ghế</span>
+          </button>
+        </div>
+        <span class="branch__sill" aria-hidden="true"></span>
+      </section>
+
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <p>CineSmart — rạp là thứ được chọn trước, phim là thứ lọc sau.</p>
+    <p class="foot__note">Prototype tĩnh, dữ liệu demo từ CatalogSeeder.</p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

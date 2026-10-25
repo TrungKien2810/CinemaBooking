@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CinemaBooking.Smart — Thanh toán (Đèn neon)</title>
+<meta name="description" content="Hướng H — Đèn neon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+<header class="hero hero--small">
+  <h1 class="hero__title">THANH TOÁN</h1>
+  <nav class="tabbar">
+    <a href="home.html">Trang chủ</a>
+    <a href="movie.html">Phim</a>
+    <a href="seatmap.html">Chỗ ngồi</a>
+    <a href="checkout.html" aria-current="page">Thanh toán</a>
+  </nav>
+</header>
+
+<main class="main">
+  <div class="receipt-card">
+    <div class="receipt-card__row"><span>Vé xem phim</span><span>95.000₫</span></div>
+    <div class="receipt-card__row"><span>Combo bắp nước</span><span>65.000₫</span></div>
+    <div class="receipt-card__row receipt-card__row--total"><span>Tổng</span><span>160.000₫</span></div>
+  </div>
+
+  <form class="form" onsubmit="return false">
+    <label class="field"><span>Họ tên</span><input type="text" placeholder="Nguyễn Văn A"></label>
+    <label class="field"><span>Email</span><input type="email" placeholder="you@example.com"></label>
+    <div class="actions">
+      <button class="btn btn--primary" type="submit">Xác nhận thanh toán</button>
+    </div>
+  </form>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

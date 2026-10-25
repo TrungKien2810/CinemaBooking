@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hôm nay — CineSmart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body data-page="home">
+<a class="skip" href="#main">Bỏ qua điều hướng</a>
+
+<header class="mast">
+  <div class="wrap mast__in">
+    <a class="wordmark" href="index.html">Cine<span class="wordmark__b">Smart</span></a>
+    <nav class="mast__nav" aria-label="Chính">
+      <a href="home.html" aria-current="page">Hôm nay</a>
+      <a href="movie.html">Phim</a>
+    </nav>
+    <p class="mast__where" hidden id="mast-where">
+      <a href="home.html"><span class="mast__where-k">Đang ở</span><span data-branch-name>CineSmart Nguyễn Huệ</span></a>
+    </p>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero wrap">
+    <p class="hero__date">Hôm nay · 21/10</p>
+    <h1 class="hero__title">Tối nay bạn đi rạp nào?</h1>
+    <p class="hero__lede">Bốn cửa đang mở. Chọn cửa trước — phim, giá và suất bên dưới sẽ theo đúng rạp đó, không phải nhớ lại lần lọc trước.</p>
+  </section>
+
+  <section class="board wrap" aria-labelledby="board-title">
+    <div class="board__head">
+      <h2 class="board__title" id="board-title">Cửa rạp</h2>
+      <p class="board__state">Đang chọn <strong data-branch-name>CineSmart Nguyễn Huệ</strong></p>
+    </div>
+
+    <div class="board__grid" id="door-board" role="group" aria-label="Chọn rạp chiếu">
+
+      <button class="door" type="button" data-branch="nguyen-hue" aria-pressed="true"
+              aria-labelledby="d1-name d1-addr" aria-describedby="d1-times">
+        <span class="door__top">
+          <span class="door__no">01</span>
+          <span class="door__city">TP. Hồ Chí Minh</span>
+          <span class="door__flag" aria-hidden="true">Đang chọn</span>
+        </span>
+        <span class="door__name" id="d1-name">CineSmart Nguyễn Huệ</span>
+        <span class="door__addr" id="d1-addr">72 Nguyễn Huệ, Quận 1</span>
+        <span class="door__rooms">Phòng 1 8×12, phòng 2 6×10</span>
+        <span class="shows" id="d1-times">
+          <span class="show">
+            <span class="show__t">15:30</span>
+            <span class="show__f">Inside Out 2</span>
+            <span class="show__l">còn 64 ghế</span>
+          </span>
+          <span class="show">
+            <span class="show__t">18:45</span>
+            <span class="show__f">Dune: Part Two</span>
+            <span class="show__l">còn 42 ghế</span>
+          </span>
+          <span class="show">
+            <span class="show__t">22:00</span>
+            <span class="show__f">Nhà Bà Nữ</span>
+            <span class="show__l show__l--out">hết chỗ</span>
+          </span>
+        </span>
+        <span class="door__sill" aria-hidden="true"></span>
+      </button>
+
+      <button class="door" type="button" data-branch="thao-dien" aria-pressed="false"
+              aria-labelledby="d2-name d2-addr" aria-describedby="d2-times">
+        <span class="door__top">
+          <span class="door__no">02</span>
+          <span class="door__city">TP. Hồ Chí Minh</span>
+          <span class="door__flag" aria-hidden="true">Đang chọn</span>
+        </span>
+        <span class="door__name" id="d2-name">CineSmart Thảo Điền</span>
+        <span class="door__addr" id="d2-addr">12 Quốc Hương, Thảo Điền</span>
+        <span class="door__rooms">Phòng 1 7×10</span>
+        <span class="shows" id="d2-times">
+          <span class="show">
+            <span class="show__t">10:30</span>
+            <span class="show__f">Inside Out 2</span>
+            <span class="show__l">còn 36 ghế</span>
+          </span>
+          <span class="show">
+            <span class="show__t">14:30</span>
+            <span class="show__f">Dune: Part Two</span>
+            <span class="show__l">còn 18 ghế</span>
+          </span>
+          <span class="show">
+            <span class="show__t">19:00</span>
+            <span class="show__f">Dune: Part Two</span>
+            <span class="show__l show__l--out">hết chỗ</span>
+          </span>
+        </span>
+        <span class="door__sill" aria-hidden="true"></span>
+      </button>
+
+      <button class="door" type="button" data-branch="cau-giay" aria-pressed="false"
+              aria-labelledby="d3-name d3-addr" aria-describedby="d3-times">
+        <span class="door__top">
+          <span class="door__no">03</span>
+          <span class="door__city">Hà Nội</span>
+          <span class="door__flag" aria-hidden="true">Đang chọn</span>
+        </span>
+        <span class="door__name" id="d3-name">CineSmart Cầu Giấy</span>
+        <span class="door__addr" id="d3-addr">15 Trần Duy Hưng</span>
+        <span class="door__rooms">Phòng A 10×14, phòng B 5×8</span>
+        <span class="shows" id="d3-times">
+          <span class="show">
+            <span class="show__t">16:00</span>
+            <span class="show__f">Inside Out 2</span>
+            <span class="show__l">còn 30 ghế</span>
+          </span>
+          <span class="show">
+            <span class="show__t">19:15</span>
+            <span class="show__f">Dune: Part Two</span>
+            <span class="show__l">còn 12 ghế</span>
+          </span>
+          <span class="show">
+            <span class="show__t">22:30</span>
+            <span class="show__f">Dune: Part Two</span>
+            <span class="show__l">còn 48 ghế</span>
+          </span>
+        </span>
+        <span class="door__sill" aria-hidden="true"></span>
+      </button>
+
+      <button class="door" type="button" data-branch="hoan-kiem" aria-pressed="false"
+              aria-labelledby="d4-name d4-addr" aria-describedby="d4-times">
+        <span class="door__top">
+          <span class="door__no">04</span>
+          <span class="door__city">Hà Nội</span>
+          <span class="door__flag" aria-hidden="true">Đang chọn</span>
+        </span>
+        <span class="door__name" id="d4-name">CineSmart Hoàn Kiếm</span>
+        <span class="door__addr" id="d4-addr">8 Tràng Tiền</span>
+        <span class="door__rooms">Phòng 1 6×9</span>
+        <span class="shows" id="d4-times">
+          <span class="show">
+            <span class="show__t">11:00</span>
+            <span class="show__f">Dune: Part Two</span>
+            <span class="show__l">còn 20 ghế</span>
+          </span>
+          <span class="show">
+            <span class="show__t">17:00</span>
+            <span class="show__f">Mắt Biếc</span>
+            <span class="show__l">còn 14 ghế</span>
+          </span>
+          <span class="show">
+            <span class="show__t">20:30</span>
+            <span class="show__f">Dune: Part Two</span>
+            <span class="show__l">còn 9 ghế</span>
+          </span>
+        </span>
+        <span class="door__sill" aria-hidden="true"></span>
+      </button>
+
+    </div>
+  </section>
+
+  <section class="feature wrap" aria-labelledby="feature-title">
+    <div class="poster poster--dune poster--feature" aria-hidden="true">
+      <span class="poster__brand">CineSmart</span>
+      <span class="poster__title">Dune<span class="poster__title-b">Part Two</span></span>
+      <span class="poster__foot">
+        <span class="poster__genre">Khoa học viễn tưởng</span>
+        <span class="poster__mins">166 phút</span>
+      </span>
+    </div>
+    <div class="feature__body">
+      <p class="feature__kicker">Phim nổi bật ở cửa này</p>
+      <h2 class="feature__title" id="feature-title">Dune: Part Two</h2>
+      <p class="feature__lede">Paul Atreides liên minh với người Fremen để trả thù những kẻ đã hủy diệt gia tộc mình.</p>
+      <dl class="specs">
+        <div class="specs__row"><dt>Thể loại</dt><dd>Khoa học viễn tưởng</dd></div>
+        <div class="specs__row"><dt>Thời lượng</dt><dd>166 phút</dd></div>
+        <div class="specs__row"><dt>Khởi chiếu</dt><dd>01/03/2024</dd></div>
+        <div class="specs__row"><dt>Giá từ</dt><dd data-price>95.000 ₫</dd></div>
+      </dl>
+      <p class="feature__next" id="feature-next">Suất gần nhất ở CineSmart Nguyễn Huệ: 18:45, phòng 1, còn 42 ghế.</p>
+      <a class="link" href="movie.html">Xem suất chiếu của Dune: Part Two</a>
+    </div>
+  </section>
+
+  <section class="catalogue wrap" aria-labelledby="list-title">
+    <div class="catalogue__head">
+      <h2 class="catalogue__title" id="list-title">Đang chiếu ở <span data-branch-name>CineSmart Nguyễn Huệ</span></h2>
+      <p class="catalogue__state" id="list-state">5 phim ở rạp này, 1 phim sắp chiếu. Giá vé từ 95.000 ₫.</p>
+    </div>
+
+    <div class="filters" role="search" aria-label="Tìm phim">
+      <div class="field field--search">
+        <label for="q">Tìm phim</label>
+        <input id="q" name="q" type="search" autocomplete="off" placeholder="Nhập tên phim" data-search>
+      </div>
+      <div class="genres" role="group" aria-label="Lọc theo thể loại">
+        <button class="tab" type="button" data-genre="all" aria-pressed="true">Tất cả</button>
+        <button class="tab" type="button" data-genre="Tình cảm" aria-pressed="false">Tình cảm</button>
+        <button class="tab" type="button" data-genre="Hài" aria-pressed="false">Hài</button>
+        <button class="tab" type="button" data-genre="Khoa học viễn tưởng" aria-pressed="false">Khoa học viễn tưởng</button>
+        <button class="tab" type="button" data-genre="Hoạt hình" aria-pressed="false">Hoạt hình</button>
+        <button class="tab" type="button" data-genre="Chiến tranh" aria-pressed="false">Chiến tranh</button>
+      </div>
+    </div>
+
+    <div class="films" id="film-list">
+      <div class="films__head" aria-hidden="true">
+        <span class="films__c-no">STT</span>
+        <span class="films__c-name">Phim</span>
+        <span class="films__c-dur">Thời lượng</span>
+        <span class="films__c-price">Giá từ</span>
+        <span class="films__c-status">Trạng thái</span>
+      </div>
+
+      <a class="film" href="movie.html?branch=nguyen-hue" data-film="mat-biec"
+         data-branches="nguyen-hue hoan-kiem">
+        <span class="film__no">01</span>
+        <span class="film__id">
+          <span class="film__name">Mắt Biếc</span>
+          <span class="film__genre">Tình cảm</span>
+        </span>
+        <span class="film__dur">117 phút</span>
+        <span class="film__price" data-price>95.000 ₫</span>
+        <span class="film__status">Đang chiếu</span>
+      </a>
+
+      <a class="film" href="movie.html?branch=nguyen-hue" data-film="nha-ba-nu"
+         data-branches="nguyen-hue cau-giay">
+        <span class="film__no">02</span>
+        <span class="film__id">
+          <span class="film__name">Nhà Bà Nữ</span>
+          <span class="film__genre">Hài</span>
+        </span>
+        <span class="film__dur">106 phút</span>
+        <span class="film__price" data-price>95.000 ₫</span>
+        <span class="film__status">Đang chiếu</span>
+      </a>
+
+      <a class="film" href="movie.html?branch=nguyen-hue" data-film="dune"
+         data-branches="nguyen-hue thao-dien cau-giay hoan-kiem">
+        <span class="film__no">03</span>
+        <span class="film__id">
+          <span class="film__name">Dune: Part Two</span>
+          <span class="film__genre">Khoa học viễn tưởng</span>
+        </span>
+        <span class="film__dur">166 phút</span>
+        <span class="film__price" data-price>95.000 ₫</span>
+        <span class="film__status">Đang chiếu</span>
+      </a>
+
+      <a class="film" href="movie.html?branch=nguyen-hue" data-film="inside-out-2"
+         data-branches="nguyen-hue thao-dien cau-giay">
+        <span class="film__no">04</span>
+        <span class="film__id">
+          <span class="film__name">Inside Out 2</span>
+          <span class="film__genre">Hoạt hình</span>
+        </span>
+        <span class="film__dur">96 phút</span>
+        <span class="film__price" data-price>95.000 ₫</span>
+        <span class="film__status">Đang chiếu</span>
+      </a>
+
+      <a class="film" href="movie.html?branch=nguyen-hue" data-film="diadao"
+         data-branches="nguyen-hue thao-dien cau-giay hoan-kiem">
+        <span class="film__no">05</span>
+        <span class="film__id">
+          <span class="film__name">Địa Đạo: Mặt Trời Trong Bóng Tối</span>
+          <span class="film__genre">Chiến tranh</span>
+        </span>
+        <span class="film__dur">128 phút</span>
+        <span class="film__price" data-price>95.000 ₫</span>
+        <span class="film__status film__status--soon">Sắp chiếu</span>
+      </a>
+    </div>
+
+    <p class="films__empty" id="film-empty" hidden>Không có phim nào khớp. Xoá từ khoá hoặc chọn lại “Tất cả” để xem 5 phim.</p>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <p>CineSmart — rạp là thứ được chọn trước, phim là thứ lọc sau.</p>
+    <p class="foot__note">Prototype tĩnh, dữ liệu demo từ CatalogSeeder.</p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+/* ==========================================================================
+   B — Signal · design tokens
+   Đây là nguồn duy nhất cho mọi màu / kích thước / khoảng cách của hướng B.
+   screens.css chỉ được dùng var(--token); không viết hex lẻ.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* --- Màu: bề mặt --------------------------------------------------- */
+  --c-bg:            #0D0F14;   /* than — nền sâu nhất */
+  --c-surface:       #161A22;   /* bề mặt chung */
+  --c-surface-raised:#1E232D;   /* bề mặt nâng: panel, ô nhập */
+  --c-surface-sunken:#101319;   /* lõm: ghế đã đặt, ô trống */
+  --c-border:        #2A3140;   /* viền hairline — cơ chế tách bề mặt chính */
+  --c-border-strong: #3B4454;   /* viền dày hơn cho trạng thái hover/active */
+
+  /* --- Màu: chữ ------------------------------------------------------ */
+  --c-text:      #EEF1F6;
+  --c-text-muted:#98A2B3;
+  --c-text-dim:  #6C7787;   /* KHÔNG dùng cho chữ nhỏ (4.2:1) — chỉ cho màu thanh, đường kẻ */
+
+  /* --- Màu: nhấn ------------------------------------------------------ */
+  --c-accent:      #3B6BFF;
+  --c-accent-ink:  #FFFFFF;
+  --c-accent-soft: rgba(59, 107, 255, 0.16);
+  --c-accent-line: rgba(59, 107, 255, 0.46);
+  /* Bản sâu/sáng của nhấn — dùng khi nền mang chữ trắng hoặc khi chữ màu nhấn nằm trên nền tối. */
+  --c-accent-deep: #2C53D8;   /* nền nút chính — chữ trắng 6.3:1 */
+  --c-accent-deep-hi: #3A66E8;/* nền nút chính khi hover — 4.9:1 */
+  --c-accent-text: #7FA0FF;   /* chữ màu nhấn trên nền than — 7.5:1 */
+
+  --c-warn:      #FFB020;   /* sắp hết / người khác đang giữ */
+  --c-warn-deep: #E08A00;   /* sắp hết — mức khan hiếm cao hơn */
+  --c-warn-soft: rgba(255, 176, 32, 0.14);
+  --c-warn-line: rgba(255, 176, 32, 0.44);
+
+  --c-ok:      #2DD4A7;   /* ghế bạn đang giữ / thành công */
+  --c-ok-soft: rgba(45, 212, 167, 0.14);
+  --c-ok-line: rgba(45, 212, 167, 0.50);
+
+  --c-danger:      #F2736B; /* lỗi — dùng có chủ đích, không trang trí */
+  --c-danger-soft: rgba(242, 115, 107, 0.14);
+  --c-danger-line: rgba(242, 115, 107, 0.46);
+
+  /* --- Màu: ghế (4 trạng thái) ---------------------------------------- */
+  --c-seat-free:    #1E232D;
+  --c-seat-free-line:#3B4454;
+  --c-seat-mine:    #2DD4A7;
+  --c-seat-held:    #FFB020;
+  --c-seat-booked:  #141821;
+  --c-seat-booked-alt: #191E27;
+
+  /* --- Quầng sáng (glow) cho ghế đang giữ ----------------------------- */
+  --c-ok-glow:     rgba(45, 212, 167, 0.45);
+  --c-accent-glow: rgba(59, 107, 255, 0.38);
+
+  /* --- Màu nền poster dựng bằng chữ (mỗi phim một nền) --------------- */
+  --c-poster-1-bg:   #16302B;  --c-poster-1-rule: #3FBF9B;  /* Mắt Biếc */
+  --c-poster-2-bg:   #3A2015;  --c-poster-2-rule: #E08A45;  /* Nhà Bà Nữ */
+  --c-poster-3-bg:   #33281A;  --c-poster-3-rule: #FFB020;  /* Dune: Part Two */
+  --c-poster-4-bg:   #232A4A;  --c-poster-4-rule: #6E8CFF;  /* Inside Out 2 */
+  --c-poster-5-bg:   #2C1A1C;  --c-poster-5-rule: #D9706A;  /* Địa Đạo */
+
+  /* --- Chữ ------------------------------------------------------------- */
+  --font-display: "Chivo", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+  --font-body:    "Manrope", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+
+  --fs-100: 0.75rem;    /* 12 — nhãn ghế, ký hiệu trạng thái, meta nhỏ */
+  --fs-200: 0.8125rem;  /* 13 — phụ đề, chú thích */
+  --fs-300: 0.875rem;   /* 14 — chữ phụ, nhãn nút nhỏ */
+  --fs-400: 1rem;       /* 16 — chữ thân */
+  --fs-500: 1.1875rem;  /* 19 — tiêu đề khối */
+  --fs-600: 1.5rem;     /* 24 — tiêu đề mục */
+  --fs-700: 2rem;       /* 32 — tiêu đề trang */
+  --fs-800: clamp(2.375rem, 1.35rem + 3.4vw, 3.25rem); /* 38–52 — display */
+  --fs-900: clamp(2.75rem, 1.6rem + 5vw, 4.5rem);      /* 44–72 — số lớn */
+  --measure: 65ch;         /* chiều dài dòng chữ thân (55–75 ký tự) */
+
+  --lh-display: 1.04;
+  --lh-tight:   1.22;
+  --lh-snug:    1.38;
+  --lh-body:    1.62;
+
+  --tr-display: -0.03em;
+  --tr-tight:   -0.018em;
+  --tr-normal:  0;
+  --tr-wide:    0.02em;
+
+  /* --- Khoảng cách (tỉ lệ 1:2:4) -------------------------------------- */
+  --sp-1: 0.25rem;  /* 4  */
+  --sp-2: 0.5rem;   /* 8  */
+  --sp-3: 0.75rem;  /* 12 */
+  --sp-4: 1rem;     /* 16 */
+  --sp-5: 1.5rem;   /* 24 */
+  --sp-6: 2rem;     /* 32 */
+  --sp-7: 3rem;     /* 48 */
+  --sp-8: 4rem;     /* 64 */
+  --sp-9: 6rem;     /* 96 */
+
+  /* --- Bo góc (gắn với kích thước phần tử) ---------------------------- */
+  --r-xs:   3px;    /* ghế, chip nhỏ */
+  --r-sm:   6px;    /* nút, ô nhập */
+  --r-md:   10px;   /* thẻ nội dung */
+  --r-lg:   16px;   /* panel, sheet */
+  --r-pill: 999px;  /* chỉ dùng cho thứ thực sự tròn: badge, avatar */
+
+  /* --- Đổ bóng (tông theo xanh than, không dùng đen thuần) -------------- */
+  --sh-1: 0 1px 2px rgba(6, 8, 13, 0.45);
+  --sh-2: 0 10px 28px -12px rgba(6, 8, 13, 0.72);
+  --sh-3: 0 24px 56px -20px rgba(6, 8, 13, 0.85);
+
+  /* --- Chuyển động ---------------------------------------------------- */
+  --dur-fast: 110ms;
+  --dur-base: 190ms;
+  --dur-slow: 280ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in:  cubic-bezier(0.5, 0, 1, 1);
+
+  /* --- Kích thước cố định --------------------------------------------- */
+  --tap-min: 44px;        /* mục tiêu chạm tối thiểu */
+  --seat-size: 44px;      /* cạnh ghế */
+  --seat-gap: 6px;
+  --aisle-w: 24px;        /* lối đi giữa sơ đồ */
+  --gutter-w: 24px;       /* cột nhãn hàng */
+  --rowpulse-w: 58px;     /* cột chỉ báo còn trống theo hàng */
+  --pulse-h: 6px;         /* bề dày thanh tín hiệu */
+  --pulse-h-sm: 4px;
+  --pulse-min: 72px;      /* bề rộng tối thiểu của thanh tín hiệu */
+  --pulse-min-sm: 26px;
+  --pulse-min-timer: 76px;
+  --meter-h: 22px;        /* vân tín hiệu trên poster */
+  --meter-w: 3px;
+  --meter-gap: 3px;
+  --arc-h: 44px;          /* vòng cung màn hình */
+  --signal-w: 420px;      /* khối tín hiệu trong hero */
+  --swatch-h: 68px;       /* ô màu trong trang giới thiệu */
+  --rail-h: 64px;         /* thanh điều hướng dính */
+  --bar-h: 76px;          /* thanh hành động dính đáy (mobile) */
+  --side-w: 340px;        /* cột phụ (tóm tắt đơn, chọn ghế) */
+  --rail-poster-w: 104px; /* poster nhỏ trong băng phim ngang */
+  --legend-seat: 30px;    /* ô ghế mẫu trong chú thích */
+  --filter-city-w: 260px; /* cột bộ lọc thành phố */
+  --decision-w: 340px;    /* khối demo seat pulse ở trang giới thiệu */
+  --decision-label-w: 72px;
+  --shell-max: 1240px;    /* bề rộng nội dung */
+  --measure: 68ch;        /* chiều dài dòng chữ */
+  --measure-sm: 26ch;
+
+  /* --- Bề rộng cột / lưới --------------------------------------------- */
+  --search-max: 320px;
+  --hero-poster-w: 300px;
+  --poster-w: 248px;
+  --card-min: 248px;
+  --rail-item-w: 216px;
+  --rail-item-w-lg: 248px;
+  --day-w: 74px;
+  --branch-w: 250px;
+  --slot-min: 158px;
+  --screen-w: 640px;
+  --summary-w: 372px;
+  --swatch-min: 140px;
+  --footer-col-min: 180px;
+  --link-card-min: 220px;
+  --fact-k-w: 8.5rem;
+  --spinner: 16px;
+
+  /* --- Thang khan hiếm của "seat pulse" -------------------------------- */
+  --pulse-open:  var(--c-accent);   /* còn nhiều */
+  --pulse-tight: var(--c-warn);     /* còn ít */
+  --pulse-last:  var(--c-warn-deep);/* sắp hết */
+  --pulse-none:  var(--c-text-dim); /* hết chỗ */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 1ms;
+    --dur-base: 1ms;
+    --dur-slow: 1ms;
+  }
+}

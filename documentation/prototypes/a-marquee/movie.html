@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CineSmart — Dune: Part Two, Lịch chiếu (Hướng A Marquee)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&amp;family=Be+Vietnam+Pro:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="shell masthead__inner">
+    <a class="wordmark" href="home.html">CINE<b>SMART</b></a>
+    <nav class="masthead__nav" aria-label="Điều hướng chính">
+      <a href="home.html">Trang chủ</a>
+      <a href="movie.html" aria-current="page">Lịch chiếu</a>
+      <a href="seatmap.html">Chọn ghế</a>
+      <a href="checkout.html">Thanh toán</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ======================= CHI TIẾT PHIM ======================= -->
+  <section class="shell band--tight film-detail" aria-labelledby="film-title">
+    <div class="poster poster--dune poster--hero">
+      <span class="poster__rule"></span>
+      <p class="poster__title">Dune: Part Two</p>
+      <div class="poster__foot">
+        <span class="poster__genre">Khoa học viễn tưởng</span>
+        <span>166 phút</span>
+      </div>
+    </div>
+
+    <div class="film-detail__copy">
+      <div class="film-detail__row">
+        <span class="badge badge--playing">Đang chiếu</span>
+        <span class="small muted">Khởi chiếu 01/03/2024</span>
+      </div>
+      <h1 class="film-detail__title" id="film-title">Dune: Part Two</h1>
+      <p class="film-detail__synopsis">Paul Atreides liên minh với người Fremen để trả thù những kẻ đã hủy diệt gia tộc mình.</p>
+
+      <dl class="spec">
+        <div class="spec__item">
+          <dt class="spec__key">Thể loại</dt>
+          <dd class="spec__val">Khoa học viễn tưởng</dd>
+        </div>
+        <div class="spec__item">
+          <dt class="spec__key">Thời lượng</dt>
+          <dd class="spec__val">166 phút</dd>
+        </div>
+        <div class="spec__item">
+          <dt class="spec__key">Giá từ</dt>
+          <dd class="spec__val">80.000 ₫</dd>
+        </div>
+        <div class="spec__item">
+          <dt class="spec__key">Giá VIP từ</dt>
+          <dd class="spec__val">96.000 ₫</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ======================= CHỌN NGÀY ======================= -->
+  <section class="shell band--tight" aria-labelledby="date-title">
+    <div class="section-head">
+      <h2 class="h3" id="date-title">Chọn ngày xem</h2>
+      <p class="section-head__note">Bạn có thể đặt trước 7 ngày</p>
+    </div>
+    <div class="day-strip" id="day-strip" role="group" aria-label="Chọn ngày xem"></div>
+  </section>
+
+  <!-- ======================= BỘ LỌC ======================= -->
+  <section class="shell band--tight" aria-labelledby="filter-title">
+    <h2 class="tiny" id="filter-title" hidden>Lọc theo địa điểm</h2>
+    <div class="filter-row">
+      <div class="field">
+        <label class="field__label" for="city">Thành phố</label>
+        <select class="select" id="city">
+          <option value="all">Tất cả thành phố</option>
+          <option value="hcm">TP. Hồ Chí Minh</option>
+          <option value="hn">Hà Nội</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field__label" for="branch">Chi nhánh</label>
+        <select class="select" id="branch">
+          <option value="all">Tất cả chi nhánh</option>
+          <option value="nguyen-hue">CineSmart Nguyễn Huệ</option>
+          <option value="thao-dien">CineSmart Thảo Điền</option>
+          <option value="cau-giay">CineSmart Cầu Giấy</option>
+          <option value="hoan-kiem">CineSmart Hoàn Kiếm</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= SUẤT CHIẾU DẠNG VÉ ======================= -->
+  <section class="shell band" aria-labelledby="showtime-title">
+    <div class="section-head">
+      <h2 class="h2" id="showtime-title">Suất chiếu</h2>
+      <p class="section-head__note" id="showtime-note">Lịch chiếu hôm nay</p>
+    </div>
+
+    <!-- Nguyễn Huệ -->
+    <div class="branch-group" data-city="hcm" data-branch="nguyen-hue">
+      <div class="branch-group__head">
+        <h3 class="branch-group__name">CineSmart Nguyễn Huệ</h3>
+        <p class="branch-group__addr">72 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh</p>
+      </div>
+      <div class="stub-wall">
+        <article class="stub">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">09:00</p><p class="stub__room">Phòng 1</p></div>
+            <p class="stub__meta">Ghế thường 95.000 ₫</p>
+            <a class="stub__link" href="seatmap.html">Chọn ghế</a>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-NH-0900-P1</p>
+            <p class="stub__price">95.000 ₫</p>
+            <p class="stub__seats">Còn 48 ghế</p>
+          </div>
+        </article>
+        <article class="stub">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">12:15</p><p class="stub__room">Phòng 2</p></div>
+            <p class="stub__meta">Ghế thường 95.000 ₫</p>
+            <a class="stub__link" href="seatmap.html">Chọn ghế</a>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-NH-1215-P2</p>
+            <p class="stub__price">95.000 ₫</p>
+            <p class="stub__seats">Còn 12 ghế</p>
+          </div>
+        </article>
+        <article class="stub stub--full">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">15:30</p><p class="stub__room">Phòng 1</p></div>
+            <p class="stub__meta">Ghế thường 95.000 ₫</p>
+            <span class="btn btn--ghost" aria-disabled="true">Hết chỗ</span>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-NH-1530-P1</p>
+            <p class="stub__price">95.000 ₫</p>
+            <p class="stub__seats">Hết chỗ</p>
+          </div>
+        </article>
+        <article class="stub">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">18:45</p><p class="stub__room">Phòng 2</p></div>
+            <p class="stub__meta">Ghế thường 95.000 ₫</p>
+            <a class="stub__link" href="seatmap.html">Chọn ghế</a>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-NH-1845-P2</p>
+            <p class="stub__price">95.000 ₫</p>
+            <p class="stub__seats">Còn 3 ghế</p>
+          </div>
+        </article>
+        <article class="stub">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">22:00</p><p class="stub__room">Phòng 1</p></div>
+            <p class="stub__meta">Ghế thường 95.000 ₫</p>
+            <a class="stub__link" href="seatmap.html">Chọn ghế</a>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-NH-2200-P1</p>
+            <p class="stub__price">95.000 ₫</p>
+            <p class="stub__seats">Còn 27 ghế</p>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <!-- Thảo Điền -->
+    <div class="branch-group band--tight" data-city="hcm" data-branch="thao-dien">
+      <div class="branch-group__head">
+        <h3 class="branch-group__name">CineSmart Thảo Điền</h3>
+        <p class="branch-group__addr">12 Quốc Hương, Thảo Điền, TP. Hồ Chí Minh</p>
+      </div>
+      <div class="stub-wall">
+        <article class="stub">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">10:30</p><p class="stub__room">Phòng 1</p></div>
+            <p class="stub__meta">Ghế thường 85.000 ₫</p>
+            <a class="stub__link" href="seatmap.html">Chọn ghế</a>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-TD-1030-P1</p>
+            <p class="stub__price">85.000 ₫</p>
+            <p class="stub__seats">Còn 22 ghế</p>
+          </div>
+        </article>
+        <article class="stub stub--full">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">14:30</p><p class="stub__room">Phòng 1</p></div>
+            <p class="stub__meta">Ghế thường 85.000 ₫</p>
+            <span class="btn btn--ghost" aria-disabled="true">Hết chỗ</span>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-TD-1430-P1</p>
+            <p class="stub__price">85.000 ₫</p>
+            <p class="stub__seats">Hết chỗ</p>
+          </div>
+        </article>
+        <article class="stub">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">19:00</p><p class="stub__room">Phòng 1</p></div>
+            <p class="stub__meta">Ghế thường 85.000 ₫</p>
+            <a class="stub__link" href="seatmap.html">Chọn ghế</a>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-TD-1900-P1</p>
+            <p class="stub__price">85.000 ₫</p>
+            <p class="stub__seats">Còn 9 ghế</p>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <!-- Cầu Giấy -->
+    <div class="branch-group band--tight" data-city="hn" data-branch="cau-giay">
+      <div class="branch-group__head">
+        <h3 class="branch-group__name">CineSmart Cầu Giấy</h3>
+        <p class="branch-group__addr">15 Trần Duy Hưng, Cầu Giấy, Hà Nội</p>
+      </div>
+      <div class="stub-wall">
+        <article class="stub">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">09:30</p><p class="stub__room">Phòng A</p></div>
+            <p class="stub__meta">Ghế thường 90.000 ₫</p>
+            <a class="stub__link" href="seatmap.html">Chọn ghế</a>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-CG-0930-PA</p>
+            <p class="stub__price">90.000 ₫</p>
+            <p class="stub__seats">Còn 61 ghế</p>
+          </div>
+        </article>
+        <article class="stub">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">12:45</p><p class="stub__room">Phòng B</p></div>
+            <p class="stub__meta">Ghế thường 90.000 ₫</p>
+            <a class="stub__link" href="seatmap.html">Chọn ghế</a>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-CG-1245-PB</p>
+            <p class="stub__price">90.000 ₫</p>
+            <p class="stub__seats">Còn 18 ghế</p>
+          </div>
+        </article>
+        <article class="stub">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">16:00</p><p class="stub__room">Phòng A</p></div>
+            <p class="stub__meta">Ghế thường 90.000 ₫</p>
+            <a class="stub__link" href="seatmap.html">Chọn ghế</a>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-CG-1600-PA</p>
+            <p class="stub__price">90.000 ₫</p>
+            <p class="stub__seats">Còn 2 ghế</p>
+          </div>
+        </article>
+        <article class="stub stub--full">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">19:15</p><p class="stub__room">Phòng B</p></div>
+            <p class="stub__meta">Ghế thường 90.000 ₫</p>
+            <span class="btn btn--ghost" aria-disabled="true">Hết chỗ</span>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-CG-1915-PB</p>
+            <p class="stub__price">90.000 ₫</p>
+            <p class="stub__seats">Hết chỗ</p>
+          </div>
+        </article>
+        <article class="stub">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">22:30</p><p class="stub__room">Phòng A</p></div>
+            <p class="stub__meta">Ghế thường 90.000 ₫</p>
+            <a class="stub__link" href="seatmap.html">Chọn ghế</a>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-CG-2230-PA</p>
+            <p class="stub__price">90.000 ₫</p>
+            <p class="stub__seats">Còn 34 ghế</p>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <!-- Hoàn Kiếm -->
+    <div class="branch-group band--tight" data-city="hn" data-branch="hoan-kiem">
+      <div class="branch-group__head">
+        <h3 class="branch-group__name">CineSmart Hoàn Kiếm</h3>
+        <p class="branch-group__addr">8 Tràng Tiền, Hoàn Kiếm, Hà Nội</p>
+      </div>
+      <div class="stub-wall">
+        <article class="stub">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">11:00</p><p class="stub__room">Phòng 1</p></div>
+            <p class="stub__meta">Ghế thường 80.000 ₫</p>
+            <a class="stub__link" href="seatmap.html">Chọn ghế</a>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-HK-1100-P1</p>
+            <p class="stub__price">80.000 ₫</p>
+            <p class="stub__seats">Còn 17 ghế</p>
+          </div>
+        </article>
+        <article class="stub">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">17:00</p><p class="stub__room">Phòng 1</p></div>
+            <p class="stub__meta">Ghế thường 80.000 ₫</p>
+            <a class="stub__link" href="seatmap.html">Chọn ghế</a>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-HK-1700-P1</p>
+            <p class="stub__price">80.000 ₫</p>
+            <p class="stub__seats">Còn 6 ghế</p>
+          </div>
+        </article>
+        <article class="stub stub--full">
+          <div class="stub__body">
+            <div class="stub__head"><p class="stub__time">20:30</p><p class="stub__room">Phòng 1</p></div>
+            <p class="stub__meta">Ghế thường 80.000 ₫</p>
+            <span class="btn btn--ghost" aria-disabled="true">Hết chỗ</span>
+          </div>
+          <div class="stub__perf" aria-hidden="true"></div>
+          <div class="stub__tear">
+            <p class="stub__code">CS-HK-2030-P1</p>
+            <p class="stub__price">80.000 ₫</p>
+            <p class="stub__seats">Hết chỗ</p>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <p class="summary__note" id="empty-filter" hidden>Không có chi nhánh nào khớp bộ lọc. Chọn thành phố khác hoặc bỏ bộ lọc chi nhánh.</p>
+  </section>
+
+</main>
+
+<footer class="colophon">
+  <div class="shell colophon__inner">
+    <p>CineSmart, prototype hướng A — Marquee. Dữ liệu mẫu lấy từ CatalogSeeder.</p>
+    <p><a href="index.html">Giới thiệu hướng thiết kế</a></p>
+    <p><a href="../index.html">Về trang so sánh 3 hướng</a></p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
