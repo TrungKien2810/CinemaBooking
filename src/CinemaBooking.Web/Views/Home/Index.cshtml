@@ -37,7 +37,7 @@
                         <img src="@movie.PosterOrPlaceholder"
                              data-poster-fallback="@MovieCardViewModel.PlaceholderPoster"
                              alt="Poster phim @movie.Title"
-                             loading="@(i == 0 ? "eager" : "lazy")" />
+                             loading="eager" />
                         <span class="hero-slide-caption">
                             <strong>@movie.Title</strong>
                             <small>@movie.GenreOrDefault · @movie.DurationMinutes phút</small>
