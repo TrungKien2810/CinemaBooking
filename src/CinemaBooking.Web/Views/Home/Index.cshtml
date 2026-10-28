@@ -6,34 +6,51 @@
     string GenreLink(string? genre) => Url.Action("Index", new { q = Model.Keyword, genre })!;
 }
 
-<section class="page-head">
-    <h1 class="page-title">Phim đang chiếu</h1>
-    <p class="cb-muted page-subtitle">Chọn phim, chọn suất, rồi giữ ghế ngay trên sơ đồ phòng chiếu.</p>
+<section class="home-hero">
+    <div class="home-hero-copy">
+        <span class="hero-eyebrow">🎬 CinemaBooking.Smart</span>
+        <h1 class="hero-title">Chọn phim hay.<br /><span>Giữ ghế trong vài giây.</span></h1>
+        <p class="hero-sub">
+            Đặt vé với sơ đồ ghế real-time, giữ ghế an toàn và nhận vé qua email — không cần xếp hàng.
+        </p>
+        <div class="hero-badges">
+            <span class="hero-badge">⚡ Giữ ghế real-time</span>
+            <span class="hero-badge">🎟️ Vé gửi qua email</span>
+            <span class="hero-badge">🪑 Sơ đồ ghế trực quan</span>
+        </div>
+    </div>
+    <div class="home-hero-art" aria-hidden="true">
+        <span class="hero-poster p1">🎬</span>
+        <span class="hero-poster p2">🍿</span>
+        <span class="hero-poster p3">🎟️</span>
+    </div>
 </section>
 
-<form method="get" asp-action="Index" class="movie-search" role="search">
-    <label for="q" class="visually-hidden">Tìm phim</label>
-    <input id="q" name="q" type="search" value="@Model.Keyword" class="form-control"
-           placeholder="Tìm theo tên phim hoặc thể loại…" maxlength="100" autocomplete="off" />
-    @if (Model.Genre is not null)
-    {
-        <input type="hidden" name="genre" value="@Model.Genre" />
-    }
-    <button type="submit" class="btn btn-primary">Tìm</button>
-</form>
-
-@if (Model.GenreOptions.Count > 0)
-{
-    <nav class="filter-row genre-filter" aria-label="Lọc theo thể loại">
-        <a href="@GenreLink(null)" class="filter-chip @(Model.Genre is null ? "active" : null)">Tất cả</a>
-        @foreach (var g in Model.GenreOptions)
+<div class="home-toolbar cb-card">
+    <form method="get" asp-action="Index" class="movie-search" role="search">
+        <label for="q" class="visually-hidden">Tìm phim</label>
+        <input id="q" name="q" type="search" value="@Model.Keyword" class="form-control"
+               placeholder="Tìm theo tên phim hoặc thể loại…" maxlength="100" autocomplete="off" />
+        @if (Model.Genre is not null)
         {
-            var isCurrent = string.Equals(g, Model.Genre, StringComparison.OrdinalIgnoreCase);
-            <a href="@GenreLink(g)" class="filter-chip @(isCurrent ? "active" : null)"
-               aria-current="@(isCurrent ? "true" : null)">@g</a>
+            <input type="hidden" name="genre" value="@Model.Genre" />
         }
-    </nav>
-}
+        <button type="submit" class="btn btn-primary">Tìm</button>
+    </form>
+
+    @if (Model.GenreOptions.Count > 0)
+    {
+        <nav class="filter-row genre-filter" aria-label="Lọc theo thể loại">
+            <a href="@GenreLink(null)" class="filter-chip @(Model.Genre is null ? "active" : null)">Tất cả</a>
+            @foreach (var g in Model.GenreOptions)
+            {
+                var isCurrent = string.Equals(g, Model.Genre, StringComparison.OrdinalIgnoreCase);
+                <a href="@GenreLink(g)" class="filter-chip @(isCurrent ? "active" : null)"
+                   aria-current="@(isCurrent ? "true" : null)">@g</a>
+            }
+        </nav>
+    }
+</div>
 
 @if (Model.IsFiltered)
 {
@@ -45,9 +62,15 @@
     </p>
 }
 
+<div class="section-head">
+    <h2 class="section-title">Phim đang chiếu</h2>
+    <span class="cb-muted">@Model.Movies.Count phim</span>
+</div>
+
 @if (!Model.HasMovies)
 {
     <div class="cb-card empty-state">
+        <div class="error-icon" aria-hidden="true">🎬</div>
         @if (Model.IsFiltered)
         {
             <p class="empty-title">Không tìm thấy phim phù hợp</p>
