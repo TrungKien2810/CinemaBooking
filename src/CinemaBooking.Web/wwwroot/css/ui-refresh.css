@@ -882,12 +882,182 @@ textarea.form-control {
 }
 
 .booking-list-item {
+    position: relative;
+    overflow: hidden;
     transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.booking-list-item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--cb-accent-2), var(--cb-accent));
+    opacity: 0.85;
 }
 
 .booking-list-item:hover {
     transform: translateY(-2px);
     border-color: var(--cb-accent);
+}
+
+/* --- Booking flow steps --------------------------------------------------- */
+
+.booking-steps {
+    counter-reset: booking-step;
+    display: flex;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+}
+
+.booking-steps li {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--cb-border);
+    border-radius: 10px;
+    background: var(--cb-surface);
+    color: var(--cb-text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.booking-steps li::before {
+    counter-increment: booking-step;
+    content: counter(booking-step);
+    flex: 0 0 auto;
+    width: 1.4rem;
+    height: 1.4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--cb-border-strong);
+    border-radius: 50%;
+    background: var(--cb-surface-2);
+    color: var(--cb-text-muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.booking-steps li.is-done {
+    color: var(--cb-text);
+    border-color: rgba(52, 211, 153, 0.35);
+}
+
+.booking-steps li.is-done::before {
+    content: "✓";
+    background: rgba(52, 211, 153, 0.18);
+    border-color: rgba(52, 211, 153, 0.45);
+    color: var(--cb-success);
+}
+
+.booking-steps li.is-current {
+    color: var(--cb-text);
+    border-color: var(--cb-accent);
+    background: var(--cb-accent-soft);
+}
+
+.booking-steps li.is-current::before {
+    background: var(--cb-accent);
+    border-color: var(--cb-accent);
+    color: #fff;
+}
+
+@media (max-width: 575.98px) {
+    .booking-steps {
+        flex-direction: column;
+    }
+}
+
+/* --- Checkout extras ------------------------------------------------------ */
+
+.checkout-secure {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    margin: 0.9rem 0 0;
+    color: var(--cb-text-muted);
+    font-size: 0.8rem;
+}
+
+.checkout-table,
+.booking-details .table {
+    --bs-table-color: var(--cb-text);
+    --bs-table-border-color: var(--cb-border);
+}
+
+.checkout-table thead th,
+.booking-details .table thead th {
+    color: var(--cb-text-muted);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.checkout-table tfoot th,
+.booking-details .table tfoot th {
+    color: var(--cb-accent-2);
+    font-size: 1rem;
+}
+
+.booking-details .table {
+    margin-bottom: 0;
+}
+
+/* --- Ticket --------------------------------------------------------------- */
+
+.ticket-barcode {
+    display: block;
+    width: min(260px, 80%);
+    height: 30px;
+    margin: 0.75rem auto 0;
+    border-radius: 4px;
+    background: repeating-linear-gradient(
+        90deg,
+        var(--cb-text) 0 2px,
+        transparent 2px 5px,
+        var(--cb-text) 5px 6px,
+        transparent 6px 10px
+    );
+    opacity: 0.45;
+}
+
+.ticket-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+    padding: 0.8rem 1rem;
+    border: 1px dashed var(--cb-border-strong);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--cb-text-muted);
+    font-size: 0.84rem;
+}
+
+.booking-list-item .badge.text-bg-success {
+    background: rgba(52, 211, 153, 0.16) !important;
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    color: var(--cb-success) !important;
+}
+
+.booking-list-item .badge.text-bg-secondary {
+    background: var(--cb-surface-2) !important;
+    border: 1px solid var(--cb-border);
+    color: var(--cb-text-muted) !important;
+}
+
+/* --- Lookup --------------------------------------------------------------- */
+
+.lookup-card {
+    padding: 1.25rem;
 }
 
 /* --- Auth ----------------------------------------------------------------- */

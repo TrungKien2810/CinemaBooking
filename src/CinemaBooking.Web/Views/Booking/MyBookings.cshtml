@@ -11,6 +11,7 @@
 @if (Model.Bookings.Count == 0)
 {
     <div class="cb-card empty-state">
+        <div class="error-icon" aria-hidden="true">🎟️</div>
         <div class="empty-title">Bạn chưa có vé nào</div>
         <p class="cb-muted">Chọn một phim và giữ ghế để đơn đầu tiên xuất hiện ở đây.</p>
         <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Xem phim đang chiếu</a>
