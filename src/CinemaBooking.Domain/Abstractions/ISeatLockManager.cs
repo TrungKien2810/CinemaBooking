@@ -17,6 +17,12 @@ public interface ISeatLockManager
     bool Release(SeatKey key, string connectionId);
     /// <summary>Giải phóng mọi ghế của một connection (gọi từ OnDisconnectedAsync).</summary>
     IReadOnlyCollection<SeatKey> ReleaseAllFor(string connectionId);
+    /// <summary>
+    /// Chuyển quyền giữ ghế từ owner này sang owner khác và gia hạn TTL. Dùng khi khách rời
+    /// trang chọn ghế sang thanh toán: connection SignalR đóng nhưng hold-token trong Session
+    /// vẫn giữ được ghế cho bước đặt vé.
+    /// </summary>
+    bool TransferOwnership(IReadOnlyCollection<SeatKey> keys, string fromOwnerId, string toOwnerId, TimeSpan ttl);
     /// <summary>Xác nhận connection này thực sự đang giữ đủ các ghế — gọi lại ngay trước khi ghi Booking.</summary>
     bool ValidateLocks(IEnumerable<SeatKey> keys, string connectionId);
     /// <summary>Xóa lock đã hết hạn; trả về danh sách để phát SignalR báo ghế trống.</summary>

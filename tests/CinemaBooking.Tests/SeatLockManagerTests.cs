@@ -42,6 +42,37 @@ public class SeatLockManagerTests
     }
 
     [Fact]
+    public void TransferOwnership_moves_lock_to_new_owner_and_survives_old_owner_release()
+    {
+        var sut = new InMemorySeatLockManager();
+        var key = new SeatKey(1, 10);
+        sut.TryLock(key, "conn-A", null, Ttl);
+
+        Assert.True(sut.TransferOwnership(new[] { key }, "conn-A", "hold-1", Ttl));
+
+        Assert.False(sut.ValidateLocks(new[] { key }, "conn-A"));
+        Assert.True(sut.ValidateLocks(new[] { key }, "hold-1"));
+        Assert.Empty(sut.ReleaseAllFor("conn-A"));
+        Assert.True(sut.ValidateLocks(new[] { key }, "hold-1"));
+    }
+
+    [Fact]
+    public void TransferOwnership_is_all_or_nothing_when_a_lock_belongs_to_someone_else()
+    {
+        var sut = new InMemorySeatLockManager();
+        var mine = new SeatKey(1, 10);
+        var other = new SeatKey(1, 11);
+        sut.TryLock(mine, "conn-A", null, Ttl);
+        sut.TryLock(other, "conn-B", null, Ttl);
+
+        Assert.False(sut.TransferOwnership(new[] { mine, other }, "conn-A", "hold-1", Ttl));
+
+        Assert.True(sut.ValidateLocks(new[] { mine }, "conn-A"));
+        Assert.True(sut.ValidateLocks(new[] { other }, "conn-B"));
+        Assert.False(sut.ValidateLocks(new[] { mine }, "hold-1"));
+    }
+
+    [Fact]
     public void Expired_lock_is_removed_and_reported()
     {
         var sut = new InMemorySeatLockManager();

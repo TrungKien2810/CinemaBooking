@@ -57,6 +57,43 @@ public sealed class InMemorySeatLockManager : ISeatLockManager
         return released;
     }
 
+    public bool TransferOwnership(IReadOnlyCollection<SeatKey> keys, string fromOwnerId, string toOwnerId, TimeSpan ttl)
+    {
+        var now = DateTime.UtcNow;
+        var expiresUtc = now.Add(ttl);
+        var originals = new List<(SeatKey Key, SeatLock Lock)>(keys.Count);
+
+        // Pha 1: xác nhận TẤT CẢ ghế vẫn thuộc owner cũ và chưa hết hạn.
+        foreach (var key in keys)
+        {
+            if (!_locks.TryGetValue(key, out var existing) ||
+                existing.ConnectionId != fromOwnerId ||
+                existing.ExpiresUtc <= now)
+            {
+                return false;
+            }
+
+            originals.Add((key, existing));
+        }
+
+        // Pha 2: chuyển owner. Nếu một ghế bị thay đổi giữa chừng thì trả các ghế đã chuyển về owner cũ.
+        var applied = new List<(SeatKey Key, SeatLock Original, SeatLock Updated)>(originals.Count);
+        foreach (var (key, original) in originals)
+        {
+            var updated = original with { ConnectionId = toOwnerId, ExpiresUtc = expiresUtc };
+            if (!_locks.TryUpdate(key, updated, original))
+            {
+                foreach (var entry in applied)
+                    _locks.TryUpdate(entry.Key, entry.Original, entry.Updated);
+                return false;
+            }
+
+            applied.Add((key, original, updated));
+        }
+
+        return true;
+    }
+
     public bool ValidateLocks(IEnumerable<SeatKey> keys, string connectionId)
     {
         var now = DateTime.UtcNow;
