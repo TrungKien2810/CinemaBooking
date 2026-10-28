@@ -539,9 +539,8 @@ body {
 }
 
 .seat.seat-vip {
-    /* Giữ viền trung tính: màu nền/viền chỉ dành cho TRẠNG THÁI ghế,
-       loại ghế được báo bằng icon ★ ở góc để không bị nhầm là "đang giữ". */
-    border-color: var(--cb-seat-free-border);
+    /* Viền màu báo loại ghế; nền vẫn trung tính để không bị nhầm là "đang giữ". */
+    border-color: var(--cb-seat-vip);
 }
 
 .seat.seat-vip::before {
@@ -557,7 +556,7 @@ body {
 
 .seat.seat-couple {
     background-color: var(--cb-seat-free-bg);
-    border-color: var(--cb-seat-free-border);
+    border-color: var(--cb-seat-couple);
 }
 
 .seat.seat-couple::before {
