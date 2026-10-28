@@ -12,18 +12,21 @@
 
 <div class="admin-shell">
     <aside class="admin-sidebar cb-card" aria-label="Menu quản trị">
-        <div class="admin-sidebar-title">Quản trị</div>
+        <div class="admin-sidebar-brand">
+            <span class="brand-mark" aria-hidden="true">🎬</span>
+            <span class="admin-sidebar-title">Quản trị</span>
+        </div>
         <nav class="admin-nav">
             <a asp-area="Admin" asp-controller="Movies" asp-action="Index"
-               class="admin-nav-link @ActiveIf("Movies")">Phim</a>
+               class="admin-nav-link @ActiveIf("Movies")" data-icon="🎬">Phim</a>
             <a asp-area="Admin" asp-controller="Theaters" asp-action="Index"
-               class="admin-nav-link @ActiveIf("Theaters", "Rooms")">Chi nhánh &amp; phòng</a>
+               class="admin-nav-link @ActiveIf("Theaters", "Rooms")" data-icon="🏢">Chi nhánh &amp; phòng</a>
             <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
-               class="admin-nav-link @ActiveIf("Showtimes")">Suất chiếu</a>
+               class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">Suất chiếu</a>
             <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
-               class="admin-nav-link @ActiveIf("Bookings")">Đặt vé</a>
+               class="admin-nav-link @ActiveIf("Bookings")" data-icon="🎟️">Đặt vé</a>
             <a asp-area="Admin" asp-controller="Revenue" asp-action="Index"
-               class="admin-nav-link @ActiveIf("Revenue")">Doanh thu</a>
+               class="admin-nav-link @ActiveIf("Revenue")" data-icon="📊">Doanh thu</a>
         </nav>
         <div class="admin-sidebar-foot">
             <a asp-area="" asp-controller="Home" asp-action="Index" class="admin-nav-link">← Về trang khách</a>

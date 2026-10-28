@@ -3,8 +3,11 @@
     ViewData["Title"] = "Doanh thu";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">Doanh thu</h1>
+<div class="admin-page-head">
+    <div>
+        <h1 class="page-title">Doanh thu</h1>
+        <p class="cb-muted page-subtitle">Chỉ tính đơn đã xác nhận, theo ngày đặt vé (giờ rạp).</p>
+    </div>
     <a asp-action="Breakdown" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")"
        class="btn btn-outline-secondary">Theo phim &amp; suất chiếu</a>
 </div>
@@ -23,20 +26,18 @@
     </div>
 </form>
 
-<p class="text-muted small">Chỉ tính đơn đã xác nhận, theo ngày đặt vé (giờ rạp).</p>
-
-<div class="row g-3 mb-4">
-    <div class="col-auto">
-        <div class="border rounded p-3">
-            <div class="text-muted small">Tổng doanh thu</div>
-            <div class="h4 mb-0">@Model.TotalRevenue.ToString("N0") ₫</div>
-        </div>
+<div class="admin-stat-grid">
+    <div class="admin-stat">
+        <span class="admin-stat-label">Tổng doanh thu</span>
+        <strong class="admin-stat-value is-accent">@Model.TotalRevenue.ToString("N0") ₫</strong>
     </div>
-    <div class="col-auto">
-        <div class="border rounded p-3">
-            <div class="text-muted small">Vé đã bán</div>
-            <div class="h4 mb-0">@Model.TotalTickets</div>
-        </div>
+    <div class="admin-stat">
+        <span class="admin-stat-label">Vé đã bán</span>
+        <strong class="admin-stat-value">@Model.TotalTickets</strong>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat-label">Chi nhánh có doanh thu</span>
+        <strong class="admin-stat-value">@Model.ByTheater.Count</strong>
     </div>
 </div>
 

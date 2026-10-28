@@ -3,8 +3,11 @@
     ViewData["Title"] = "Đơn " + Model.BookingCode;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">Đơn @Model.BookingCode <span class="badge bg-secondary">@Model.Status</span></h1>
+<div class="admin-page-head">
+    <div>
+        <a asp-action="Index" class="back-link">← Danh sách đơn</a>
+        <h1 class="page-title">Đơn @Model.BookingCode <span class="badge bg-secondary">@Model.Status</span></h1>
+    </div>
     <a asp-action="Index" class="btn btn-outline-secondary">Về danh sách</a>
 </div>
 

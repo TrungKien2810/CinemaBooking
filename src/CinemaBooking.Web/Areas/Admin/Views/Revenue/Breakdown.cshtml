@@ -3,8 +3,11 @@
     ViewData["Title"] = "Doanh thu theo phim & suất chiếu";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">Doanh thu theo phim &amp; suất chiếu</h1>
+<div class="admin-page-head">
+    <div>
+        <h1 class="page-title">Doanh thu theo phim &amp; suất chiếu</h1>
+        <p class="cb-muted page-subtitle">So sánh doanh thu và tỷ lệ lấp đầy giữa các phim, suất chiếu.</p>
+    </div>
     <a asp-action="Index" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")"
        class="btn btn-outline-secondary">Về tổng quan</a>
 </div>
