@@ -3,8 +3,8 @@ namespace CinemaBooking.Web.Services;
 /// <summary>
 /// Yêu cầu đặt vé. Danh sách ghế lấy từ Session phía server, KHÔNG nhận từ payload client —
 /// form có thể bị sửa để gửi ghế bất kỳ (General.md §6.2).
-/// <see cref="ConnectionId"/> là connection SignalR đang giữ lock, cần để gọi lại
-/// <c>ValidateLocks</c> ngay trước khi ghi Booking.
+/// <see cref="ConnectionId"/> là owner token của lock: connection SignalR khi còn ở trang
+/// chọn ghế, hoặc hold-token trong Session sau khi đã chuyển sang trang thanh toán.
 /// </summary>
 public sealed record BookingRequest(
     int ShowtimeId,

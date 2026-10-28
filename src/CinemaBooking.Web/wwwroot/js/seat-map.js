@@ -195,6 +195,11 @@
                 event.preventDefault();
                 toast('Chưa kết nối real-time, vui lòng thử lại.', true);
             }
+            if (event.defaultPrevented) return;
+
+            // Chặn double-submit: lần gửi thứ hai sẽ thấy lock đã được chuyển sang hold-token.
+            continueBtn.disabled = true;
+            continueBtn.textContent = 'Đang chuyển…';
         });
     }
 

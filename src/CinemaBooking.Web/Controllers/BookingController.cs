@@ -59,6 +59,21 @@ public class BookingController : Controller
         var showtime = await FindBookableShowtimeAsync(id, ct);
         if (showtime is null) return NotFound();
 
+        // Quay lại sơ đồ ghế sau khi đã sang Checkout nghĩa là khách đổi ý: nhả hold cũ
+        // (đang thuộc hold-token trong Session) để ghế không hiện nhầm là "người khác giữ".
+        var previous = HttpContext.Session.GetSeatSelection();
+        if (previous is not null && previous.ShowtimeId == id)
+        {
+            var released = previous.SeatIds
+                .Where(seatId => _locks.Release(new SeatKey(id, seatId), previous.ConnectionId))
+                .ToList();
+
+            HttpContext.Session.ClearSeatSelection();
+
+            if (released.Count > 0)
+                await _seats.Clients.Group(SeatHub.GroupName(id)).SeatUnlocked(released);
+        }
+
         var booked = await _bookedSeats.GetBookedSeatIdsAsync(showtime.Id, ct);
 
         return View(SeatMapViewModel.Build(
@@ -85,7 +100,17 @@ public class BookingController : Controller
             return RedirectToAction(nameof(SeatMap), new { id = showtimeId });
         }
 
-        HttpContext.Session.SetSeatSelection(new SeatSelection(showtimeId, ids, connectionId!));
+        // Rời trang chọn ghế sẽ đóng connection SignalR. Chuyển lock sang một hold-token
+        // trong Session để disconnect không nhả ghế trước khi khách kịp thanh toán.
+        var holdToken = $"hold:{Guid.NewGuid():N}";
+        var keys = ids.Select(seatId => new SeatKey(showtimeId, seatId)).ToList();
+        if (!_locks.TransferOwnership(keys, connectionId!, holdToken, _hold.Duration))
+        {
+            TempData["Error"] = "Thời gian giữ ghế đã hết hoặc ghế không còn do bạn giữ. Vui lòng chọn lại.";
+            return RedirectToAction(nameof(SeatMap), new { id = showtimeId });
+        }
+
+        HttpContext.Session.SetSeatSelection(new SeatSelection(showtimeId, ids, holdToken));
         return RedirectToAction(nameof(Checkout));
     }
 
