@@ -577,6 +577,17 @@ body {
     color: var(--cb-text);
 }
 
+/* Khi rê/focus mới hiện viền màu loại ghế — mặc định ghế trống vẫn trung tính. */
+.seat.seat-vip:hover:not(:disabled),
+.seat.seat-vip:focus-visible {
+    border-color: var(--cb-seat-vip);
+}
+
+.seat.seat-couple:hover:not(:disabled),
+.seat.seat-couple:focus-visible {
+    border-color: var(--cb-seat-couple);
+}
+
 .seat:focus-visible {
     outline: 2px solid var(--cb-accent);
     outline-offset: 2px;
@@ -690,13 +701,13 @@ body {
 }
 
 .seat-swatch.is-vip {
-    border-color: var(--cb-seat-free-border);
+    border-color: var(--cb-seat-vip);
     color: var(--cb-seat-vip);
 }
 
 .seat-swatch.is-couple {
     background-color: var(--cb-seat-free-bg);
-    border-color: var(--cb-seat-free-border);
+    border-color: var(--cb-seat-couple);
     color: var(--cb-seat-couple);
 }
 
