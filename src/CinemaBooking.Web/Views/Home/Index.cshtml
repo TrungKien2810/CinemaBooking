@@ -4,6 +4,9 @@
 
     // Chip thể loại giữ nguyên từ khóa đang tìm, và ngược lại form tìm giữ thể loại (input ẩn).
     string GenreLink(string? genre) => Url.Action("Index", new { q = Model.Keyword, genre })!;
+
+    // Poster cho banner hero: tối đa 6 phim đang chiếu.
+    var heroMovies = Model.Movies.Take(6).ToList();
 }
 
 <section class="home-hero">
@@ -19,10 +22,45 @@
             <span class="hero-badge">🪑 Sơ đồ ghế trực quan</span>
         </div>
     </div>
-    <div class="home-hero-art" aria-hidden="true">
-        <span class="hero-poster p1">🎬</span>
-        <span class="hero-poster p2">🍿</span>
-        <span class="hero-poster p3">🎟️</span>
+    <div class="home-hero-art">
+        @if (heroMovies.Count > 0)
+        {
+            <div class="hero-carousel" data-hero-carousel
+                 aria-roledescription="carousel" aria-label="Poster phim đang chiếu">
+                @for (var i = 0; i < heroMovies.Count; i++)
+                {
+                    var movie = heroMovies[i];
+                    <a class="hero-slide @(i == 0 ? "is-active" : null)"
+                       asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id"
+                       aria-hidden="@(i == 0 ? "false" : "true")"
+                       tabindex="@(i == 0 ? "0" : "-1")">
+                        <img src="@movie.PosterOrPlaceholder"
+                             data-poster-fallback="@MovieCardViewModel.PlaceholderPoster"
+                             alt="Poster phim @movie.Title"
+                             loading="@(i == 0 ? "eager" : "lazy")" />
+                        <span class="hero-slide-caption">
+                            <strong>@movie.Title</strong>
+                            <small>@movie.GenreOrDefault · @movie.DurationMinutes phút</small>
+                        </span>
+                    </a>
+                }
+                <div class="hero-dots" role="group" aria-label="Chọn poster phim">
+                    @for (var i = 0; i < heroMovies.Count; i++)
+                    {
+                        <button type="button" class="hero-dot @(i == 0 ? "is-active" : null)"
+                                data-hero-dot="@i" aria-label="Xem poster @heroMovies[i].Title"></button>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="hero-poster-stack" aria-hidden="true">
+                <span class="hero-poster p1">🎬</span>
+                <span class="hero-poster p2">🍿</span>
+                <span class="hero-poster p3">🎟️</span>
+            </div>
+        }
     </div>
 </section>
 
@@ -96,4 +134,8 @@ else
             </li>
         }
     </ul>
+}
+
+@section Scripts {
+    <script src="~/js/hero-carousel.js" asp-append-version="true"></script>
 }
