@@ -7,10 +7,12 @@
 
 <article class="cb-card movie-card position-relative">
     <div class="movie-poster">
+        <span class="movie-badge">Đang chiếu</span>
         <img src="@Model.PosterOrPlaceholder"
              data-poster-fallback="@MovieCardViewModel.PlaceholderPoster"
              alt="Poster phim @Model.Title"
              loading="lazy" width="200" height="300" />
+        <span class="movie-overlay" aria-hidden="true">Xem chi tiết →</span>
     </div>
     <div class="movie-card-body">
         @* stretched-link: cả thẻ bấm được, nhưng trình đọc màn hình chỉ đọc một link là tên phim. *@

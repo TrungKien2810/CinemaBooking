@@ -534,15 +534,15 @@ body {
     pointer-events: none;
 }
 
-.seat-standard {
+.seat.seat-standard {
     /* Ghế thường dùng đúng màu nền/viền mặc định. */
 }
 
-.seat-vip {
+.seat.seat-vip {
     border-color: var(--cb-seat-vip);
 }
 
-.seat-vip::before {
+.seat.seat-vip::before {
     content: "★";
     position: absolute;
     top: 1px;
@@ -552,12 +552,12 @@ body {
     color: var(--cb-seat-vip);
 }
 
-.seat-couple {
+.seat.seat-couple {
     background-color: color-mix(in srgb, var(--cb-seat-couple) 16%, var(--cb-seat-free-bg));
     border-color: var(--cb-seat-couple);
 }
 
-.seat-couple::before {
+.seat.seat-couple::before {
     content: "♥";
     position: absolute;
     top: 1px;
@@ -791,8 +791,8 @@ body {
         font-size: 0.6rem;
     }
 
-    .seat-vip::before,
-    .seat-couple::before,
+    .seat.seat-vip::before,
+    .seat.seat-couple::before,
     .seat.is-mine::after,
     .seat.is-held::after,
     .seat.is-booked::after {
