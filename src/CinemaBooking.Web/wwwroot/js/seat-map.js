@@ -151,6 +151,7 @@
     setInterval(function () {
         if (selected.size === 0) {
             timerEl.hidden = true;
+            timerEl.classList.remove('is-warning');
             return;
         }
 
@@ -174,10 +175,12 @@
         if (changed) renderSelection();
         if (selected.size === 0) {
             timerEl.hidden = true;
+            timerEl.classList.remove('is-warning');
             return;
         }
 
         timerEl.hidden = false;
+        timerEl.classList.toggle('is-warning', soonest < 60000);
         timerEl.textContent = 'Giữ ghế còn ' + formatClock(soonest);
     }, 500);
 

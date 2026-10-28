@@ -2,6 +2,15 @@
 @{
     ViewData["Title"] = $"Chọn ghế — {Model.MovieTitle}";
     var seatColumns = Model.TotalColumns;
+
+    // Ghế VIP / đôi có icon và viền riêng để khách nhận ra loại ghế trên sơ đồ,
+    // không chỉ dựa vào màu trạng thái (trống / đang giữ / đã đặt).
+    string TypeClass(SeatType type) => type switch
+    {
+        SeatType.Vip => "seat-vip",
+        SeatType.Couple => "seat-couple",
+        _ => "seat-standard",
+    };
 }
 
 <div class="page-head">
@@ -13,7 +22,8 @@
 
 <div class="seat-map-shell cb-card" id="seat-map"
      data-showtime-id="@Model.ShowtimeId"
-     data-hold-seconds="@Model.HoldSeconds">
+     data-hold-seconds="@Model.HoldSeconds"
+     aria-describedby="seat-map-legend">
     <div class="seat-map-screen" aria-hidden="true"><span>Màn hình</span></div>
 
     <div class="seat-rows" style="--seat-cols: @seatColumns">
@@ -38,7 +48,7 @@
                     }
 
                     <button type="button"
-                            class="seat @(seat.IsBooked ? "is-booked" : "is-free")"
+                            class="seat @TypeClass(seat.Type) @(seat.IsBooked ? "is-booked" : "is-free")"
                             data-seat-id="@seat.SeatId"
                             data-seat-label="@seat.Label"
                             data-seat-price="@seat.Price.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
@@ -54,13 +64,17 @@
         }
     </div>
 
-    <ul class="seat-map-legend" aria-label="Chú thích trạng thái ghế">
+    <ul class="seat-map-legend" id="seat-map-legend" aria-label="Chú thích trạng thái và loại ghế">
         <li><span class="seat-swatch is-free" aria-hidden="true"></span>Trống</li>
         <li><span class="seat-swatch is-mine" aria-hidden="true"></span>Bạn đang giữ</li>
         <li><span class="seat-swatch is-held" aria-hidden="true"></span>Người khác đang giữ</li>
         <li><span class="seat-swatch is-booked" aria-hidden="true"></span>Đã đặt</li>
+        <li><span class="seat-swatch is-vip" aria-hidden="true"></span>Ghế VIP</li>
+        <li><span class="seat-swatch is-couple" aria-hidden="true"></span>Ghế đôi</li>
     </ul>
 </div>
+
+<p class="seat-map-hint cb-muted" aria-hidden="true">Kéo ngang để xem toàn bộ sơ đồ.</p>
 
 <div class="seat-summary" id="seat-summary" aria-live="polite">
     <div class="seat-summary-info">
