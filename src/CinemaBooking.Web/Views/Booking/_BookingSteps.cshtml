@@ -1,0 +1,10 @@
+@model int
+@{
+    string StepClass(int step) =>
+        Model == step ? "is-current" : Model > step ? "is-done" : "";
+}
+<ol class="booking-steps" aria-label="Tiến trình đặt vé">
+    <li class="@StepClass(1)"><span class="booking-step-label">Chọn ghế</span></li>
+    <li class="@StepClass(2)"><span class="booking-step-label">Thanh toán</span></li>
+    <li class="@StepClass(3)"><span class="booking-step-label">Hoàn tất</span></li>
+</ol>

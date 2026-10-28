@@ -4,19 +4,27 @@
 }
 
 <section class="page-head">
-    <h1 class="page-title">Đặt vé thành công</h1>
+    <h1 class="page-title">Đặt vé thành công 🎉</h1>
     <p class="cb-muted page-subtitle">
         Cảm ơn @Model.CustomerName! Vé đã được xác nhận và email sẽ được gửi tới @Model.CustomerEmail.
     </p>
 </section>
 
+<partial name="_BookingSteps" model="3" />
+
 <div class="cb-card booking-confirmation">
     <div class="booking-code-block">
         <span class="cb-muted">Mã vé</span>
         <strong class="booking-code">@Model.BookingCode</strong>
+        <span class="ticket-barcode" aria-hidden="true"></span>
     </div>
 
     <partial name="_BookingDetails" model="Model" />
+
+    <p class="ticket-note">
+        <span aria-hidden="true">📧</span>
+        Vui lòng đưa mã vé cho nhân viên khi tới rạp. Bạn có thể tra cứu lại vé bất cứ lúc nào.
+    </p>
 
     <div class="booking-actions">
         <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Về trang chủ</a>

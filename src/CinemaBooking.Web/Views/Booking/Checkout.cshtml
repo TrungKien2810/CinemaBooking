@@ -8,6 +8,8 @@
     <p class="cb-muted page-subtitle">Kiểm tra lại ghế và điền thông tin liên hệ để nhận vé qua email.</p>
 </section>
 
+<partial name="_BookingSteps" model="2" />
+
 @if (TempData["Error"] is string error)
 {
     <div class="alert alert-danger" role="alert">@error</div>
