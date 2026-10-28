@@ -1,5 +1,12 @@
 ﻿@inject SignInManager<ApplicationUser> SignInManager
 
+@{
+    var displayName = User.Identity?.Name ?? "";
+    var initial = string.IsNullOrWhiteSpace(displayName)
+        ? "?"
+        : displayName.Substring(0, 1).ToUpperInvariant();
+}
+
 @*
     Hiển thị tên đăng nhập lấy từ cookie (User.Identity.Name), KHÔNG gọi
     UserManager.GetUserAsync — partial này nằm trong layout nên chạy ở mọi trang,
@@ -12,7 +19,8 @@
         <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle account-name" href="#" role="button"
                data-bs-toggle="dropdown" aria-expanded="false">
-                @User.Identity?.Name
+                <span class="account-avatar" aria-hidden="true">@initial</span>
+                <span class="account-email">@displayName</span>
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
                 @if (User.IsInRole(AppRoles.Admin))

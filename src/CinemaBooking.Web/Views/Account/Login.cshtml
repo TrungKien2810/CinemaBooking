@@ -5,6 +5,11 @@
 
 <div class="auth-shell">
     <div class="cb-card auth-card">
+        <div class="auth-brand">
+            <span class="brand-mark" aria-hidden="true">🎬</span>
+            <span>CinemaBooking<span class="brand-accent">.Smart</span></span>
+        </div>
+
         <h1 class="auth-title">Đăng nhập</h1>
         <p class="cb-muted auth-subtitle">Đăng nhập để xem lại vé đã đặt của bạn.</p>
 
@@ -12,20 +17,24 @@
             <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
             <div class="mb-3">
-                <label asp-for="Email" class="form-label"></label>
+                <label asp-for="Email" class="form-label">Email</label>
                 <input asp-for="Email" class="form-control" autocomplete="username" placeholder="ban@example.com" />
                 <span asp-validation-for="Email" class="text-danger small"></span>
             </div>
 
             <div class="mb-3">
-                <label asp-for="Password" class="form-label"></label>
-                <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                <label asp-for="Password" class="form-label">Mật khẩu</label>
+                <div class="pwd-field">
+                    <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                    <button type="button" class="pwd-toggle" data-password-toggle="Password"
+                            aria-label="Hiện mật khẩu">👁️</button>
+                </div>
                 <span asp-validation-for="Password" class="text-danger small"></span>
             </div>
 
             <div class="form-check mb-4">
                 <input asp-for="RememberMe" class="form-check-input" />
-                <label asp-for="RememberMe" class="form-check-label"></label>
+                <label asp-for="RememberMe" class="form-check-label">Ghi nhớ đăng nhập</label>
             </div>
 
             <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
@@ -40,4 +49,5 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script src="~/js/auth-ui.js" asp-append-version="true"></script>
 }

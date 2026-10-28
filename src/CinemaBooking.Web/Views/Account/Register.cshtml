@@ -5,6 +5,11 @@
 
 <div class="auth-shell">
     <div class="cb-card auth-card">
+        <div class="auth-brand">
+            <span class="brand-mark" aria-hidden="true">🎬</span>
+            <span>CinemaBooking<span class="brand-accent">.Smart</span></span>
+        </div>
+
         <h1 class="auth-title">Tạo tài khoản</h1>
         <p class="cb-muted auth-subtitle">Đặt vé nhanh hơn và tra cứu lại vé bất cứ lúc nào.</p>
 
@@ -12,28 +17,52 @@
             <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
             <div class="mb-3">
-                <label asp-for="FullName" class="form-label"></label>
+                <label asp-for="FullName" class="form-label">Họ và tên</label>
                 <input asp-for="FullName" class="form-control" autocomplete="name" placeholder="Nguyễn Văn A" />
                 <span asp-validation-for="FullName" class="text-danger small"></span>
             </div>
 
             <div class="mb-3">
-                <label asp-for="Email" class="form-label"></label>
+                <label asp-for="Email" class="form-label">Email</label>
                 <input asp-for="Email" class="form-control" autocomplete="username" placeholder="ban@example.com" />
                 <span asp-validation-for="Email" class="text-danger small"></span>
             </div>
 
             <div class="mb-3">
-                <label asp-for="Password" class="form-label"></label>
-                <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                <label asp-for="Password" class="form-label">Mật khẩu</label>
+                <div class="pwd-field">
+                    <input asp-for="Password" class="form-control" autocomplete="new-password"
+                           data-password-input />
+                    <button type="button" class="pwd-toggle" data-password-toggle="Password"
+                            aria-label="Hiện mật khẩu">👁️</button>
+                </div>
+                <div class="pwd-strength" data-password-strength hidden>
+                    <div class="pwd-strength-track">
+                        <div class="pwd-strength-bar" data-password-bar></div>
+                    </div>
+                    <span class="pwd-strength-label" data-password-label></span>
+                </div>
                 <span asp-validation-for="Password" class="text-danger small"></span>
                 <div class="form-text cb-muted">Tối thiểu 8 ký tự.</div>
             </div>
 
             <div class="mb-4">
-                <label asp-for="ConfirmPassword" class="form-label"></label>
-                <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                <label asp-for="ConfirmPassword" class="form-label">Nhập lại mật khẩu</label>
+                <div class="pwd-field">
+                    <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                    <button type="button" class="pwd-toggle" data-password-toggle="ConfirmPassword"
+                            aria-label="Hiện mật khẩu">👁️</button>
+                </div>
                 <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+            </div>
+
+            <div class="terms-check">
+                <input id="terms" type="checkbox" required />
+                <span>
+                    <label for="terms" class="d-inline">Tôi đồng ý với</label>
+                    <a asp-controller="Home" asp-action="Privacy">Chính sách bảo mật</a>
+                    và các điều khoản sử dụng.
+                </span>
             </div>
 
             <button type="submit" class="btn btn-primary w-100">Đăng ký</button>
@@ -48,4 +77,5 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script src="~/js/auth-ui.js" asp-append-version="true"></script>
 }
