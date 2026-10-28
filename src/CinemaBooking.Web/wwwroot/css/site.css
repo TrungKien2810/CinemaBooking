@@ -508,6 +508,7 @@ body {
 }
 
 .seat {
+    position: relative;
     width: var(--cb-seat-size);
     height: var(--cb-seat-size);
     padding: 0;
@@ -517,13 +518,53 @@ body {
     border: 1px solid var(--cb-seat-free-border);
     border-radius: var(--cb-radius-sm);
     background-color: var(--cb-seat-free-bg);
-    color: var(--cb-text-muted);
-    font-size: 0.6rem;
-    font-weight: 600;
+    color: var(--cb-text);
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
     line-height: 1;
     cursor: pointer;
     transition: background-color 0.15s ease, border-color 0.15s ease,
         color 0.15s ease, transform 0.1s ease;
+}
+
+/* Nhãn A1, A2… phải đọc được trên mọi trạng thái; icon trạng thái/loại ghế
+   nằm ở góc nên không che nhãn. */
+.seat-label {
+    pointer-events: none;
+}
+
+.seat-standard {
+    /* Ghế thường dùng đúng màu nền/viền mặc định. */
+}
+
+.seat-vip {
+    border-color: var(--cb-seat-vip);
+}
+
+.seat-vip::before {
+    content: "★";
+    position: absolute;
+    top: 1px;
+    left: 2px;
+    font-size: 0.5rem;
+    line-height: 1;
+    color: var(--cb-seat-vip);
+}
+
+.seat-couple {
+    background-color: color-mix(in srgb, var(--cb-seat-couple) 16%, var(--cb-seat-free-bg));
+    border-color: var(--cb-seat-couple);
+}
+
+.seat-couple::before {
+    content: "♥";
+    position: absolute;
+    top: 1px;
+    left: 2px;
+    font-size: 0.5rem;
+    line-height: 1;
+    color: var(--cb-seat-couple);
 }
 
 .seat:hover:not(:disabled) {
@@ -549,6 +590,16 @@ body {
     color: #fff;
 }
 
+.seat.is-mine::after {
+    content: "✓";
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    font-size: 0.48rem;
+    line-height: 1;
+    color: #fff;
+}
+
 .seat.is-held {
     background-color: var(--cb-seat-held-bg);
     border-color: var(--cb-seat-held-border);
@@ -556,12 +607,30 @@ body {
     cursor: not-allowed;
 }
 
+.seat.is-held::after {
+    content: "⏳";
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    font-size: 0.45rem;
+    line-height: 1;
+}
+
 .seat.is-booked {
     background-color: var(--cb-seat-booked-bg);
     border-color: var(--cb-seat-booked-border);
-    color: rgba(232, 234, 240, 0.45);
+    color: rgba(232, 234, 240, 0.55);
     cursor: not-allowed;
-    text-decoration: line-through;
+}
+
+.seat.is-booked::after {
+    content: "✕";
+    position: absolute;
+    right: 1px;
+    top: 1px;
+    font-size: 0.45rem;
+    line-height: 1;
+    color: rgba(248, 113, 113, 0.9);
 }
 
 /* Bootstrap đặt opacity cho :disabled; ghế đã đặt cần giữ nguyên màu để đọc được. */
@@ -610,6 +679,15 @@ body {
     border-color: var(--cb-seat-booked-border);
 }
 
+.seat-swatch.is-vip {
+    border-color: var(--cb-seat-vip);
+}
+
+.seat-swatch.is-couple {
+    background-color: rgba(219, 39, 119, 0.18);
+    border-color: var(--cb-seat-couple);
+}
+
 .seat-summary {
     display: flex;
     flex-wrap: wrap;
@@ -621,6 +699,13 @@ body {
     background-color: var(--cb-surface);
     border: 1px solid var(--cb-border);
     border-radius: var(--cb-radius);
+
+    /* Giữ thanh tổng kết luôn trong tầm mắt khi sơ đồ dài trên mobile. */
+    position: sticky;
+    bottom: 0.75rem;
+    z-index: 20;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.35);
 }
 
 .seat-summary-info {
@@ -634,6 +719,17 @@ body {
     color: var(--cb-seat-held-border);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
+}
+
+.seat-timer.is-warning {
+    color: #f87171;
+    animation: seat-timer-pulse 1s ease-in-out infinite;
+}
+
+@keyframes seat-timer-pulse {
+    50% {
+        opacity: 0.55;
+    }
 }
 
 .seat-total {
@@ -677,18 +773,38 @@ body {
     }
 }
 
-/* Trên điện thoại thu nhỏ ghế để cả phòng vừa chiều ngang. */
+.seat-map-hint {
+    display: none;
+    margin: 0.5rem 0 0;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+/* Trên điện thoại thu nhỏ ghế để cả phòng vừa chiều ngang, nhưng vẫn giữ
+   nhãn đọc được và vùng chạm lớn hơn mức cũ. */
 @media (max-width: 575.98px) {
     :root {
-        --cb-seat-size: 1.55rem;
+        --cb-seat-size: 1.7rem;
     }
 
     .seat {
-        font-size: 0.52rem;
+        font-size: 0.6rem;
+    }
+
+    .seat-vip::before,
+    .seat-couple::before,
+    .seat.is-mine::after,
+    .seat.is-held::after,
+    .seat.is-booked::after {
+        font-size: 0.4rem;
     }
 
     .seat-map-shell {
         padding: 0.75rem;
+    }
+
+    .seat-map-hint {
+        display: block;
     }
 }
 
@@ -698,6 +814,10 @@ body {
     }
 
     .seat-toast {
+        animation: none;
+    }
+
+    .seat-timer.is-warning {
         animation: none;
     }
 }
