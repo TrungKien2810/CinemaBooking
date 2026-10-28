@@ -539,7 +539,9 @@ body {
 }
 
 .seat.seat-vip {
-    border-color: var(--cb-seat-vip);
+    /* Giữ viền trung tính: màu nền/viền chỉ dành cho TRẠNG THÁI ghế,
+       loại ghế được báo bằng icon ★ ở góc để không bị nhầm là "đang giữ". */
+    border-color: var(--cb-seat-free-border);
 }
 
 .seat.seat-vip::before {
@@ -550,11 +552,12 @@ body {
     font-size: 0.5rem;
     line-height: 1;
     color: var(--cb-seat-vip);
+    opacity: 0.85;
 }
 
 .seat.seat-couple {
-    background-color: color-mix(in srgb, var(--cb-seat-couple) 16%, var(--cb-seat-free-bg));
-    border-color: var(--cb-seat-couple);
+    background-color: var(--cb-seat-free-bg);
+    border-color: var(--cb-seat-free-border);
 }
 
 .seat.seat-couple::before {
@@ -565,6 +568,7 @@ body {
     font-size: 0.5rem;
     line-height: 1;
     color: var(--cb-seat-couple);
+    opacity: 0.85;
 }
 
 .seat:hover:not(:disabled) {
@@ -680,12 +684,12 @@ body {
 }
 
 .seat-swatch.is-vip {
-    border-color: var(--cb-seat-vip);
+    border-color: var(--cb-seat-free-border);
 }
 
 .seat-swatch.is-couple {
-    background-color: rgba(219, 39, 119, 0.18);
-    border-color: var(--cb-seat-couple);
+    background-color: var(--cb-seat-free-bg);
+    border-color: var(--cb-seat-free-border);
 }
 
 .seat-summary {

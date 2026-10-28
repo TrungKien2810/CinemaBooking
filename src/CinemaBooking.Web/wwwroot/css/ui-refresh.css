@@ -832,6 +832,22 @@ textarea.form-control {
     color: var(--cb-text-muted);
 }
 
+.seat-map-note {
+    margin: -0.4rem 0 0.75rem;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.seat-note-vip {
+    color: var(--cb-seat-vip);
+    font-weight: 800;
+}
+
+.seat-note-couple {
+    color: var(--cb-seat-couple);
+    font-weight: 800;
+}
+
 /* --- Checkout / ticket ---------------------------------------------------- */
 
 .checkout-card,
