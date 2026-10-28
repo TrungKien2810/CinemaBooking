@@ -1081,9 +1081,9 @@ body {
     border-radius: 0.2rem 0.2rem 0.35rem 0.35rem;
 }
 
-.seat-standard { background-color: var(--cb-seat-standard); }
-.seat-vip { background-color: var(--cb-seat-vip); }
-.seat-couple { background-color: var(--cb-seat-couple); }
+.seat-dot.seat-standard { background-color: var(--cb-seat-standard); }
+.seat-dot.seat-vip { background-color: var(--cb-seat-vip); }
+.seat-dot.seat-couple { background-color: var(--cb-seat-couple); }
 
 .seat-legend {
     list-style: none;
