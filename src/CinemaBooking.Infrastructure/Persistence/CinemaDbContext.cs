@@ -37,6 +37,7 @@ public class CinemaDbContext : IdentityDbContext<ApplicationUser>
         b.Entity<Booking>().Property(x => x.TotalAmount).HasPrecision(18, 2);
         b.Entity<BookingSeat>().Property(x => x.PriceAtBooking).HasPrecision(18, 2);
         b.Entity<Payment>().Property(x => x.Amount).HasPrecision(18, 2);
+        b.Entity<Payment>().Property(x => x.RefundedAmount).HasPrecision(18, 2);
         b.Entity<DailyRevenueReport>().Property(x => x.Revenue).HasPrecision(18, 2);
 
         b.Entity<Booking>().HasIndex(x => x.BookingCode).IsUnique();

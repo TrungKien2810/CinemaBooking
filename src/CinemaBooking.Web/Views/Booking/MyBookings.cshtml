@@ -1,6 +1,12 @@
 @model MyBookingsViewModel
+@using CinemaBooking.Domain.Enums
 @{
     ViewData["Title"] = "Vé của tôi";
+
+    string TabClass(string tab) =>
+        string.Equals(Model.Tab, tab, StringComparison.OrdinalIgnoreCase)
+            ? "nav-link active"
+            : "nav-link";
 }
 
 <section class="page-head">
@@ -8,11 +14,43 @@
     <p class="cb-muted page-subtitle">Các đơn đã đặt bằng tài khoản này.</p>
 </section>
 
+@if (TempData["Success"] is string success)
+{
+    <div class="alert alert-success" role="alert">@success</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger" role="alert">@error</div>
+}
+
+<ul class="nav nav-tabs booking-tabs">
+    <li class="nav-item">
+        <a class="@TabClass("all")" asp-action="MyBookings" asp-route-tab="all">
+            Tất cả <span class="badge text-bg-secondary">@(Model.UpcomingCount + Model.HistoryCount + Model.CancelledCount)</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="@TabClass("upcoming")" asp-action="MyBookings" asp-route-tab="upcoming">
+            Sắp chiếu <span class="badge text-bg-secondary">@Model.UpcomingCount</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="@TabClass("history")" asp-action="MyBookings" asp-route-tab="history">
+            Đã xem <span class="badge text-bg-secondary">@Model.HistoryCount</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="@TabClass("cancelled")" asp-action="MyBookings" asp-route-tab="cancelled">
+            Đã hủy <span class="badge text-bg-secondary">@Model.CancelledCount</span>
+        </a>
+    </li>
+</ul>
+
 @if (Model.Bookings.Count == 0)
 {
     <div class="cb-card empty-state">
         <div class="error-icon" aria-hidden="true">🎟️</div>
-        <div class="empty-title">Bạn chưa có vé nào</div>
+        <div class="empty-title">Không có vé trong mục này</div>
         <p class="cb-muted">Chọn một phim và giữ ghế để đơn đầu tiên xuất hiện ở đây.</p>
         <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Xem phim đang chiếu</a>
     </div>
@@ -22,6 +60,12 @@ else
     <div class="booking-list">
         @foreach (var booking in Model.Bookings)
         {
+            var badgeClass = booking.Status switch
+            {
+                BookingStatus.Confirmed => "text-bg-success",
+                BookingStatus.Pending => "text-bg-warning",
+                _ => "text-bg-secondary",
+            };
             <article class="cb-card booking-list-item">
                 <div class="booking-list-main">
                     <div class="booking-list-code">@booking.BookingCode</div>
@@ -31,12 +75,18 @@ else
                     <p class="cb-muted mb-0">Ghế: @string.Join(", ", booking.Seats.Select(s => s.Label))</p>
                 </div>
                 <div class="booking-list-side">
-                    <span class="badge @(booking.Status == BookingStatus.Confirmed ? "text-bg-success" : "text-bg-secondary")">
-                        @booking.StatusLabel
-                    </span>
+                    <span class="badge @badgeClass">@booking.StatusLabel</span>
                     <div class="booking-list-total">@booking.TotalAmount.ToString("N0") ₫</div>
-                    <a asp-controller="Booking" asp-action="Confirmation" asp-route-code="@booking.BookingCode"
-                       class="btn btn-outline-secondary btn-sm">Xem chi tiết</a>
+                    <div class="booking-list-payment">@booking.PaymentStateLabel</div>
+                    <div class="d-flex gap-2 mt-2">
+                        <a asp-controller="Booking" asp-action="Confirmation" asp-route-code="@booking.BookingCode"
+                           class="btn btn-outline-secondary btn-sm">Xem chi tiết</a>
+                        @if (booking.CanCancel)
+                        {
+                            <a asp-controller="Booking" asp-action="Cancel" asp-route-code="@booking.BookingCode"
+                               class="btn btn-outline-danger btn-sm">Hủy vé</a>
+                        }
+                    </div>
                 </div>
             </article>
         }

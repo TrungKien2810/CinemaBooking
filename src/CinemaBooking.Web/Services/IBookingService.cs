@@ -1,3 +1,5 @@
+using CinemaBooking.Domain.Abstractions;
+
 namespace CinemaBooking.Web.Services;
 
 /// <summary>
@@ -27,15 +29,25 @@ public enum BookingResultKind
     ShowtimeNotBookable,
     /// <summary>Cổng thanh toán từ chối — đơn không được xác nhận.</summary>
     PaymentFailed,
+    /// <summary>
+    /// Đã ghi Booking + giữ ghế (Pending) và tạo URL thanh toán VNPAY — khách cần chuyển hướng sang
+    /// cổng thanh toán để hoàn tất. Đơn chỉ được xác nhận khi VNPAY trả về <c>ReturnUrl</c>/IPN.
+    /// </summary>
+    PaymentRedirected,
 }
 
-public sealed record BookingResult(BookingResultKind Kind, string? BookingCode, string? Message)
+public sealed record BookingResult(BookingResultKind Kind, string? BookingCode, string? Message, string? PaymentUrl = null)
 {
     public bool IsSuccess => Kind == BookingResultKind.Success;
+
+    public bool IsRedirectToPayment => Kind == BookingResultKind.PaymentRedirected;
 
     public static BookingResult Success(string bookingCode) => new(BookingResultKind.Success, bookingCode, null);
 
     public static BookingResult Failed(BookingResultKind kind, string message) => new(kind, null, message);
+
+    public static BookingResult RedirectToPayment(string bookingCode, string paymentUrl) =>
+        new(BookingResultKind.PaymentRedirected, bookingCode, null, paymentUrl);
 }
 
 /// <summary>
@@ -45,4 +57,12 @@ public sealed record BookingResult(BookingResultKind Kind, string? BookingCode, 
 public interface IBookingService
 {
     Task<BookingResult> PlaceAsync(BookingRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Xác nhận / hủy đơn sau khi VNPAY xác thực xong kết quả thanh toán (qua ReturnUrl hoặc IPN).
+    /// </summary>
+    Task<BookingResult> ConfirmAsync(string bookingCode, VnpayVerifyResult verify, CancellationToken ct = default);
+
+    /// <summary>Đưa lại email xác nhận vào outbox (khách làm mất email / không nhận được).</summary>
+    Task<BookingResult> ResendConfirmationAsync(string bookingCode, CancellationToken ct = default);
 }

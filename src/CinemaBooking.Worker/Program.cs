@@ -33,6 +33,7 @@ builder.Services.Configure<EmailOutboxOptions>(
     builder.Configuration.GetSection(EmailOutboxOptions.SectionName));
 
 builder.Services.AddHostedService<ExpiredSeatCleaner>();
+builder.Services.AddHostedService<ExpiredBookingCleaner>();
 builder.Services.AddHostedService<EmailOutboxWorker>();
 builder.Services.AddHostedService<DailyReportWorker>();
 

@@ -1,14 +1,36 @@
 @model BookingTicketViewModel
+@using CinemaBooking.Domain.Enums
 @{
     ViewData["Title"] = $"Vé {Model.BookingCode}";
+    var confirmed = Model.Status == BookingStatus.Confirmed;
 }
 
 <section class="page-head">
-    <h1 class="page-title">Đặt vé thành công 🎉</h1>
+    <h1 class="page-title">@(confirmed ? "Đặt vé thành công 🎉" : "Thanh toán chưa hoàn tất")</h1>
     <p class="cb-muted page-subtitle">
-        Cảm ơn @Model.CustomerName! Vé đã được xác nhận và email sẽ được gửi tới @Model.CustomerEmail.
+        @if (confirmed)
+        {
+            <text>Cảm ơn @Model.CustomerName! Vé đã được xác nhận và email sẽ được gửi tới @Model.CustomerEmail.</text>
+        }
+        else
+        {
+            <text>
+                Giao dịch chưa thành công nên vé @Model.BookingCode chưa được xác nhận.
+                Ghế của đơn này đã được trả lại — bạn có thể chọn lại ghế và thanh toán lại.
+            </text>
+        }
     </p>
 </section>
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger" role="alert">@error</div>
+}
+
+@if (TempData["Success"] is string success)
+{
+    <div class="alert alert-success" role="alert">@success</div>
+}
 
 <partial name="_BookingSteps" model="3" />
 
@@ -19,19 +41,53 @@
         <span class="ticket-barcode" aria-hidden="true"></span>
     </div>
 
+    @if (confirmed)
+    {
+        <div class="ticket-qr">
+            <img src="@Url.Action("Qr", "Booking", new { code = Model.BookingCode })"
+                 alt="Mã QR của vé @Model.BookingCode" width="148" height="148" />
+            <span class="cb-muted">Quét mã QR để mở lại vé</span>
+        </div>
+    }
+
     <partial name="_BookingDetails" model="Model" />
 
-    <p class="ticket-note">
-        <span aria-hidden="true">📧</span>
-        Vui lòng đưa mã vé cho nhân viên khi tới rạp. Bạn có thể tra cứu lại vé bất cứ lúc nào.
-    </p>
+    @if (confirmed)
+    {
+        <p class="ticket-note">
+            <span aria-hidden="true">📧</span>
+            Vui lòng đưa mã vé cho nhân viên khi tới rạp. Bạn có thể tra cứu lại vé bất cứ lúc nào.
+        </p>
+    }
 
     <div class="booking-actions">
         <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Về trang chủ</a>
         <a asp-controller="Booking" asp-action="Lookup" class="btn btn-outline-secondary">Tra cứu vé khác</a>
+        @if (confirmed && Model.CanCancel)
+        {
+            <a asp-controller="Booking" asp-action="Cancel" asp-route-code="@Model.BookingCode"
+               class="btn btn-outline-danger">Hủy vé</a>
+        }
         @if (User.Identity?.IsAuthenticated == true)
         {
             <a asp-controller="Booking" asp-action="MyBookings" class="btn btn-link">Vé của tôi</a>
         }
+        @if (confirmed)
+        {
+            <button type="button" class="btn btn-outline-secondary" onclick="window.print()">In vé</button>
+        }
     </div>
+
+    @if (confirmed)
+    {
+        <form asp-controller="Booking" asp-action="ResendEmail" method="post" class="resend-email-form mt-3">
+            <input type="hidden" name="code" value="@Model.BookingCode" />
+            @if (User.Identity?.IsAuthenticated != true)
+            {
+                <input type="email" name="email" class="form-control form-control-sm"
+                       placeholder="Email đặt vé" required />
+            }
+            <button type="submit" class="btn btn-outline-secondary btn-sm">Gửi lại email xác nhận</button>
+        </form>
+    }
 </div>

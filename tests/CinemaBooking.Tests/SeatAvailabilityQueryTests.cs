@@ -1,8 +1,11 @@
 using CinemaBooking.Domain.Entities;
+using CinemaBooking.Domain.Enums;
+using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace CinemaBooking.Tests;
 
@@ -52,7 +55,8 @@ public sealed class SeatAvailabilityQueryTests : IAsyncLifetime
         await _connection.DisposeAsync();
     }
 
-    private SeatAvailabilityQuery Sut(DateTime? nowUtc = null) => new(_db, new FixedTimeProvider(nowUtc ?? Now));
+    private SeatAvailabilityQuery Sut(DateTime? nowUtc = null) =>
+        new(_db, new FixedTimeProvider(nowUtc ?? Now), Options.Create(new VnpayOptions()));
 
     [Fact]
     public async Task Free_seat_of_an_upcoming_showtime_is_available()
@@ -61,7 +65,7 @@ public sealed class SeatAvailabilityQueryTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Seat_with_a_booking_row_is_booked()
+    public async Task Seat_with_a_confirmed_booking_row_is_booked()
     {
         _db.Bookings.Add(new Booking
         {
@@ -69,11 +73,50 @@ public sealed class SeatAvailabilityQueryTests : IAsyncLifetime
             ShowtimeId = _showtime.Id,
             CustomerName = "Khách",
             CustomerEmail = "khach@example.com",
+            BookingTimeUtc = Now.AddMinutes(-1),
+            Status = BookingStatus.Confirmed,
             Seats = { new BookingSeat { SeatId = _seat.Id, ShowtimeId = _showtime.Id, PriceAtBooking = 90_000m } },
         });
         await _db.SaveChangesAsync();
 
         Assert.Equal(SeatAvailability.Booked, await Sut().CheckAsync(_showtime.Id, _seat.Id));
+    }
+
+    [Fact]
+    public async Task Seat_held_by_a_booking_still_waiting_for_payment_is_booked()
+    {
+        _db.Bookings.Add(new Booking
+        {
+            BookingCode = "CB-T00002",
+            ShowtimeId = _showtime.Id,
+            CustomerName = "Khách",
+            CustomerEmail = "khach@example.com",
+            BookingTimeUtc = Now.AddMinutes(-1),
+            Status = BookingStatus.Pending,
+            Seats = { new BookingSeat { SeatId = _seat.Id, ShowtimeId = _showtime.Id, PriceAtBooking = 90_000m } },
+        });
+        await _db.SaveChangesAsync();
+
+        Assert.Equal(SeatAvailability.Booked, await Sut().CheckAsync(_showtime.Id, _seat.Id));
+    }
+
+    [Fact]
+    public async Task Seat_held_by_an_abandoned_pending_booking_is_available_again()
+    {
+        // Quá hạn chờ thanh toán (VNPAY 15 phút + 5 phút gia hạn): đơn chưa trả tiền không được giữ ghế.
+        _db.Bookings.Add(new Booking
+        {
+            BookingCode = "CB-T00003",
+            ShowtimeId = _showtime.Id,
+            CustomerName = "Khách bỏ dở",
+            CustomerEmail = "bo@example.com",
+            BookingTimeUtc = Now.AddMinutes(-30),
+            Status = BookingStatus.Pending,
+            Seats = { new BookingSeat { SeatId = _seat.Id, ShowtimeId = _showtime.Id, PriceAtBooking = 90_000m } },
+        });
+        await _db.SaveChangesAsync();
+
+        Assert.Equal(SeatAvailability.Available, await Sut().CheckAsync(_showtime.Id, _seat.Id));
     }
 
     [Fact]

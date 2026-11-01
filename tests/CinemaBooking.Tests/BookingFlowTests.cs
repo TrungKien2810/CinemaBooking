@@ -65,26 +65,43 @@ public sealed class BookingFlowTests : IAsyncLifetime
         var seats = await StandardSeatIdsAsync(2);
         Hold(seats);
 
+        // Luồng VNPAY: PlaceAsync tạo Booking Pending + URL thanh toán rồi chuyển sang cổng VNPAY;
+        // sau đó VNPAY trả về (ReturnUrl/IPN) xác nhận giao dịch.
         var result = await Service().PlaceAsync(Request(seats));
 
-        Assert.True(result.IsSuccess);
+        Assert.True(result.IsRedirectToPayment);
         Assert.StartsWith(BookingCodeGenerator.Prefix, result.BookingCode);
+
+        var bookingCode = result.BookingCode!;
+        var confirm = await Service().ConfirmAsync(bookingCode, new VnpayVerifyResult(
+            SignatureValid: true,
+            PaymentSucceeded: true,
+            TxnRef: bookingCode,
+            ResponseCode: "00",
+            TransactionId: "VNPAY-TEST",
+            BankCode: "NCB",
+            Amount: 180_000m,
+            FailureReason: null));
+
+        Assert.True(confirm.IsSuccess);
+        Assert.Equal(BookingResultKind.Success, confirm.Kind);
 
         _db.ChangeTracker.Clear();
         var booking = await _db.Bookings
             .Include(b => b.Seats).Include(b => b.Payment)
-            .SingleAsync(b => b.BookingCode == result.BookingCode);
+            .SingleAsync(b => b.BookingCode == bookingCode);
 
         Assert.Equal(BookingStatus.Confirmed, booking.Status);
         Assert.Equal(2, booking.Seats.Count);
         Assert.Equal(180_000m, booking.TotalAmount);
         Assert.Equal(PaymentStatus.Succeeded, booking.Payment!.Status);
+        Assert.Equal("VNPAY", booking.Payment.PaymentMethod);
         Assert.False(string.IsNullOrEmpty(booking.Payment.TransactionId));
 
         var mail = await _db.OutboxEmails.SingleAsync();
         Assert.Equal(OutboxStatus.Pending, mail.Status);
         Assert.Equal(booking.CustomerEmail, mail.ToAddress);
-        Assert.Contains(result.BookingCode!, mail.Subject);
+        Assert.Contains(bookingCode, mail.Subject);
 
         Assert.Empty(_locks.GetLocksForShowtime(_showtime.Id));
     }
@@ -134,7 +151,7 @@ public sealed class BookingFlowTests : IAsyncLifetime
         var seats = await StandardSeatIdsAsync(2);
         Hold(seats);
 
-        var result = await Service(payment: new FakePaymentService(succeed: false)).PlaceAsync(Request(seats));
+        var result = await Service(vnpay: new FakeVnpayPaymentService(succeed: false)).PlaceAsync(Request(seats));
 
         Assert.Equal(BookingResultKind.PaymentFailed, result.Kind);
 
@@ -146,16 +163,110 @@ public sealed class BookingFlowTests : IAsyncLifetime
         Assert.Empty(await _db.OutboxEmails.ToListAsync());
     }
 
+    [Fact]
+    public async Task Failed_payment_on_return_frees_the_seats_for_other_customers()
+    {
+        var seats = await StandardSeatIdsAsync(2);
+        Hold(seats);
+
+        var placed = await Service().PlaceAsync(Request(seats));
+        Assert.True(placed.IsRedirectToPayment);
+
+        // VNPAY trả về với mã lỗi (khách hủy / thẻ bị từ chối) — chữ ký vẫn hợp lệ.
+        var confirm = await Service().ConfirmAsync(placed.BookingCode!, new VnpayVerifyResult(
+            SignatureValid: true,
+            PaymentSucceeded: false,
+            TxnRef: placed.BookingCode,
+            ResponseCode: "24",
+            TransactionId: null,
+            BankCode: null,
+            Amount: 180_000m,
+            FailureReason: "Khách hủy thanh toán."));
+
+        Assert.Equal(BookingResultKind.PaymentFailed, confirm.Kind);
+
+        _db.ChangeTracker.Clear();
+        Assert.Equal(BookingStatus.Cancelled, (await _db.Bookings.SingleAsync()).Status);
+        Assert.Empty(await _db.BookingSeats.ToListAsync());
+        Assert.Empty(await _db.OutboxEmails.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Invalid_signature_never_cancels_the_booking()
+    {
+        var seat = (await StandardSeatIdsAsync(1))[0];
+        Hold(new[] { seat });
+
+        var placed = await Service().PlaceAsync(Request(new[] { seat }));
+        Assert.True(placed.IsRedirectToPayment);
+
+        // Ai đó gọi ReturnUrl với tham số rác: chữ ký sai thì tuyệt đối không được hủy đơn của khách.
+        var confirm = await Service().ConfirmAsync(placed.BookingCode!, new VnpayVerifyResult(
+            SignatureValid: false,
+            PaymentSucceeded: false,
+            TxnRef: placed.BookingCode,
+            ResponseCode: "24",
+            TransactionId: null,
+            BankCode: null,
+            Amount: 90_000m,
+            FailureReason: "Chu ky khong hop le."));
+
+        Assert.False(confirm.IsSuccess);
+
+        _db.ChangeTracker.Clear();
+        Assert.Equal(BookingStatus.Pending, (await _db.Bookings.SingleAsync()).Status);
+        Assert.Single(await _db.BookingSeats.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Abandoned_pending_booking_releases_the_seat_after_the_payment_window()
+    {
+        var seat = (await StandardSeatIdsAsync(1))[0];
+
+        // Đơn Pending tạo cách đây 40 phút (> 15 phút VNPAY + 5 phút gia hạn) và chưa từng được xác nhận.
+        _db.Bookings.Add(new Booking
+        {
+            BookingCode = "CB-STALE1",
+            ShowtimeId = _showtime.Id,
+            CustomerName = "Khách bỏ dở",
+            CustomerEmail = "bo@example.com",
+            BookingTimeUtc = Now.AddMinutes(-40),
+            TotalAmount = 90_000m,
+            Status = BookingStatus.Pending,
+            Seats = { new BookingSeat { SeatId = seat, ShowtimeId = _showtime.Id, PriceAtBooking = 90_000m } },
+            Payment = new Payment { Amount = 90_000m, PaymentMethod = "VNPAY", Status = PaymentStatus.Pending, CreatedUtc = Now.AddMinutes(-40) },
+        });
+        await _db.SaveChangesAsync();
+        _db.ChangeTracker.Clear();
+
+        var bookedSeats = new BookedSeatQuery(_db, new FixedTimeProvider(Now),
+            Microsoft.Extensions.Options.Options.Create(new CinemaBooking.Infrastructure.VnpayOptions()));
+        Assert.DoesNotContain(seat, await bookedSeats.GetBookedSeatIdsAsync(_showtime.Id));
+
+        // Người khác chọn đúng ghế đó: đơn bỏ dở bị hết hạn, ghế được trả và bán cho người mới.
+        Hold(new[] { seat });
+        var result = await Service().PlaceAsync(Request(new[] { seat }));
+
+        Assert.True(result.IsRedirectToPayment);
+
+        _db.ChangeTracker.Clear();
+        Assert.Equal(BookingStatus.Expired, (await _db.Bookings.SingleAsync(b => b.BookingCode == "CB-STALE1")).Status);
+        Assert.Single(await _db.BookingSeats.ToListAsync());
+    }
+
     private BookingService Service(
         IBookedSeatQuery? bookedSeats = null,
-        IPaymentService? payment = null) =>
+        IVnpayPaymentService? vnpay = null) =>
         new(_db,
-            bookedSeats ?? new BookedSeatQuery(_db),
+            bookedSeats ?? new BookedSeatQuery(_db, new FixedTimeProvider(Now),
+                Microsoft.Extensions.Options.Options.Create(new CinemaBooking.Infrastructure.VnpayOptions())),
             _locks,
             new SeatPricingService(),
-            payment ?? new FakePaymentService(succeed: true),
+            vnpay ?? new FakeVnpayPaymentService(succeed: true),
             new BookingCodeGenerator(),
-            new FixedTimeProvider(Now));
+            new FixedTimeProvider(Now),
+            Microsoft.Extensions.Options.Options.Create(new CinemaBooking.Infrastructure.VnpayOptions()),
+            new CinemaBooking.Web.Services.DisplayTimeZone());
 
     private BookingRequest Request(IReadOnlyList<int> seatIds) =>
         new(_showtime.Id, seatIds, Connection, "Nguyễn Văn A", "a@example.com", "0900000000", null);
@@ -187,15 +298,26 @@ public sealed class BookingFlowTests : IAsyncLifetime
         _db.ChangeTracker.Clear();
     }
 
-    private sealed class FakePaymentService : IPaymentService
+    private sealed class FakeVnpayPaymentService : IVnpayPaymentService
     {
         private readonly bool _succeed;
-        public FakePaymentService(bool succeed) => _succeed = succeed;
+        public FakeVnpayPaymentService(bool succeed) => _succeed = succeed;
 
-        public Task<PaymentResult> ChargeAsync(PaymentRequest request, CancellationToken ct = default) =>
+        public Task<VnpayPaymentResult> CreateVnpayPaymentAsync(VnpayPaymentRequest request, CancellationToken ct = default) =>
             Task.FromResult(_succeed
-                ? new PaymentResult(true, "TX-TEST", null)
-                : new PaymentResult(false, null, "Thẻ bị từ chối."));
+                ? new VnpayPaymentResult(true, $"https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_TxnRef={request.TxnRef}", null, request.TxnRef, "00", null, null, null)
+                : new VnpayPaymentResult(false, null, null, request.TxnRef, null, null, null, "Gia cong khong thanh cong."));
+
+        public Task<VnpayVerifyResult> VerifyVnpayPaymentAsync(VnpayPaymentRequest request, IDictionary<string, string?> response, CancellationToken ct = default) =>
+            Task.FromResult(new VnpayVerifyResult(
+                SignatureValid: true,
+                PaymentSucceeded: true,
+                TxnRef: response["vnp_TxnRef"],
+                ResponseCode: response["vnp_ResponseCode"],
+                TransactionId: response["vnp_TransactionNo"],
+                BankCode: response["vnp_BankCode"],
+                Amount: 180_000m,
+                FailureReason: null));
     }
 
     private sealed class NoBookedSeats : IBookedSeatQuery

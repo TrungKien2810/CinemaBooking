@@ -20,6 +20,12 @@ public class Booking
     public decimal TotalAmount { get; set; }
     public BookingStatus Status { get; set; } = BookingStatus.Pending;
 
+    /// <summary>Thời điểm hủy (UTC). Null với đơn chưa hủy.</summary>
+    public DateTime? CancelledUtc { get; set; }
+    /// <summary>Ai hủy: "customer:{userId}", "guest:{email}" hoặc "admin:{userId}".</summary>
+    [MaxLength(300)] public string? CancelledBy { get; set; }
+    [MaxLength(500)] public string? CancellationReason { get; set; }
+
     public ICollection<BookingSeat> Seats { get; set; } = new List<BookingSeat>();
     public Payment? Payment { get; set; }
 }
@@ -47,4 +53,23 @@ public class Payment
     public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
     [MaxLength(100)] public string? TransactionId { get; set; }
     public DateTime CreatedUtc { get; set; }
+
+    /// <summary>
+    /// <c>vnp_CreateDate</c> gốc đã gửi sang VNPAY (GMT+7, yyyyMMddHHmmss). API hoàn tiền bắt buộc
+    /// phải có đúng giá trị này ở <c>vnp_TransactionDate</c>.
+    /// </summary>
+    [MaxLength(14)] public string? VnpayCreateDate { get; set; }
+
+    /// <summary>Thời điểm VNPAY xác nhận thanh toán (<c>vnp_PayDate</c>), GMT+7.</summary>
+    [MaxLength(14)] public string? VnpayPayDate { get; set; }
+
+    public DateTime? PaidUtc { get; set; }
+
+    // ── Hoàn tiền ────────────────────────────────────────────────────────────
+    [MaxLength(32)] public string? RefundRequestId { get; set; }
+    [MaxLength(100)] public string? RefundTransactionNo { get; set; }
+    public decimal? RefundedAmount { get; set; }
+    public DateTime? RefundedUtc { get; set; }
+    [MaxLength(10)] public string? RefundResponseCode { get; set; }
+    [MaxLength(500)] public string? RefundMessage { get; set; }
 }

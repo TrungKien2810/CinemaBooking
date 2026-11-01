@@ -1,5 +1,7 @@
+using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
+using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Areas.Admin.Controllers;
 using CinemaBooking.Web.Services;
@@ -8,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace CinemaBooking.Tests;
@@ -69,10 +72,22 @@ public sealed class AdminBookingCancellationTests : IAsyncLifetime
         return booking;
     }
 
-    private BookingsController CreateController() => new(_db, Options.Create(new DisplayTimeZone()))
+    private BookingsController CreateController()
     {
-        TempData = new TempDataDictionary(new DefaultHttpContext(), new NullTempDataProvider()),
-    };
+        var cancellation = new BookingCancellationService(
+            _db,
+            new FakeRefundService(),
+            Options.Create(new VnpayOptions { RefundEnabled = false }),
+            Options.Create(new BookingCancellationOptions()),
+            new DisplayTimeZone(),
+            TimeProvider.System,
+            NullLogger<BookingCancellationService>.Instance);
+
+        return new BookingsController(_db, Options.Create(new DisplayTimeZone()), cancellation)
+        {
+            TempData = new TempDataDictionary(new DefaultHttpContext(), new NullTempDataProvider()),
+        };
+    }
 
     [Fact]
     public async Task Cancel_frees_the_seats_and_refunds_a_paid_booking()
@@ -114,7 +129,7 @@ public sealed class AdminBookingCancellationTests : IAsyncLifetime
 
         _db.ChangeTracker.Clear();
         var payment = await _db.Payments.SingleAsync(p => p.BookingId == booking.Id);
-        Assert.Equal(PaymentStatus.Pending, payment.Status);
+        Assert.Equal(PaymentStatus.Failed, payment.Status);
     }
 
     [Theory]
@@ -143,5 +158,11 @@ public sealed class AdminBookingCancellationTests : IAsyncLifetime
         public IDictionary<string, object> LoadTempData(HttpContext context) => new Dictionary<string, object>();
 
         public void SaveTempData(HttpContext context, IDictionary<string, object> values) { }
+    }
+
+    private sealed class FakeRefundService : IVnpayRefundService
+    {
+        public Task<VnpayRefundResult> RefundAsync(VnpayRefundRequest request, CancellationToken ct = default) =>
+            Task.FromResult(new VnpayRefundResult(true, "00", "00", "REFUND-TEST", "OK"));
     }
 }

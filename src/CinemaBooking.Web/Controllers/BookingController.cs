@@ -26,10 +26,14 @@ public class BookingController : Controller
     private readonly ISeatLockManager _locks;
     private readonly ISeatPricingService _pricing;
     private readonly IBookingService _bookings;
+    private readonly IBookingCancellationService _cancellations;
+    private readonly IQrCodeService _qr;
+    private readonly IVnpayPaymentService _vnpay;
     private readonly IHubContext<SeatHub, ISeatClient> _seats;
     private readonly DisplayTimeZone _tz;
     private readonly TimeProvider _clock;
     private readonly SeatHoldOptions _hold;
+    private readonly IOptions<VnpayOptions> _vnpayOptions;
 
     public BookingController(
         CinemaDbContext db,
@@ -37,20 +41,28 @@ public class BookingController : Controller
         ISeatLockManager locks,
         ISeatPricingService pricing,
         IBookingService bookings,
+        IBookingCancellationService cancellations,
+        IQrCodeService qr,
+        IVnpayPaymentService vnpay,
         IHubContext<SeatHub, ISeatClient> seats,
         IOptions<DisplayTimeZone> tz,
         TimeProvider clock,
-        IOptions<SeatHoldOptions> hold)
+        IOptions<SeatHoldOptions> hold,
+        IOptions<VnpayOptions> vnpayOptions)
     {
         _db = db;
         _bookedSeats = bookedSeats;
         _locks = locks;
         _pricing = pricing;
         _bookings = bookings;
+        _cancellations = cancellations;
+        _qr = qr;
+        _vnpay = vnpay;
         _seats = seats;
         _tz = tz.Value;
         _clock = clock;
         _hold = hold.Value;
+        _vnpayOptions = vnpayOptions;
     }
 
     [HttpGet]
@@ -158,6 +170,14 @@ public class BookingController : Controller
             form.CustomerPhone,
             User.FindFirstValue(ClaimTypes.NameIdentifier)), ct);
 
+        if (result.IsRedirectToPayment)
+        {
+            // Luồng VNPAY: Booking + Payment đang ở trạng thái Pending (BookingSeats giữ ghế), khách
+            // cần được chuyển hướng sang cổng VNPAY để thanh toán. Quay về sau khi VNPAY xử lý
+            // (qua ReturnUrl / IPN) sẽ gọi lại để xác nhận hoặc hủy đơn.
+            return Redirect(result.PaymentUrl ?? string.Empty);
+        }
+
         if (!result.IsSuccess)
         {
             TempData["Error"] = result.Message;
@@ -171,6 +191,99 @@ public class BookingController : Controller
         return RedirectToAction(nameof(Confirmation), new { code = result.BookingCode });
     }
 
+    /// <summary>
+    /// URL nhận kết quả sau khi khách hàng hoàn tất thanh toán online tại cổng VNPAY (<c>vnp_ReturnUrl</c>).
+    /// Xác minh chữ ký <c>vnp_SecureHash</c>, xác nhận / hủy đơn, rồi đưa sang trang xác nhận vé.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> PaymentReturn(CancellationToken ct)
+    {
+        var response = new Dictionary<string, string?>();
+        foreach (var key in Request.Query.Keys)
+        {
+            if (!key.StartsWith("vnp_", StringComparison.OrdinalIgnoreCase)) continue;
+            response[key] = Request.Query[key];
+        }
+
+        var vnpayRequest = new VnpayPaymentRequest(
+            TxnRef: response["vnp_TxnRef"] ?? string.Empty,
+            Amount: 0,
+            OrderInfo: string.Empty,
+            ReturnUrl: _vnpayOptions.Value.ReturnUrl,
+            TmnCode: _vnpayOptions.Value.TmnCode,
+            HashSecret: _vnpayOptions.Value.HashSecret,
+            IpAddr: _vnpayOptions.Value.IpAddr,
+            Locale: _vnpayOptions.Value.Locale,
+            OrderType: _vnpayOptions.Value.OrderType,
+            ExpireMinutes: _vnpayOptions.Value.ExpireMinutes);
+
+        var verify = await _vnpay.VerifyVnpayPaymentAsync(vnpayRequest, response, ct);
+
+        // Chữ ký sai: không đổi trạng thái đơn, cũng không báo ghế trống cho các tab khác.
+        if (!verify.SignatureValid)
+        {
+            TempData["Error"] = "Không xác thực được phản hồi từ VNPAY (chữ ký không hợp lệ). Vé chưa được xác nhận.";
+            return RedirectToAction(nameof(Confirmation), new { code = verify.TxnRef });
+        }
+
+        var result = await _bookings.ConfirmAsync(verify.TxnRef ?? string.Empty, verify, ct);
+
+        // Đơn đã có kết quả: giỏ ghế trong Session hết tác dụng. Báo cho các tab đang mở suất chiếu
+        // vẽ lại ghế ngay — thanh toán xong thì "đã đặt", thanh toán lỗi/hủy thì "trống" (ghế đã được
+        // trả trong ConfirmAsync), không phải chờ lock hết hạn.
+        var selection = HttpContext.Session.GetSeatSelection();
+        HttpContext.Session.ClearSeatSelection();
+        if (selection is not null)
+        {
+            var seatIds = selection.SeatIds.ToList();
+            if (result.IsSuccess)
+                await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatBooked(seatIds);
+            else
+                await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatUnlocked(seatIds);
+        }
+
+        if (!result.IsSuccess)
+            TempData["Error"] = result.Message;
+
+        return RedirectToAction(nameof(Confirmation), new { code = result.BookingCode ?? verify.TxnRef });
+    }
+
+    /// <summary>
+    /// IPN URL của VNPAY: cổng thanh toán gọi lại máy chủ để notify kết quả sau khi khách thanh toán.
+    /// Bắt buộc trả JSON <c>{"RspCode":"00","Message":"..."}</c> cho VNPAY. Sau đó xác nhận / hủy
+    /// đơn đặt vé tương ứng.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> PaymentIpn(CancellationToken ct)
+    {
+        var response = new Dictionary<string, string?>();
+        foreach (var key in Request.Query.Keys)
+        {
+            if (!key.StartsWith("vnp_", StringComparison.OrdinalIgnoreCase)) continue;
+            response[key] = Request.Query[key];
+        }
+
+        var vnpayRequest = new VnpayPaymentRequest(
+            TxnRef: response["vnp_TxnRef"] ?? string.Empty,
+            Amount: 0,
+            OrderInfo: string.Empty,
+            ReturnUrl: _vnpayOptions.Value.ReturnUrl,
+            TmnCode: _vnpayOptions.Value.TmnCode,
+            HashSecret: _vnpayOptions.Value.HashSecret,
+            IpAddr: _vnpayOptions.Value.IpAddr,
+            Locale: _vnpayOptions.Value.Locale,
+            OrderType: _vnpayOptions.Value.OrderType,
+            ExpireMinutes: _vnpayOptions.Value.ExpireMinutes);
+
+        var verify = await _vnpay.VerifyVnpayPaymentAsync(vnpayRequest, response, ct);
+        await _bookings.ConfirmAsync(verify.TxnRef ?? string.Empty, verify, ct);
+
+        var responseCode = verify.SignatureValid ? "00" : "97";
+        var message = verify.SignatureValid ? "Confirm Success" : "Invalid signature";
+
+        return Content("{\"RspCode\":\"" + responseCode + "\",\"Message\":\"" + message + "\"}", "application/json");
+    }
+
     /// <summary>Trang xác nhận sau khi đặt vé — mã vé là thứ khách cần lưu lại.</summary>
     [HttpGet]
     public async Task<IActionResult> Confirmation(string? code, CancellationToken ct)
@@ -182,7 +295,28 @@ public class BookingController : Controller
         if (booking is null)
             return View("BookingNotFound", code.Trim());
 
-        return View(ToDetails(booking));
+        var eligibility = await _cancellations.GetEligibilityAsync(booking, ct);
+        return View(ToDetails(booking, eligibility.CanCancel, eligibility.RefundAmount));
+    }
+
+    /// <summary>
+    /// Ảnh QR in trên vé. Nội dung là URL tuyệt đối tới trang xác nhận để nhân viên quét bằng
+    /// điện thoại; URL dùng host hiện tại nên chạy đúng cả localhost và tên miền thật.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Qr(string code, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return NotFound();
+
+        var normalized = code.Trim().ToUpperInvariant();
+        var exists = await _db.Bookings.AsNoTracking()
+            .AnyAsync(b => b.BookingCode == normalized, ct);
+        if (!exists) return NotFound();
+
+        var url = Url.Action(nameof(Confirmation), "Booking", new { code = normalized }, Request.Scheme);
+        if (string.IsNullOrWhiteSpace(url)) return NotFound();
+
+        return File(_qr.CreatePng(url), "image/png");
     }
 
     /// <summary>Tra cứu vé theo mã, dùng được cho cả khách không đăng nhập.</summary>
@@ -201,13 +335,15 @@ public class BookingController : Controller
                 null));
         }
 
-        return View(new BookingLookupViewModel(booking.BookingCode, null, ToDetails(booking)));
+        var eligibility = await _cancellations.GetEligibilityAsync(booking, ct);
+        return View(new BookingLookupViewModel(
+            booking.BookingCode, null, ToDetails(booking, eligibility.CanCancel, eligibility.RefundAmount)));
     }
 
     /// <summary>Vé của tài khoản đang đăng nhập, mới nhất trước.</summary>
     [Authorize]
     [HttpGet]
-    public async Task<IActionResult> MyBookings(CancellationToken ct)
+    public async Task<IActionResult> MyBookings(string? tab, CancellationToken ct)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId is null) return Challenge();
@@ -222,7 +358,149 @@ public class BookingController : Controller
             .OrderByDescending(b => b.BookingTimeUtc)
             .ToListAsync(ct);
 
-        return View(new MyBookingsViewModel(bookings.Select(ToDetails).ToList()));
+        var now = _clock.GetUtcNow().UtcDateTime;
+        var upcomingCount = bookings.Count(b =>
+            (b.Status is BookingStatus.Confirmed or BookingStatus.Pending) && b.Showtime!.StartTimeUtc > now);
+        var historyCount = bookings.Count(b =>
+            b.Status == BookingStatus.Confirmed && b.Showtime!.StartTimeUtc <= now);
+        var cancelledCount = bookings.Count(b =>
+            b.Status is BookingStatus.Cancelled or BookingStatus.Expired);
+
+        var selected = string.IsNullOrWhiteSpace(tab) ? "all" : tab.Trim().ToLowerInvariant();
+        var filtered = selected switch
+        {
+            "upcoming" => bookings.Where(b =>
+                (b.Status is BookingStatus.Confirmed or BookingStatus.Pending) && b.Showtime!.StartTimeUtc > now),
+            "history" => bookings.Where(b =>
+                b.Status == BookingStatus.Confirmed && b.Showtime!.StartTimeUtc <= now),
+            "cancelled" => bookings.Where(b =>
+                b.Status is BookingStatus.Cancelled or BookingStatus.Expired),
+            _ => bookings,
+        };
+
+        var items = new List<BookingTicketViewModel>();
+        foreach (var booking in filtered)
+        {
+            var eligibility = await _cancellations.GetEligibilityAsync(booking, ct);
+            items.Add(ToDetails(booking, eligibility.CanCancel, eligibility.RefundAmount));
+        }
+
+        return View(new MyBookingsViewModel(
+            items, selected, upcomingCount, historyCount, cancelledCount));
+    }
+
+    /// <summary>
+    /// Trang xác nhận hủy vé. Khách đã đăng nhập chỉ xem được vé của mình; khách guest phải
+    /// nhập lại email khi bấm hủy ở bước POST.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Cancel(string code, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return View("BookingNotFound", (string?)null);
+
+        var booking = await FindBookingAsync(code, ct);
+        if (booking is null)
+            return View("BookingNotFound", code.Trim());
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var email = User.Identity.Name;
+            var owns = string.Equals(booking.UserId, userId, StringComparison.Ordinal)
+                       || (booking.UserId is null
+                           && string.Equals(booking.CustomerEmail, email, StringComparison.OrdinalIgnoreCase));
+            if (!owns) return Forbid();
+        }
+        else if (booking.UserId is not null)
+        {
+            // Vé đã gắn tài khoản: bắt đăng nhập rồi quay lại trang hủy.
+            return RedirectToAction("Login", "Account", new { returnUrl = Url.Action(nameof(Cancel), new { code }) });
+        }
+
+        var eligibility = await _cancellations.GetEligibilityAsync(booking, ct);
+        var details = ToDetails(booking, eligibility.CanCancel, eligibility.RefundAmount);
+
+        return View(new CancelBookingPageViewModel(
+            details,
+            eligibility.CanCancel,
+            eligibility.Reason,
+            eligibility.RefundAmount,
+            RequiresEmail: User.Identity?.IsAuthenticated != true));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Cancel(string code, string? email, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return View("BookingNotFound", (string?)null);
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
+        var authEmail = User.Identity?.IsAuthenticated == true ? User.Identity.Name : email?.Trim();
+        var actor = isAdmin
+            ? $"admin:{userId}"
+            : userId is not null
+                ? $"customer:{userId}"
+                : $"guest:{authEmail}";
+
+        var result = await _cancellations.CancelAsync(
+            new CancelBookingRequest(code, userId, authEmail, isAdmin, actor), ct);
+
+        if (result.IsSuccess)
+        {
+            if (result.ShowtimeId > 0 && result.SeatIds is { Count: > 0 })
+            {
+                await _seats.Clients.Group(SeatHub.GroupName(result.ShowtimeId))
+                    .SeatUnlocked(result.SeatIds);
+            }
+
+            TempData["Success"] = result.Message;
+            return User.Identity?.IsAuthenticated == true
+                ? RedirectToAction(nameof(MyBookings))
+                : RedirectToAction(nameof(Confirmation), new { code });
+        }
+
+        TempData["Error"] = result.Message;
+        if (result.Outcome == CancelBookingOutcome.NotFound)
+            return View("BookingNotFound", code);
+
+        return RedirectToAction(nameof(Cancel), new { code });
+    }
+
+    /// <summary>Gửi lại email xác nhận; khách guest phải nhập đúng email trên vé.</summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResendEmail(string code, string? email, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return View("BookingNotFound", (string?)null);
+
+        var booking = await FindBookingAsync(code, ct);
+        if (booking is null) return View("BookingNotFound", code);
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var authEmail = User.Identity?.IsAuthenticated == true ? User.Identity.Name : email?.Trim();
+        var owns = (!string.IsNullOrWhiteSpace(userId)
+                    && string.Equals(booking.UserId, userId, StringComparison.Ordinal))
+                   || (booking.UserId is null
+                       && !string.IsNullOrWhiteSpace(authEmail)
+                       && string.Equals(booking.CustomerEmail, authEmail, StringComparison.OrdinalIgnoreCase));
+
+        if (!owns)
+        {
+            TempData["Error"] = "Email không khớp với vé. Vui lòng kiểm tra lại.";
+            return RedirectToAction(nameof(Confirmation), new { code = booking.BookingCode });
+        }
+
+        var result = await _bookings.ResendConfirmationAsync(booking.BookingCode, ct);
+        if (result.IsSuccess)
+            TempData["Success"] = $"Đã xếp email xác nhận gửi lại tới {booking.CustomerEmail}.";
+        else
+            TempData["Error"] = result.Message;
+
+        return RedirectToAction(nameof(Confirmation), new { code = booking.BookingCode });
     }
 
     /// <summary>Dựng lại tóm tắt đơn từ Session; trả null nếu suất không còn bán (đã xóa Session).</summary>
@@ -286,7 +564,7 @@ public class BookingController : Controller
             .FirstOrDefaultAsync(b => b.BookingCode == normalized, ct);
     }
 
-    private BookingTicketViewModel ToDetails(Booking booking)
+    private BookingTicketViewModel ToDetails(Booking booking, bool canCancel = false, decimal refundAmount = 0)
     {
         var showtime = booking.Showtime!;
 
@@ -306,13 +584,15 @@ public class BookingController : Controller
             _tz.ToLocalTime(booking.BookingTimeUtc),
             booking.Status,
             booking.Payment?.Status ?? PaymentStatus.Pending,
-            booking.Payment?.PaymentMethod ?? "Mock",
+            booking.Payment?.PaymentMethod ?? "VNPAY",
             booking.Payment?.TransactionId,
             booking.CustomerName,
             booking.CustomerEmail,
             booking.CustomerPhone,
             booking.TotalAmount,
-            seats);
+            seats,
+            canCancel,
+            refundAmount);
     }
 
     private async Task<string?> ValidateSelectionAsync(Showtime showtime, List<int> ids, string? connectionId, CancellationToken ct)

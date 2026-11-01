@@ -1,9 +1,11 @@
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
+using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace CinemaBooking.Tests;
 
@@ -54,6 +56,7 @@ public sealed class BookingSeatConstraintTests : IAsyncLifetime
         ShowtimeId = showtimeId,
         CustomerName = "Khách",
         CustomerEmail = "khach@example.com",
+        BookingTimeUtc = DateTime.UtcNow,
         Status = BookingStatus.Pending,
         Seats = { new BookingSeat { SeatId = seatId, ShowtimeId = seatShowtimeId, PriceAtBooking = 90_000m } },
     };
@@ -100,7 +103,8 @@ public sealed class BookingSeatConstraintTests : IAsyncLifetime
         _db.Bookings.Add(NewBooking(_otherShowtime.Id, _otherShowtime.Id, _seat.Id + 1));
         await _db.SaveChangesAsync();
 
-        var booked = await new BookedSeatQuery(_db).GetBookedSeatIdsAsync(_showtime.Id);
+        var booked = await new BookedSeatQuery(_db, TimeProvider.System, Options.Create(new VnpayOptions()))
+            .GetBookedSeatIdsAsync(_showtime.Id);
 
         Assert.Equal([_seat.Id], booked);
     }
