@@ -4,6 +4,7 @@ using CinemaBooking.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace CinemaBooking.Infrastructure;
 
@@ -14,6 +15,9 @@ public static class DependencyInjection
     {
         services.AddDbContext<CinemaDbContext>(o =>
             o.UseSqlServer(config.GetConnectionString("Default")));
+
+        // Dịch vụ hạ tầng dùng TimeProvider để test được đồng hồ; Web/Worker có thể override sau.
+        services.TryAddSingleton(TimeProvider.System);
 
         // Singleton: trạng thái lock phải sống xuyên request.
         services.AddSingleton<ISeatLockManager, InMemorySeatLockManager>();
@@ -31,6 +35,22 @@ public static class DependencyInjection
             c.BaseAddress = new Uri(config["Payment:BaseUrl"] ?? "https://localhost/mock-pay/");
             c.Timeout = TimeSpan.FromSeconds(10);
         });
+
+        services.AddOptions<VnpayOptions>()
+            .Bind(config.GetSection(VnpayOptions.SectionName));
+
+        services.AddScoped<IVnpayPaymentService, VnpayPaymentService>();
+
+        // Refund service dùng named client thay vì typed client: tránh ActivatorUtilities phải
+        // dựng constructor có TimeProvider/IOptions, đồng thời vẫn reuse HttpClient handler.
+        services.AddHttpClient(nameof(VnpayRefundService), c =>
+        {
+            c.Timeout = TimeSpan.FromSeconds(20);
+            // VNPAY chặn 403 (openresty/WAF) nếu request không có User-Agent; HttpClient mặc định
+            // không gửi header này. Đặt UA cố định để API refund nhận request.
+            c.DefaultRequestHeaders.UserAgent.ParseAdd("CinemaBooking/1.0");
+        });
+        services.AddScoped<IVnpayRefundService, VnpayRefundService>();
 
         services.AddScoped<IEmailSender, LoggingEmailSender>();
 

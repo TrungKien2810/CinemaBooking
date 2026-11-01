@@ -142,6 +142,26 @@ chuỗi tay: gõ sai thì build vẫn xanh, lỗi chỉ lộ lúc chạy dưới
 
 ---
 
+## Thanh toán và hoàn tiền VNPAY (Sandbox)
+
+`Vnpay:TmnCode`, `Vnpay:PaymentUrl`, `Vnpay:ReturnUrl`… nằm trong `appsettings.json`. Riêng
+`Vnpay:HashSecret` **không commit**; đặt bằng user-secrets:
+
+```bash
+dotnet user-secrets set "Vnpay:HashSecret" "..." --project src/CinemaBooking.Web
+```
+
+- `Vnpay:RefundEnabled=false`: hủy vé sẽ hoàn tiền mô phỏng (chỉ đổi trạng thái), dùng khi
+  merchant sandbox chưa được cấp quyền API hoàn tiền.
+- `Vnpay:RefundEnabled=true`: gọi thật `POST /merchant_webapi/api/transaction`. Nếu VNPAY trả
+  `vnp_ResponseCode=99` (`Unexpected error`), kiểm tra merchant đã bật quyền **Refund/Querydr**
+  và đã whitelist IP máy chủ gửi request chưa. Lỗi này không làm mất vé: đơn vẫn `Confirmed`,
+  ghế vẫn giữ và khách có thể bấm hủy lại.
+- `Vnpay:IpAddr`: IP máy chủ gửi API (không phải IP khách). Khi triển khai thật phải đặt IP
+  công khai của server, không dùng `127.0.0.1`.
+
+---
+
 ## Giao diện
 
 - Toàn bộ token màu, khoảng cách, bo góc khai báo một lần ở `:root` trong

@@ -1617,3 +1617,49 @@ textarea.form-control {
         transform: none !important;
     }
 }
+
+/* ── Vé của tôi / hủy vé / gửi lại email ── */
+.booking-tabs {
+    margin-bottom: 1.25rem;
+}
+
+.booking-list-payment {
+    font-size: 0.85rem;
+    color: var(--bs-secondary-color);
+}
+
+.resend-email-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.resend-email-form .form-control {
+    max-width: 280px;
+}
+
+.account-card {
+    max-width: 640px;
+    padding: 1.5rem;
+}
+
+@media print {
+    .site-navbar,
+    .site-footer,
+    .booking-actions,
+    .resend-email-form,
+    .skip-link,
+    .page-head .page-subtitle {
+        display: none !important;
+    }
+
+    .site-main {
+        padding: 0 !important;
+    }
+
+    .cb-card {
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+    }
+}

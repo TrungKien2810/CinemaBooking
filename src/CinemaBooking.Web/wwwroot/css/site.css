@@ -1566,3 +1566,49 @@ body {
         text-align: left;
     }
 }
+
+/* --- QR trên vé --- */
+.ticket-qr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 1.25rem;
+    text-align: center;
+}
+
+.ticket-qr img {
+    width: 148px;
+    height: 148px;
+    padding: 0.35rem;
+    background: #fff;
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius-sm);
+}
+
+@media print {
+    header,
+    .site-footer,
+    .skip-link,
+    .booking-actions,
+    .resend-email-form,
+    .ticket-note,
+    .alert {
+        display: none !important;
+    }
+
+    .site-main {
+        padding: 0 !important;
+    }
+
+    .booking-confirmation {
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .ticket-qr img {
+        width: 120px;
+        height: 120px;
+    }
+}

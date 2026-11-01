@@ -1,8 +1,10 @@
 using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
+using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace CinemaBooking.Web.Services;
 
@@ -21,26 +23,32 @@ public sealed class BookingService : IBookingService
     private readonly IBookedSeatQuery _bookedSeats;
     private readonly ISeatLockManager _locks;
     private readonly ISeatPricingService _pricing;
-    private readonly IPaymentService _payment;
+    private readonly IVnpayPaymentService _vnpay;
     private readonly IBookingCodeGenerator _codes;
     private readonly TimeProvider _clock;
+    private readonly IOptions<VnpayOptions> _vnpayOptions;
+    private readonly DisplayTimeZone _tz;
 
     public BookingService(
         CinemaDbContext db,
         IBookedSeatQuery bookedSeats,
         ISeatLockManager locks,
         ISeatPricingService pricing,
-        IPaymentService payment,
+        IVnpayPaymentService vnpay,
         IBookingCodeGenerator codes,
-        TimeProvider clock)
+        TimeProvider clock,
+        IOptions<VnpayOptions> vnpayOptions,
+        DisplayTimeZone tz)
     {
         _db = db;
         _bookedSeats = bookedSeats;
         _locks = locks;
         _pricing = pricing;
-        _payment = payment;
+        _vnpay = vnpay;
         _codes = codes;
         _clock = clock;
+        _vnpayOptions = vnpayOptions;
+        _tz = tz;
     }
 
     public async Task<BookingResult> PlaceAsync(BookingRequest request, CancellationToken ct = default)
@@ -57,6 +65,11 @@ public sealed class BookingService : IBookingService
         var seats = showtime.Room!.Seats.Where(s => seatIds.Contains(s.Id)).ToList();
         if (seats.Count != seatIds.Count)
             return BookingResult.Failed(BookingResultKind.SeatsUnavailable, "Có ghế không thuộc phòng chiếu của suất này.");
+
+        // Đơn Pending bỏ dở (khách đóng tab ở cổng VNPAY / thanh toán lỗi mà cổng không gọi về) đã
+        // quá hạn chờ vẫn còn dòng BookingSeats — unique index sẽ chặn người khác đặt lại ghế. Dọn
+        // các đơn đó trước khi kiểm ghế để ghế chưa thanh toán được trả về cho người mua sau.
+        await ExpireStalePendingBookingsAsync(showtime.Id, ct);
 
         // Kiểm tra sớm cho thông báo thân thiện; chốt chặn cuối vẫn là unique index (ShowtimeId, SeatId).
         var booked = await _bookedSeats.GetBookedSeatIdsAsync(showtime.Id, ct);
@@ -96,36 +109,156 @@ public sealed class BookingService : IBookingService
             await transaction.CommitAsync(ct);
         }
 
-        var charge = await _payment.ChargeAsync(
-            new PaymentRequest(booking.BookingCode, booking.TotalAmount, booking.CustomerEmail), ct);
+        var vnpay = await _vnpay.CreateVnpayPaymentAsync(new VnpayPaymentRequest(
+            TxnRef: booking.BookingCode,
+            Amount: booking.TotalAmount,
+            OrderInfo: $"Thanh toan don hang {booking.BookingCode}",
+            ReturnUrl: _vnpayOptions.Value.ReturnUrl,
+            TmnCode: _vnpayOptions.Value.TmnCode,
+            HashSecret: _vnpayOptions.Value.HashSecret,
+            IpAddr: _vnpayOptions.Value.IpAddr,
+            Locale: _vnpayOptions.Value.Locale,
+            OrderType: _vnpayOptions.Value.OrderType,
+            ExpireMinutes: _vnpayOptions.Value.ExpireMinutes), ct);
 
-        if (!charge.Succeeded)
+        if (!vnpay.Success)
         {
-            // Đơn không thành: xóa dòng BookingSeats để trả ghế ngay (unique index không lọc theo trạng
-            // thái đơn, nên hủy vé phải xóa dòng ghế), giữ lại Booking làm lịch sử.
+            // Không tạo được yêu cầu thanh toán: xóa BookingSeats để trả ghế, giữ lại Booking làm
+            // lịch sử. Lock RAM của khách GIỮ NGUYÊN để họ bấm "Thanh toán" lại được ngay — ghế vẫn
+            // là của họ trong thời gian giữ chỗ.
             _db.BookingSeats.RemoveRange(booking.Seats);
             booking.Status = BookingStatus.Cancelled;
             booking.Payment!.Status = PaymentStatus.Failed;
             await _db.SaveChangesAsync(ct);
 
             return BookingResult.Failed(BookingResultKind.PaymentFailed,
-                charge.FailureReason ?? "Thanh toán không thành công. Vui lòng thử lại.");
+                vnpay.FailureReason ?? "Không tạo được yêu cầu thanh toán. Vui lòng thử lại.");
+        }
+
+        // VNPAY: khách sẽ được chuyển hướng sang cổng thanh toán. Booking + Payment đang ở trạng
+        // thái Pending nên BookingSeats vẫn giữ ghế (unique index (ShowtimeId, SeatId)); RAM lock có
+        // thể nhả ở đây vì DB đã giữ thay. Kết quả xác nhận (thành công/hủy) do VNPAY trả về
+        // ReturnUrl/IPN rồi gọi <see cref="ConfirmAsync"/>.
+        booking.Payment!.VnpayCreateDate = vnpay.CreateDate;
+        await _db.SaveChangesAsync(ct);
+
+        foreach (var key in keys) _locks.Release(key, request.ConnectionId);
+
+        return BookingResult.RedirectToPayment(booking.BookingCode, vnpay.PaymentUrl ?? string.Empty);
+    }
+
+    /// <summary>
+    /// Xác nhận kết quả thanh toán VNPAY cho một đơn (gọi từ ReturnUrl sau khi khách thanh toán xong
+    /// ở cổng VNPAY, hoặc từ IPN notify). Giao dịch thành công → sang <see cref="BookingStatus.Confirmed"/>
+    /// + gửi email xác nhận vào outbox; không thành / số tiền không khớp → trả ghế và hủy đơn.
+    /// </summary>
+    public async Task<BookingResult> ConfirmAsync(string bookingCode, VnpayVerifyResult verify, CancellationToken ct = default)
+    {
+        var booking = await _db.Bookings
+            .Include(b => b.Payment)
+            .Include(b => b.Showtime)
+            .Include(b => b.Seats).ThenInclude(bs => bs.Seat)
+            .FirstOrDefaultAsync(b => b.BookingCode == bookingCode, ct);
+
+        if (booking is null)
+            return BookingResult.Failed(BookingResultKind.PaymentFailed, "Không tìm thấy đơn đặt vé để xác nhận.");
+
+        // Chữ ký sai thì KHÔNG được đụng vào đơn: nếu không, chỉ cần gọi ReturnUrl với tham số rác là
+        // hủy được đơn (và ghế) của người khác. Chỉ VNPAY ký đúng mới được đổi trạng thái.
+        if (!verify.SignatureValid)
+            return BookingResult.Failed(BookingResultKind.PaymentFailed, "Chữ ký VNPAY không hợp lệ — đơn được giữ nguyên.");
+
+        if (!string.Equals(verify.TxnRef, booking.BookingCode, StringComparison.OrdinalIgnoreCase))
+            return BookingResult.Failed(BookingResultKind.PaymentFailed, "Mã giao dịch không khớp với đơn đặt vé.");
+
+        // Đơn không còn Pending thì coi như đã xử lý — không thao tác lại (tránh xác nhận trùng).
+        if (booking.Status != BookingStatus.Pending)
+            return BookingResult.Failed(BookingResultKind.PaymentFailed, "Đơn này đã được xử lý trước đó.");
+
+        var amountMatches = Math.Round(booking.TotalAmount, 2) == Math.Round(verify.Amount, 2);
+
+        if (!verify.PaymentSucceeded || !amountMatches)
+        {
+            // Thanh toán không thành / số tiền không khớp: trả ghế để người khác đặt được.
+            _db.BookingSeats.RemoveRange(booking.Seats);
+            booking.Status = BookingStatus.Cancelled;
+            booking.Payment!.Status = PaymentStatus.Failed;
+            await _db.SaveChangesAsync(ct);
+
+            return BookingResult.Failed(BookingResultKind.PaymentFailed, verify.FailureReason ?? "Thanh toán không thành công. Vui lòng thử lại.");
         }
 
         booking.Status = BookingStatus.Confirmed;
         booking.Payment!.Status = PaymentStatus.Succeeded;
-        booking.Payment.TransactionId = charge.TransactionId;
+        booking.Payment.TransactionId = verify.TransactionId;
+        booking.Payment.PaymentMethod = "VNPAY";
+        booking.Payment.VnpayPayDate = verify.PayDate;
+        booking.Payment.PaidUtc = ParseVnpayDateToUtc(verify.PayDate) ?? _clock.GetUtcNow().UtcDateTime;
 
-        // Email KHÔNG gửi trực tiếp trong request (fire-and-forget sẽ mất mail nếu process chết):
-        // Web chỉ ghi vào outbox cùng transaction với bước xác nhận, EmailOutboxWorker mới gửi.
-        _db.OutboxEmails.Add(BuildConfirmationEmail(booking, showtime, seats));
+        var seats = booking.Seats.Where(bs => bs.Seat is not null).Select(bs => bs.Seat!).ToList();
+        _db.OutboxEmails.Add(BuildConfirmationEmail(booking, booking.Showtime!, seats));
 
         await _db.SaveChangesAsync(ct);
 
-        // Ghế đã thành "đã đặt" ở DB: nhả lock RAM để nhường chỗ cho lần mua sau.
-        foreach (var key in keys) _locks.Release(key, request.ConnectionId);
+        return BookingResult.Success(booking.BookingCode);
+    }
+
+    /// <summary>Gửi lại email xác nhận cho đơn đã Confirmed (không đổi trạng thái đơn).</summary>
+    public async Task<BookingResult> ResendConfirmationAsync(string bookingCode, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(bookingCode))
+            return BookingResult.Failed(BookingResultKind.PaymentFailed, "Thiếu mã vé.");
+
+        var code = bookingCode.Trim().ToUpperInvariant();
+        var booking = await _db.Bookings
+            .Include(b => b.Showtime!).ThenInclude(s => s.Movie)
+            .Include(b => b.Seats).ThenInclude(bs => bs.Seat)
+            .FirstOrDefaultAsync(b => b.BookingCode == code, ct);
+
+        if (booking is null)
+            return BookingResult.Failed(BookingResultKind.PaymentFailed, "Không tìm thấy vé.");
+
+        if (booking.Status != BookingStatus.Confirmed)
+            return BookingResult.Failed(BookingResultKind.PaymentFailed,
+                "Chỉ gửi lại email cho vé đã xác nhận.");
+
+        var seats = booking.Seats.Where(bs => bs.Seat is not null).Select(bs => bs.Seat!).ToList();
+        _db.OutboxEmails.Add(BuildConfirmationEmail(booking, booking.Showtime!, seats));
+        await _db.SaveChangesAsync(ct);
 
         return BookingResult.Success(booking.BookingCode);
+    }
+
+    /// <summary>
+    /// Hết hạn các đơn <c>Pending</c> đã quá <see cref="VnpayOptions.PendingHoldWindow"/> của một suất
+    /// chiếu và trả ghế (xóa dòng <c>BookingSeats</c> — unique index không lọc theo trạng thái đơn).
+    /// <para>
+    /// Không có bước này thì một lần thanh toán lỗi/bỏ dở sẽ khóa ghế vĩnh viễn: đơn không bao giờ
+    /// được xác nhận nhưng dòng BookingSeats vẫn còn, nên ghế không ai đặt lại được.
+    /// </para>
+    /// </summary>
+    private async Task ExpireStalePendingBookingsAsync(int showtimeId, CancellationToken ct)
+    {
+        var cutoff = _clock.GetUtcNow().UtcDateTime - _vnpayOptions.Value.PendingHoldWindow;
+
+        var stale = await _db.Bookings
+            .Include(b => b.Seats)
+            .Include(b => b.Payment)
+            .Where(b => b.ShowtimeId == showtimeId
+                     && b.Status == BookingStatus.Pending
+                     && b.BookingTimeUtc <= cutoff)
+            .ToListAsync(ct);
+
+        if (stale.Count == 0) return;
+
+        foreach (var booking in stale)
+        {
+            _db.BookingSeats.RemoveRange(booking.Seats);
+            booking.Status = BookingStatus.Expired;
+            if (booking.Payment is not null) booking.Payment.Status = PaymentStatus.Failed;
+        }
+
+        await _db.SaveChangesAsync(ct);
     }
 
     /// <summary>
@@ -169,7 +302,7 @@ public sealed class BookingService : IBookingService
             Payment = new Payment
             {
                 Amount = total,
-                PaymentMethod = "Mock",
+                PaymentMethod = "VNPAY",
                 Status = PaymentStatus.Pending,
                 CreatedUtc = nowUtc,
             },
@@ -180,17 +313,21 @@ public sealed class BookingService : IBookingService
     /// Thư xác nhận chỉ là dữ liệu trong outbox; nội dung hiển thị ở đây phải đủ để khách đọc lại
     /// mà không cần mở DB (mã vé, phim, suất, ghế, số tiền).
     /// </summary>
-    private static OutboxEmail BuildConfirmationEmail(Booking booking, Showtime showtime, IReadOnlyList<Seat> seats)
+    private OutboxEmail BuildConfirmationEmail(Booking booking, Showtime showtime, IReadOnlyList<Seat> seats)
     {
         var labels = string.Join(", ", seats
             .OrderBy(s => s.RowNumber).ThenBy(s => s.ColumnNumber)
             .Select(s => s.Label));
 
+        // Giờ trong email phải là giờ rạp (GMT+7), không phải UTC trong DB — khách đọc email
+        // không được thấy lệch 7 tiếng so với trang web.
+        var startLocal = _tz.ToLocalTime(showtime.StartTimeUtc);
+
         var body =
             $"Xin chào {booking.CustomerName},\n\n" +
             $"Đơn {booking.BookingCode} của bạn đã được xác nhận.\n" +
             $"Phim: {showtime.Movie?.Title}\n" +
-            $"Suất chiếu: {showtime.StartTimeUtc:HH:mm dd/MM/yyyy} (UTC)\n" +
+            $"Suất chiếu: {startLocal:HH:mm dd/MM/yyyy}\n" +
             $"Ghế: {labels}\n" +
             $"Tổng tiền: {booking.TotalAmount:N0} VND\n\n" +
             "Cảm ơn bạn đã đặt vé tại CinemaBooking.";
@@ -201,7 +338,19 @@ public sealed class BookingService : IBookingService
             Subject = $"Xác nhận đặt vé {booking.BookingCode}",
             Body = body,
             Status = OutboxStatus.Pending,
+            CreatedUtc = _clock.GetUtcNow().UtcDateTime,
         };
+    }
+
+    /// <summary>Đổi <c>vnp_PayDate</c> (GMT+7, yyyyMMddHHmmss) sang UTC để lưu DB.</summary>
+    private static DateTime? ParseVnpayDateToUtc(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        return DateTime.TryParseExact(value, "yyyyMMddHHmmss",
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var local)
+            ? local.AddHours(-7)
+            : null;
     }
 
     /// <summary>

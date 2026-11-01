@@ -22,7 +22,9 @@ public sealed record BookingTicketViewModel(
     string CustomerEmail,
     string? CustomerPhone,
     decimal TotalAmount,
-    IReadOnlyList<BookingSeatLine> Seats)
+    IReadOnlyList<BookingSeatLine> Seats,
+    bool CanCancel = false,
+    decimal RefundAmount = 0)
 {
     public string StatusLabel => Status switch
     {
@@ -39,6 +41,8 @@ public sealed record BookingTicketViewModel(
         PaymentStatus.Pending => "Đang chờ",
         PaymentStatus.Failed => "Thất bại",
         PaymentStatus.Refunded => "Đã hoàn tiền",
+        PaymentStatus.RefundPending => "Đang hoàn tiền",
+        PaymentStatus.RefundFailed => "Hoàn tiền thất bại",
         _ => PaymentState.ToString(),
     };
 }
@@ -47,4 +51,17 @@ public sealed record BookingTicketViewModel(
 public sealed record BookingLookupViewModel(string? Code, string? Error, BookingTicketViewModel? Booking);
 
 /// <summary>Danh sách vé của tài khoản đang đăng nhập, mới nhất trước.</summary>
-public sealed record MyBookingsViewModel(IReadOnlyList<BookingTicketViewModel> Bookings);
+public sealed record MyBookingsViewModel(
+    IReadOnlyList<BookingTicketViewModel> Bookings,
+    string Tab = "all",
+    int UpcomingCount = 0,
+    int HistoryCount = 0,
+    int CancelledCount = 0);
+
+/// <summary>Trang xác nhận hủy vé; guest phải nhập lại email đã dùng khi đặt.</summary>
+public sealed record CancelBookingPageViewModel(
+    BookingTicketViewModel Booking,
+    bool CanCancel,
+    string? Reason,
+    decimal RefundAmount,
+    bool RequiresEmail);

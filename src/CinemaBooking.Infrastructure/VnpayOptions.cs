@@ -1,0 +1,50 @@
+namespace CinemaBooking.Infrastructure;
+
+/// <summary>
+/// Cấu hình cổng thanh toán VNPAY (môi trường Sandbox khi <c>Environment=Development</c>).
+/// Section <c>Vnpay</c> trong appsettings. Hai process (Web) phải đọc cùng một cấu hình —
+/// hard-code mỗi nơi một kiểu thì checksum giữa merchant và gateway sẽ lệch.
+/// </summary>
+public sealed class VnpayOptions
+{
+    public const string SectionName = "Vnpay";
+
+    /// <summary>Mã TmnCode của merchant tại VNPAY (vnp_TmnCode).</summary>
+    public string TmnCode { get; set; } = string.Empty;
+
+    /// <summary>Chuỗi bí mật tạo checksum (vnp_HashSecret).</summary>
+    public string HashSecret { get; set; } = string.Empty;
+
+    /// <summary>URL cổng thanh toán VNPAY (vnp_Url).</summary>
+    public string PaymentUrl { get; set; } = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+
+    /// <summary>URL nhận kết quả sau khi khách thanh toán xong (vnp_ReturnUrl).</summary>
+    public string ReturnUrl { get; set; } = "http://localhost:5005/Booking/PaymentReturn";
+
+    /// <summary>API hoàn tiền/kiểm tra giao dịch (server-to-server, POST JSON).</summary>
+    public string RefundUrl { get; set; } = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";
+
+    /// <summary>
+    /// Bật gọi VNPAY refund thật. Tắt = hoàn tiền mô phỏng (chỉ đổi trạng thái), dùng khi merchant
+    /// sandbox chưa được cấp quyền REFUND.
+    /// </summary>
+    public bool RefundEnabled { get; set; }
+
+    /// <summary>Người khởi tạo hoàn tiền gửi sang VNPAY (vnp_CreateBy), thường là email admin.</summary>
+    public string CreateBy { get; set; } = "admin@cinemabooking.local";
+
+    public string Locale { get; set; } = "vn";
+
+    public string OrderType { get; set; } = "other";
+
+    public int ExpireMinutes { get; set; } = 15;
+
+    public string IpAddr { get; set; } = "127.0.0.1";
+
+    /// <summary>
+    /// Thời gian tối đa một đơn <c>Pending</c> được phép giữ ghế trong DB: thời gian VNPAY cho thanh
+    /// toán cộng 5 phút gia hạn. Quá hạn này (khách đóng tab / thanh toán lỗi không quay về) thì đơn
+    /// phải trả ghế — nếu không ghế sẽ bị khóa vĩnh viễn dù chưa ai trả tiền.
+    /// </summary>
+    public TimeSpan PendingHoldWindow => TimeSpan.FromMinutes(ExpireMinutes + 5);
+}

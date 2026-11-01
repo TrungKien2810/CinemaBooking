@@ -1,5 +1,7 @@
 using CinemaBooking.Domain;
 using CinemaBooking.Domain.Entities;
+using CinemaBooking.Domain.Enums;
+using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -12,15 +14,21 @@ public class AccountController : Controller
 {
     private readonly UserManager<ApplicationUser> _users;
     private readonly SignInManager<ApplicationUser> _signIn;
+    private readonly CinemaDbContext _db;
+    private readonly TimeProvider _clock;
     private readonly ILogger<AccountController> _logger;
 
     public AccountController(
         UserManager<ApplicationUser> users,
         SignInManager<ApplicationUser> signIn,
+        CinemaDbContext db,
+        TimeProvider clock,
         ILogger<AccountController> logger)
     {
         _users = users;
         _signIn = signIn;
+        _db = db;
+        _clock = clock;
         _logger = logger;
     }
 
@@ -128,6 +136,163 @@ public class AccountController : Controller
     [HttpGet]
     public IActionResult AccessDenied() => View();
 
+    // ── Quên / đặt lại mật khẩu ─────────────────────────────────────────────
+
+    [HttpGet]
+    public IActionResult ForgotPassword() => View(new ForgotPasswordViewModel());
+
+    /// <summary>
+    /// Luôn trả về cùng một thông báo dù email có tồn tại hay không — tránh lộ danh sách tài khoản.
+    /// Link reset được đưa vào outbox để Worker gửi, không gửi SMTP ngay trong request.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var user = await _users.FindByEmailAsync(model.Email);
+        if (user is not null)
+        {
+            var token = await _users.GeneratePasswordResetTokenAsync(user);
+            var link = Url.Action(nameof(ResetPassword), "Account",
+                new { email = model.Email, token }, Request.Scheme);
+
+            if (!string.IsNullOrWhiteSpace(link))
+            {
+                _db.OutboxEmails.Add(new OutboxEmail
+                {
+                    ToAddress = model.Email,
+                    Subject = "Đặt lại mật khẩu CinemaBooking",
+                    Body =
+                        $"Xin chào {user.FullName ?? user.Email},\n\n" +
+                        "Bạn (hoặc ai đó) đã yêu cầu đặt lại mật khẩu cho tài khoản này.\n" +
+                        $"Mở liên kết sau để đặt mật khẩu mới (hết hạn sau 24 giờ):\n{link}\n\n" +
+                        "Nếu bạn không yêu cầu, hãy bỏ qua email này — mật khẩu hiện tại vẫn giữ nguyên.",
+                    Status = OutboxStatus.Pending,
+                    CreatedUtc = _clock.GetUtcNow().UtcDateTime,
+                });
+                await _db.SaveChangesAsync();
+            }
+
+            _logger.LogInformation("Đã tạo yêu cầu đặt lại mật khẩu cho {Email}", model.Email);
+        }
+
+        ViewData["Sent"] = true;
+        return View(new ForgotPasswordViewModel { Email = model.Email });
+    }
+
+    [HttpGet]
+    public IActionResult ResetPassword(string? email, string? token)
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+            return RedirectToAction(nameof(Login));
+
+        return View(new ResetPasswordViewModel { Email = email, Token = token });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var user = await _users.FindByEmailAsync(model.Email);
+        if (user is null)
+        {
+            ModelState.AddModelError(string.Empty,
+                "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.");
+            return View(model);
+        }
+
+        var result = await _users.ResetPasswordAsync(user, model.Token, model.Password);
+        if (!result.Succeeded)
+        {
+            AddErrors(result);
+            return View(model);
+        }
+
+        TempData["Success"] = "Đã đặt lại mật khẩu. Vui lòng đăng nhập bằng mật khẩu mới.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    // ── Trang tài khoản ──────────────────────────────────────────────────────
+
+    [HttpGet]
+    public async Task<IActionResult> Profile()
+    {
+        if (User.Identity?.IsAuthenticated != true) return Challenge();
+
+        var user = await _users.GetUserAsync(User);
+        if (user is null) return Challenge();
+
+        return View(new ProfileViewModel
+        {
+            FullName = user.FullName ?? string.Empty,
+            Email = user.Email ?? string.Empty,
+            PhoneNumber = user.PhoneNumber,
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Profile(ProfileViewModel model)
+    {
+        if (User.Identity?.IsAuthenticated != true) return Challenge();
+
+        var user = await _users.GetUserAsync(User);
+        if (user is null) return Challenge();
+
+        // Email là định danh đăng nhập, không cho sửa ở đây.
+        model.Email = user.Email ?? string.Empty;
+        if (!ModelState.IsValid) return View(model);
+
+        user.FullName = model.FullName.Trim();
+        user.PhoneNumber = string.IsNullOrWhiteSpace(model.PhoneNumber)
+            ? null
+            : model.PhoneNumber.Trim();
+
+        var result = await _users.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            AddErrors(result);
+            return View(model);
+        }
+
+        TempData["Success"] = "Đã cập nhật thông tin tài khoản.";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [HttpGet]
+    public IActionResult ChangePassword()
+    {
+        if (User.Identity?.IsAuthenticated != true) return Challenge();
+        return View(new ChangePasswordViewModel());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        if (User.Identity?.IsAuthenticated != true) return Challenge();
+        if (!ModelState.IsValid) return View(model);
+
+        var user = await _users.GetUserAsync(User);
+        if (user is null) return Challenge();
+
+        var result = await _users.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+        if (!result.Succeeded)
+        {
+            AddErrors(result);
+            return View(model);
+        }
+
+        // Đổi mật khẩu làm hết hạn security stamp; refresh cookie để không bị đăng xuất ngay.
+        await _signIn.RefreshSignInAsync(user);
+        TempData["Success"] = "Đã đổi mật khẩu thành công.";
+        return RedirectToAction(nameof(Profile));
+    }
+
     /// <summary>
     /// Distinct vì Identity trả cả DuplicateUserName lẫn DuplicateEmail khi đăng ký trùng
     /// (UserName = Email nên một lỗi hóa hai) — sau khi Việt hóa thì hai dòng y hệt nhau.
@@ -148,6 +313,8 @@ public class AccountController : Controller
         "PasswordRequiresDigit" => "Mật khẩu phải có ít nhất một chữ số.",
         "PasswordRequiresUpper" => "Mật khẩu phải có ít nhất một chữ in hoa.",
         "PasswordRequiresLower" => "Mật khẩu phải có ít nhất một chữ thường.",
+        "PasswordMismatch" => "Mật khẩu hiện tại không đúng.",
+        "InvalidToken" => "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.",
         _ => error.Description,
     };
 

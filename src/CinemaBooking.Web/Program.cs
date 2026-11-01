@@ -25,6 +25,10 @@ builder.Services.AddCinemaInfrastructure(builder.Configuration);
 // ── Dev B: truy vấn catalog & lịch chiếu ──
 builder.Services.Configure<DisplayTimeZone>(
     builder.Configuration.GetSection(DisplayTimeZone.SectionName));
+// BookingService/BookingCancellationService nhận trực tiếp DisplayTimeZone (không qua IOptions)
+// để không phải inject IOptions ở mọi nơi.
+builder.Services.AddSingleton(sp =>
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<DisplayTimeZone>>().Value);
 builder.Services.TryAddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IShowtimeQueryService, ShowtimeQueryService>();
 builder.Services.AddScoped<IMovieCatalogService, MovieCatalogService>();
@@ -39,6 +43,12 @@ builder.Services.AddScoped<ISeatAvailabilityQuery, SeatAvailabilityQuery>();
 
 // ── Dev B: luồng đặt vé (kiểm ghế + lock → ghi Booking trong một transaction → thu tiền → outbox) ──
 builder.Services.AddScoped<IBookingService, BookingService>();
+
+// ── Hủy vé + hoàn tiền VNPAY (khách tự hủy hoặc admin hủy) ──
+builder.Services.Configure<BookingCancellationOptions>(
+    builder.Configuration.GetSection(BookingCancellationOptions.SectionName));
+builder.Services.AddScoped<IBookingCancellationService, BookingCancellationService>();
+builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(o =>

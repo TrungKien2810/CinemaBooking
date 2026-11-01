@@ -201,6 +201,7 @@ public static class CatalogSeeder
             Payment = new Payment
             {
                 Amount = total,
+                PaymentMethod = "VNPAY",
                 Status = PaymentStatus.Succeeded,
                 TransactionId = $"SEED-{number:00}",
                 CreatedUtc = now,
