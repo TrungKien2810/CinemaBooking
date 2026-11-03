@@ -570,6 +570,29 @@ body {
     opacity: 0.85;
 }
 
+/* Ghế đôi bán theo cặp: hai ghế liền kề vẽ thành MỘT khối chữ nhật rộng 2 cột.
+   Nửa phải không được render nên lưới vẫn thẳng cột. */
+.seat.seat-pair {
+    grid-column: span 2;
+    width: 100%;
+    border-radius: 0.6rem;
+    font-size: 0.62rem;
+    letter-spacing: -0.01em;
+}
+
+.seat.seat-pair .seat-label {
+    font-size: 0.6rem;
+    white-space: nowrap;
+}
+
+/* Ghế đôi lẻ loi (không có cặp): hiện mờ, không bấm được, để sơ đồ không bị trống ô. */
+.seat.seat-orphan {
+    border-style: dashed;
+    opacity: 0.4;
+    cursor: not-allowed;
+    font-size: 0.6rem;
+}
+
 .seat:hover:not(:disabled) {
     transform: translateY(-1px);
     border-color: var(--cb-accent);
@@ -746,6 +769,15 @@ body {
 .seat-timer.is-warning {
     color: #f87171;
     animation: seat-timer-pulse 1s ease-in-out infinite;
+}
+
+/* Đồng hồ giữ ghế trên trang thanh toán: cùng kiểu với đồng hồ ở sơ đồ ghế. */
+.checkout-hold-timer {
+    display: inline-block;
+    margin: 0.35rem 0 0.25rem;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid var(--cb-border);
+    border-radius: 999px;
 }
 
 @keyframes seat-timer-pulse {
@@ -1106,6 +1138,28 @@ body {
 .seat-dot.seat-standard { background-color: var(--cb-seat-standard); }
 .seat-dot.seat-vip { background-color: var(--cb-seat-vip); }
 .seat-dot.seat-couple { background-color: var(--cb-seat-couple); }
+
+/* Trang "Sửa loại ghế": ghế là <button>, bấm để đổi Thường ↔ VIP. */
+.room-seat-editor .seat-dot {
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.room-seat-editor .seat-dot:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 2px var(--cb-accent);
+}
+
+.room-seat-editor .seat-dot.seat-vip:hover {
+    box-shadow: 0 0 0 2px var(--cb-seat-vip);
+}
+
+.room-seat-editor .seat-locked {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
 
 .seat-legend {
     list-style: none;

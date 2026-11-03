@@ -41,18 +41,13 @@ public static class DependencyInjection
 
         services.AddScoped<IVnpayPaymentService, VnpayPaymentService>();
 
-        // Refund service dùng named client thay vì typed client: tránh ActivatorUtilities phải
-        // dựng constructor có TimeProvider/IOptions, đồng thời vẫn reuse HttpClient handler.
-        services.AddHttpClient(nameof(VnpayRefundService), c =>
-        {
-            c.Timeout = TimeSpan.FromSeconds(20);
-            // VNPAY chặn 403 (openresty/WAF) nếu request không có User-Agent; HttpClient mặc định
-            // không gửi header này. Đặt UA cố định để API refund nhận request.
-            c.DefaultRequestHeaders.UserAgent.ParseAdd("CinemaBooking/1.0");
-        });
-        services.AddScoped<IVnpayRefundService, VnpayRefundService>();
-
-        services.AddScoped<IEmailSender, LoggingEmailSender>();
+        // Có Email:Smtp:Host thì gửi thật, chưa cấu hình thì chỉ log (dev). Đổi cấu hình là đổi
+        // hành vi, không phải sửa code; outbox worker chỉ phụ thuộc IEmailSender.
+        services.AddOptions<EmailOptions>().Bind(config.GetSection(EmailOptions.SectionName));
+        if (EmailOptions.IsSmtpConfigured(config))
+            services.AddScoped<IEmailSender, SmtpEmailSender>();
+        else
+            services.AddScoped<IEmailSender, LoggingEmailSender>();
 
         // Singleton: không giữ trạng thái, chỉ gọi RNG mật mã.
         services.AddSingleton<IBookingCodeGenerator, BookingCodeGenerator>();

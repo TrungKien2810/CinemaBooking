@@ -22,23 +22,34 @@ public class ShowtimesController : AdminControllerBase
     private readonly IShowtimeScheduler _scheduler;
     private readonly DisplayTimeZone _tz;
     private readonly TimeProvider _clock;
+    private readonly IBranchScope _branches;
 
     public ShowtimesController(
         CinemaDbContext db,
         IShowtimeScheduler scheduler,
         IOptions<DisplayTimeZone> tz,
-        TimeProvider clock)
+        TimeProvider clock,
+        IBranchScope branches)
     {
         _db = db;
         _scheduler = scheduler;
         _tz = tz.Value;
         _clock = clock;
+        _branches = branches;
     }
 
     public async Task<IActionResult> Index(int? theaterId, DateOnly? date, CancellationToken ct)
     {
         var day = date ?? _tz.ToLocalDate(_clock.GetUtcNow().UtcDateTime);
         var (fromUtc, toUtc) = _tz.DayRangeUtc(day);
+
+        // BranchAdmin chỉ thấy suất của chi nhánh mình; sửa URL sang chi nhánh khác thì chặn.
+        var scoped = await _branches.TheaterIdAsync(ct);
+        if (scoped is not null)
+        {
+            if (theaterId is not null && theaterId != scoped) return Forbid();
+            theaterId = scoped;
+        }
 
         var query = _db.Showtimes.AsNoTracking()
             .Where(s => s.StartTimeUtc >= fromUtc && s.StartTimeUtc < toUtc);
@@ -66,7 +77,10 @@ public class ShowtimesController : AdminControllerBase
                 _tz.ToLocalTime(r.StartTimeUtc), _tz.ToLocalTime(r.EndTimeUtc), r.BasePrice, r.Bookings))
             .ToList();
 
-        var theaters = await _db.Theaters.AsNoTracking()
+        var theatersQuery = _db.Theaters.AsNoTracking().Where(t => t.IsActive);
+        if (scoped is not null) theatersQuery = theatersQuery.Where(t => t.Id == scoped);
+
+        var theaters = await theatersQuery
             .OrderBy(t => t.City).ThenBy(t => t.Name)
             .Select(t => new SelectListItem(t.City + " · " + t.Name, t.Id.ToString()))
             .ToListAsync(ct);
@@ -104,6 +118,8 @@ public class ShowtimesController : AdminControllerBase
     {
         var showtime = await _db.Showtimes.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id, ct);
         if (showtime is null) return NotFound();
+        if (!await _branches.CanAccessTheaterAsync(await TheaterIdOfRoomAsync(showtime.RoomId, ct), ct))
+            return Forbid();
 
         var form = new ShowtimeFormModel
         {
@@ -123,6 +139,8 @@ public class ShowtimesController : AdminControllerBase
     {
         var showtime = await _db.Showtimes.FirstOrDefaultAsync(s => s.Id == id, ct);
         if (showtime is null) return NotFound();
+        if (!await _branches.CanAccessTheaterAsync(await TheaterIdOfRoomAsync(showtime.RoomId, ct), ct))
+            return Forbid();
 
         form.Id = id;
 
@@ -147,6 +165,8 @@ public class ShowtimesController : AdminControllerBase
     {
         var showtime = await _db.Showtimes.FirstOrDefaultAsync(s => s.Id == id, ct);
         if (showtime is null) return NotFound();
+        if (!await _branches.CanAccessTheaterAsync(await TheaterIdOfRoomAsync(showtime.RoomId, ct), ct))
+            return Forbid();
 
         if (await _db.Bookings.AnyAsync(b => b.ShowtimeId == id, ct))
         {
@@ -172,9 +192,15 @@ public class ShowtimesController : AdminControllerBase
         if (!movieOk)
             ModelState.AddModelError(nameof(form.MovieId), "Phim không tồn tại hoặc đã ẩn.");
 
-        var roomOk = await _db.Rooms.AnyAsync(r => r.Id == form.RoomId && r.Theater!.IsActive, ct);
-        if (!roomOk)
+        var roomTheaterId = await _db.Rooms
+            .Where(r => r.Id == form.RoomId && r.Theater!.IsActive)
+            .Select(r => (int?)r.TheaterId)
+            .FirstOrDefaultAsync(ct);
+
+        if (roomTheaterId is null)
             ModelState.AddModelError(nameof(form.RoomId), "Phòng không tồn tại hoặc chi nhánh đã đóng.");
+        else if (!await _branches.CanAccessTheaterAsync(roomTheaterId.Value, ct))
+            ModelState.AddModelError(nameof(form.RoomId), "Bạn chỉ xếp được suất chiếu cho chi nhánh mình quản lý.");
 
         if (!ModelState.IsValid) return false;
 
@@ -227,8 +253,12 @@ public class ShowtimesController : AdminControllerBase
             .Select(m => new SelectListItem(m.Title + " (" + m.DurationMinutes + "')", m.Id.ToString()))
             .ToListAsync(ct);
 
-        var rooms = await _db.Rooms.AsNoTracking()
-            .Where(r => r.Theater!.IsActive)
+        // BranchAdmin chỉ thấy phòng của chi nhánh mình trong dropdown.
+        var scoped = await _branches.TheaterIdAsync(ct);
+        var roomsQuery = _db.Rooms.AsNoTracking().Where(r => r.Theater!.IsActive);
+        if (scoped is not null) roomsQuery = roomsQuery.Where(r => r.TheaterId == scoped);
+
+        var rooms = await roomsQuery
             .OrderBy(r => r.Theater!.City).ThenBy(r => r.Theater!.Name).ThenBy(r => r.RoomName)
             .Select(r => new { r.Id, r.RoomName, r.Theater!.Name, r.Theater.City })
             .ToListAsync(ct);
@@ -241,6 +271,9 @@ public class ShowtimesController : AdminControllerBase
             return new SelectListItem(r.RoomName, r.Id.ToString()) { Group = group };
         }).ToList();
     }
+
+    private Task<int> TheaterIdOfRoomAsync(int roomId, CancellationToken ct) =>
+        _db.Rooms.Where(r => r.Id == roomId).Select(r => r.TheaterId).FirstAsync(ct);
 
     private RedirectToActionResult RedirectToIndexOf(Showtime showtime) =>
         RedirectToAction(nameof(Index), new { date = _tz.ToLocalDate(showtime.StartTimeUtc).ToString("yyyy-MM-dd") });

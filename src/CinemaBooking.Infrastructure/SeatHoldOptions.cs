@@ -1,8 +1,8 @@
 namespace CinemaBooking.Infrastructure;
 
 /// <summary>
-/// Section <c>SeatHold</c> trong appsettings, dùng chung cho Web (SeatHub, BookingController) và
-/// Worker (ExpiredSeatCleaner) — hai process phải đọc cùng một con số, không hard-code mỗi nơi một kiểu.
+/// Section <c>SeatHold</c> trong appsettings, dùng chung cho SeatHub, BookingController và
+/// SeatLockCleaner (đều trong process Web) — một nguồn số duy nhất, không hard-code mỗi nơi một kiểu.
 /// </summary>
 public sealed class SeatHoldOptions
 {

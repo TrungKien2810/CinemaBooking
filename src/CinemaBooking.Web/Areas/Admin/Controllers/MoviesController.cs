@@ -1,11 +1,14 @@
+using CinemaBooking.Domain;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Areas.Admin.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace CinemaBooking.Web.Areas.Admin.Controllers;
 
+[Authorize(Roles = AppRoles.Admin)]
 public class MoviesController : AdminControllerBase
 {
     private readonly CinemaDbContext _db;

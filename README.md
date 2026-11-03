@@ -65,8 +65,8 @@ dotnet run --project src/CinemaBooking.Web        # tự tạo lại và seed
 | ---------------------------------- | ------------------------------------------------------------------------------ |
 | `src/CinemaBooking.Domain`         | Entity, enum, interface — không phụ thuộc hạ tầng                              |
 | `src/CinemaBooking.Infrastructure` | `CinemaDbContext`, `InMemorySeatLockManager`, `MockPaymentService`, đăng ký DI |
-| `src/CinemaBooking.Web`            | MVC controllers, Razor views, `SeatHub` tại `/hubs/seat`                       |
-| `src/CinemaBooking.Worker`         | `ExpiredSeatCleaner`, `EmailOutboxWorker`, `DailyReportWorker`                 |
+| `src/CinemaBooking.Web`            | MVC controllers, Razor views, `SeatHub` tại `/hubs/seat`, dọn ghế hết hạn (`SeatLockCleaner`, `ExpiredBookingCleaner`) |
+| `src/CinemaBooking.Worker`         | `EmailOutboxWorker`, `DailyReportWorker`                                        |
 | `tests/CinemaBooking.Tests`        | xUnit                                                                          |
 
 ---

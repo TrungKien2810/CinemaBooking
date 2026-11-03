@@ -32,7 +32,12 @@ public sealed record SeatMapViewModel(
         var theater = room.Theater ?? throw new ArgumentException("Chưa nạp Room.Theater.", nameof(showtime));
         var movie = showtime.Movie ?? throw new ArgumentException("Chưa nạp Movie của suất chiếu.", nameof(showtime));
 
-        var byPosition = room.Seats.ToDictionary(s => (s.RowNumber, s.ColumnNumber));
+        var allSeats = room.Seats.ToList();
+        var byPosition = allSeats.ToDictionary(s => (s.RowNumber, s.ColumnNumber));
+        var byId = allSeats.ToDictionary(s => s.Id);
+
+        // Ghế đôi hiển thị thành MỘT ô rộng 2 cột (hình chữ nhật), không phải hai ô rời.
+        var partners = SeatPairing.BuildPartnerMap(allSeats);
 
         var rows = new List<SeatRowViewModel>(room.TotalRows);
         for (var row = 1; row <= room.TotalRows; row++)
@@ -42,12 +47,31 @@ public sealed record SeatMapViewModel(
             {
                 if (!byPosition.TryGetValue((row, col), out var seat)) continue;
 
+                if (seat.SeatType == SeatType.Couple && partners.TryGetValue(seat.Id, out var partnerId))
+                {
+                    var partner = byId[partnerId];
+
+                    // Ghép tại nửa bên trái; nửa bên phải là ô bị che, view bỏ qua khi render
+                    // (vẫn giữ phần tử để số cột của hàng không đổi).
+                    cells[col - 1] = partner.ColumnNumber > seat.ColumnNumber
+                        ? new SeatCellViewModel(
+                            [seat.Id, partner.Id],
+                            $"{seat.Label}–{partner.Label}",
+                            SeatType.Couple,
+                            pricing.PriceFor(showtime.BasePrice, SeatType.Couple) * 2,
+                            bookedSeatIds.Contains(seat.Id) || bookedSeatIds.Contains(partner.Id))
+                        : SeatCellViewModel.CoveredByPair;
+                    continue;
+                }
+
+                // Ghế đôi lẻ loi (hàng lẻ ghế / khuyết ghế): không bán được vì không có cặp.
                 cells[col - 1] = new SeatCellViewModel(
-                    seat.Id,
+                    [seat.Id],
                     seat.Label,
                     seat.SeatType,
                     pricing.PriceFor(showtime.BasePrice, seat.SeatType),
-                    bookedSeatIds.Contains(seat.Id));
+                    bookedSeatIds.Contains(seat.Id),
+                    IsOrphan: seat.SeatType == SeatType.Couple);
             }
             rows.Add(new SeatRowViewModel(RowLabel(row), cells));
         }
@@ -63,4 +87,22 @@ public sealed record SeatMapViewModel(
 /// <summary>Một hàng ghế; <see cref="Seats"/> có đúng TotalColumns phần tử, null là lối đi/ô trống.</summary>
 public sealed record SeatRowViewModel(string Label, IReadOnlyList<SeatCellViewModel?> Seats);
 
-public sealed record SeatCellViewModel(int SeatId, string Label, SeatType Type, decimal Price, bool IsBooked);
+/// <summary>
+/// Một ô trên sơ đồ. Ghế đơn có 1 id; <b>ghế đôi có 2 id</b> và là một khối duy nhất (giá = cả cặp).
+/// <see cref="IsCoveredByPair"/> đánh dấu nửa phải của cặp — giữ chỗ trong lưới nhưng không render.
+/// </summary>
+public sealed record SeatCellViewModel(
+    IReadOnlyList<int> SeatIds,
+    string Label,
+    SeatType Type,
+    decimal Price,
+    bool IsBooked,
+    bool IsCoveredByPair = false,
+    bool IsOrphan = false)
+{
+    /// <summary>Nửa phải của một cặp ghế đôi: đã được vẽ chung với nửa trái.</summary>
+    public static SeatCellViewModel CoveredByPair { get; } =
+        new(Array.Empty<int>(), string.Empty, SeatType.Couple, 0m, false, IsCoveredByPair: true);
+
+    public bool IsPair => SeatIds.Count > 1;
+}

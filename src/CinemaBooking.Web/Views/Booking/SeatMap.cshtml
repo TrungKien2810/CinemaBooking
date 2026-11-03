@@ -49,15 +49,29 @@
                         continue;
                     }
 
+                    // Nửa phải của ghế đôi đã được vẽ chung trong khối của nửa trái.
+                    if (seat.IsCoveredByPair) { continue; }
+
+                    // Ghế đôi lẻ loi: không có cặp thì không bán, nhưng vẫn hiện để khách thấy
+                    // sơ đồ không bị thiếu ô.
+                    if (seat.IsOrphan)
+                    {
+                        <span class="seat seat-couple seat-orphan"
+                              title="Ghế đôi @seat.Label không có cặp — không bán"
+                              aria-label="Ghế đôi @seat.Label không có cặp, không bán được">@seat.Label</span>
+                        continue;
+                    }
+
+                    var seatKind = seat.IsPair ? "Ghế đôi" : "Ghế";
                     <button type="button"
-                            class="seat @TypeClass(seat.Type) @(seat.IsBooked ? "is-booked" : "is-free")"
-                            data-seat-id="@seat.SeatId"
+                            class="seat @TypeClass(seat.Type) @(seat.IsPair ? "seat-pair" : null) @(seat.IsBooked ? "is-booked" : "is-free")"
+                            data-seat-ids="@string.Join(",", seat.SeatIds)"
                             data-seat-label="@seat.Label"
                             data-seat-price="@seat.Price.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
                             data-seat-type="@seat.Type"
                             aria-pressed="@(seat.IsBooked ? "true" : "false")"
-                            aria-label="Ghế @seat.Label, @seat.Type, @seat.Price.ToString("N0") đ@(seat.IsBooked ? ", đã được đặt" : "")"
-                            title="Ghế @seat.Label · @seat.Type · @seat.Price.ToString("N0") đ"
+                            aria-label="@seatKind @seat.Label, @seat.Type, @seat.Price.ToString("N0") đ@(seat.IsBooked ? ", đã được đặt" : "")"
+                            title="@seatKind @seat.Label · @seat.Type · @seat.Price.ToString("N0") đ"
                             disabled="@seat.IsBooked">
                         <span class="seat-label">@seat.Label</span>
                     </button>

@@ -1,8 +1,10 @@
+using CinemaBooking.Domain;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Areas.Admin.Models;
 using CinemaBooking.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +17,7 @@ namespace CinemaBooking.Web.Areas.Admin.Controllers;
 /// tới từng phút, không phụ thuộc DailyReportWorker đã chạy hay chưa. Một ngày = một ngày theo giờ
 /// rạp của thời điểm ĐẶT vé (lúc thu tiền), không phải ngày chiếu.
 /// </summary>
+[Authorize(Roles = AppRoles.Admin)]
 public class RevenueController : AdminControllerBase
 {
     /// <summary>Mặc định xem 7 ngày gần nhất, tính cả hôm nay.</summary>

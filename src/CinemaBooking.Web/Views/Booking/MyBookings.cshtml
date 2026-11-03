@@ -26,7 +26,7 @@
 <ul class="nav nav-tabs booking-tabs">
     <li class="nav-item">
         <a class="@TabClass("all")" asp-action="MyBookings" asp-route-tab="all">
-            Tất cả <span class="badge text-bg-secondary">@(Model.UpcomingCount + Model.HistoryCount + Model.CancelledCount)</span>
+            Tất cả <span class="badge text-bg-secondary">@(Model.UpcomingCount + Model.HistoryCount)</span>
         </a>
     </li>
     <li class="nav-item">
@@ -37,11 +37,6 @@
     <li class="nav-item">
         <a class="@TabClass("history")" asp-action="MyBookings" asp-route-tab="history">
             Đã xem <span class="badge text-bg-secondary">@Model.HistoryCount</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="@TabClass("cancelled")" asp-action="MyBookings" asp-route-tab="cancelled">
-            Đã hủy <span class="badge text-bg-secondary">@Model.CancelledCount</span>
         </a>
     </li>
 </ul>
@@ -81,11 +76,6 @@ else
                     <div class="d-flex gap-2 mt-2">
                         <a asp-controller="Booking" asp-action="Confirmation" asp-route-code="@booking.BookingCode"
                            class="btn btn-outline-secondary btn-sm">Xem chi tiết</a>
-                        @if (booking.CanCancel)
-                        {
-                            <a asp-controller="Booking" asp-action="Cancel" asp-route-code="@booking.BookingCode"
-                               class="btn btn-outline-danger btn-sm">Hủy vé</a>
-                        }
                     </div>
                 </div>
             </article>

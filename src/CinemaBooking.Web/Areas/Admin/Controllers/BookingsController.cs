@@ -1,18 +1,18 @@
+using CinemaBooking.Domain;
 using CinemaBooking.Domain.Enums;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Areas.Admin.Models;
-using CinemaBooking.Web.Hubs;
 using CinemaBooking.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using System.Security.Claims;
 
 namespace CinemaBooking.Web.Areas.Admin.Controllers;
 
-/// <summary>Tra cứu đơn đặt vé của mọi chi nhánh: lọc theo mã, chi nhánh, trạng thái; xem chi tiết và hủy.</summary>
+/// <summary>Tra cứu đơn đặt vé của mọi chi nhánh: lọc theo mã, chi nhánh, trạng thái; xem chi tiết.</summary>
+[Authorize(Roles = AppRoles.Admin)]
 public class BookingsController : AdminControllerBase
 {
     /// <summary>Số đơn tối đa trên một trang danh sách — đơn mới nhất trước, lọc để thu hẹp.</summary>
@@ -20,19 +20,11 @@ public class BookingsController : AdminControllerBase
 
     private readonly CinemaDbContext _db;
     private readonly DisplayTimeZone _tz;
-    private readonly IBookingCancellationService _cancellations;
-    private readonly IHubContext<SeatHub, ISeatClient>? _seats;
 
-    public BookingsController(
-        CinemaDbContext db,
-        IOptions<DisplayTimeZone> tz,
-        IBookingCancellationService cancellations,
-        IHubContext<SeatHub, ISeatClient>? seats = null)
+    public BookingsController(CinemaDbContext db, IOptions<DisplayTimeZone> tz)
     {
         _db = db;
         _tz = tz.Value;
-        _cancellations = cancellations;
-        _seats = seats;
     }
 
     public async Task<IActionResult> Index(string? code, int? theaterId, BookingStatus? status, CancellationToken ct)
@@ -117,45 +109,5 @@ public class BookingsController : AdminControllerBase
             b.CustomerName, b.CustomerEmail, b.CustomerPhone,
             b.Title, b.TheaterName, b.RoomName, _tz.ToLocalTime(b.StartTimeUtc),
             b.TotalAmount, b.PaymentStatus, b.TransactionId, seats));
-    }
-
-    /// <summary>
-    /// Hủy đơn và trả ghế. Dùng chung <see cref="IBookingCancellationService"/> với khách để mọi
-    /// đường hủy đều đi qua cùng quy tắc hoàn tiền VNPAY, outbox email và trạng thái Payment.
-    /// </summary>
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Cancel(int id, CancellationToken ct)
-    {
-        var booking = await _db.Bookings.AsNoTracking()
-            .Where(b => b.Id == id)
-            .Select(b => new { b.BookingCode })
-            .FirstOrDefaultAsync(ct);
-        if (booking is null) return NotFound();
-
-        var adminId = User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
-        var result = await _cancellations.CancelAsync(new CancelBookingRequest(
-            BookingCode: booking.BookingCode,
-            UserId: adminId,
-            Email: null,
-            IsAdmin: true,
-            Actor: $"admin:{adminId}"), ct);
-
-        if (result.IsSuccess)
-        {
-            if (_seats is not null && result.ShowtimeId > 0 && result.SeatIds is { Count: > 0 })
-            {
-                await _seats.Clients.Group(SeatHub.GroupName(result.ShowtimeId))
-                    .SeatUnlocked(result.SeatIds);
-            }
-
-            TempData["Message"] = result.Message;
-        }
-        else
-        {
-            TempData["Error"] = result.Message;
-        }
-
-        return RedirectToAction(nameof(Details), new { id });
     }
 }

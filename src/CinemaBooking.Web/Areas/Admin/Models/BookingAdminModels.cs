@@ -18,8 +18,4 @@ public sealed record BookingDetailsViewModel(
     string CustomerName, string CustomerEmail, string? CustomerPhone,
     string MovieTitle, string TheaterName, string RoomName, DateTime ShowtimeStartLocal,
     decimal TotalAmount, PaymentStatus? PaymentStatus, string? TransactionId,
-    List<BookingSeatLine> Seats)
-{
-    /// <summary>Chỉ đơn còn giữ ghế mới hủy được — đơn đã hủy/hết hạn đã trả ghế rồi.</summary>
-    public bool CanCancel => Status is BookingStatus.Pending or BookingStatus.Confirmed;
-}
+    List<BookingSeatLine> Seats);

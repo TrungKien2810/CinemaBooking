@@ -72,6 +72,24 @@ public class AdminAuthorizationTests
         Assert.True(await IsAuthorizedAsync(controller, SignedIn(AppRoles.Admin)));
     }
 
+    /// <summary>
+    /// BranchAdmin chỉ được vào phòng/ghế và suất chiếu; phim, chi nhánh, đơn, doanh thu là của
+    /// Admin toàn hệ thống.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(AdminControllerTypes))]
+    public async Task Branch_admin_is_allowed_only_on_rooms_and_showtimes(Type controller)
+    {
+        var expected = controller == typeof(RoomsController) || controller == typeof(ShowtimesController);
+        Assert.Equal(expected, await IsAuthorizedAsync(controller, SignedIn(AppRoles.BranchAdmin)));
+    }
+
+    [Fact]
+    public void Branch_admin_role_is_seeded()
+    {
+        Assert.Contains(AppRoles.BranchAdmin, AppRoles.All);
+    }
+
     private static ClaimsPrincipal SignedIn(string role) =>
         new(new ClaimsIdentity([new Claim(ClaimTypes.Name, "user@example.com"), new Claim(ClaimTypes.Role, role)], "Test"));
 

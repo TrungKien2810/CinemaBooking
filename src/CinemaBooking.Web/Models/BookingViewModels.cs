@@ -22,9 +22,7 @@ public sealed record BookingTicketViewModel(
     string CustomerEmail,
     string? CustomerPhone,
     decimal TotalAmount,
-    IReadOnlyList<BookingSeatLine> Seats,
-    bool CanCancel = false,
-    decimal RefundAmount = 0)
+    IReadOnlyList<BookingSeatLine> Seats)
 {
     public string StatusLabel => Status switch
     {
@@ -55,13 +53,4 @@ public sealed record MyBookingsViewModel(
     IReadOnlyList<BookingTicketViewModel> Bookings,
     string Tab = "all",
     int UpcomingCount = 0,
-    int HistoryCount = 0,
-    int CancelledCount = 0);
-
-/// <summary>Trang xác nhận hủy vé; guest phải nhập lại email đã dùng khi đặt.</summary>
-public sealed record CancelBookingPageViewModel(
-    BookingTicketViewModel Booking,
-    bool CanCancel,
-    string? Reason,
-    decimal RefundAmount,
-    bool RequiresEmail);
+    int HistoryCount = 0);

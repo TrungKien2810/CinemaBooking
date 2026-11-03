@@ -44,7 +44,7 @@ giữ ghế bằng hai trình duyệt khác nhau không có SignalR; ghi lại l
 | ☐ | `12-admin-suat-chieu.png` | `/Admin/Showtimes` | Lọc theo một chi nhánh và ngày mai | Bảng suất chiếu có phim, phòng, giờ, giá; bộ lọc chi nhánh/ngày hiện rõ |
 | ☐ | `13-admin-don.png` | `/Admin/Bookings` | — | Thấy các đơn `CB-SEED…` cùng bộ lọc mã / chi nhánh / trạng thái |
 | ☐ | `14-admin-chi-tiet-don.png` | `/Admin/Bookings/Details/{id}` | Mở một đơn seed | Thông tin khách, suất, **bảng ghế kèm giá từng ghế**, trạng thái thanh toán |
-| ☐ | `15-admin-huy-don.png` | Trang chi tiết sau khi hủy | Bấm hủy một đơn (đơn seed hoặc đơn tự đặt) | Dòng thông báo "Đã hủy đơn … và trả N ghế", trạng thái `Cancelled` |
+| ☐ | ~~`15-admin-huy-don.png`~~ | — | Tính năng hủy đơn đã được bỏ khỏi phạm vi | — |
 | ☐ | `16-admin-doanh-thu.png` | `/Admin/Revenue` | Chọn khoảng ngày có đơn (mặc định 7 ngày) | Bảng doanh thu theo ngày × chi nhánh + tổng theo chi nhánh, có số vé |
 | ☐ | `17-admin-doanh-thu-chi-tiet.png` | `/Admin/Revenue/Breakdown` | Lọc theo một chi nhánh | Bảng theo phim và bảng theo suất chiếu (số vé / sức chứa, doanh thu) |
 
