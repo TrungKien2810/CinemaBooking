@@ -11,16 +11,23 @@ public interface ISeatPricingService
     decimal PriceFor(decimal basePrice, SeatType type);
 }
 
-/// <summary>Ghế VIP +20%, ghế đôi tính giá hai người. Không giữ trạng thái — đăng ký Singleton.</summary>
+/// <summary>
+/// Ghế VIP +20%. Ghế đôi: MỖI NỬA tính bằng một vé thường — cả cặp (2 nửa) = 2 vé thường.
+/// Không nhân đôi từng nửa, vì như vậy một cặp sẽ thành 4 vé (xem <see cref="SeatPairing"/>).
+/// Không giữ trạng thái — đăng ký Singleton.
+/// </summary>
 public sealed class SeatPricingService : ISeatPricingService
 {
     public const decimal VipMultiplier = 1.2m;
-    public const decimal CoupleMultiplier = 2m;
+
+    /// <summary>Giá một NỬA ghế đôi so với vé thường. Muốn ghế đôi có phụ thu thì nâng số này
+    /// (ví dụ 1.1 → cả cặp = 2,2 vé thường).</summary>
+    public const decimal CoupleHalfMultiplier = 1m;
 
     public decimal PriceFor(decimal basePrice, SeatType type) => type switch
     {
         SeatType.Vip => basePrice * VipMultiplier,
-        SeatType.Couple => basePrice * CoupleMultiplier,
+        SeatType.Couple => basePrice * CoupleHalfMultiplier,
         _ => basePrice,
     };
 }

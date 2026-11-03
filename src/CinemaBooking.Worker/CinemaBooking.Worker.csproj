@@ -8,8 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Test gọi thẳng các bước quét/tổng hợp (internal) thay vì chờ PeriodicTimer của BackgroundService. -->
+    <InternalsVisibleTo Include="CinemaBooking.Tests" />
   </ItemGroup>
 
   <ItemGroup>

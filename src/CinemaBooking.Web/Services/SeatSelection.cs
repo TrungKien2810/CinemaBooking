@@ -8,7 +8,11 @@ namespace CinemaBooking.Web.Services;
 /// owner token của lock — đã chuyển từ connection SignalR sang hold-token trong Session khi
 /// khách bấm "Tiếp tục thanh toán", để rời trang không làm mất ghế.
 /// </summary>
-public sealed record SeatSelection(int ShowtimeId, IReadOnlyList<int> SeatIds, string ConnectionId);
+public sealed record SeatSelection(
+    int ShowtimeId,
+    IReadOnlyList<int> SeatIds,
+    string ConnectionId,
+    DateTime? ExpiresUtc = null);
 
 public static class SeatSelectionSessionExtensions
 {

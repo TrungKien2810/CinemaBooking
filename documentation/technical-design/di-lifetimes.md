@@ -14,7 +14,7 @@ Tài liệu này giải thích **vì sao** mỗi service có vòng đời như h
 | `CinemaDbContext` | Scoped | `DbContext` không thread-safe; mỗi request một unit of work, mỗi request một transaction |
 | `ISeatLockManager` → `InMemorySeatLockManager` | **Singleton** | Trạng thái lock nằm trong RAM của process; Scoped thì mỗi request có một bảng lock riêng và không ai thấy ghế của ai |
 | `IPaymentService` → `MockPaymentService` | Scoped (qua `AddHttpClient<,>`) | `HttpMessageHandler` được factory pool lại; service chỉ là vỏ mỏng, tạo mới mỗi request là rẻ |
-| `IEmailSender` → `LoggingEmailSender` | Scoped | Không giữ trạng thái; để Scoped cho đồng nhất với phần còn lại của request |
+| `IEmailSender` → `SmtpEmailSender` nếu có `Email:Smtp:Host`, ngược lại `LoggingEmailSender` | Scoped | Không giữ trạng thái; để Scoped cho đồng nhất với phần còn lại của request |
 | `SeatHub` | Transient (SignalR tự quản) | SignalR tạo một instance cho **mỗi lần gọi hub method** — xem §4 |
 
 ## 2. Cái bẫy: Singleton không được inject Scoped
@@ -58,8 +58,12 @@ public sealed class SomeSingleton(IServiceScopeFactory scopeFactory)
 Quy tắc: **scope phải ngắn hơn thao tác**, mở ngay trước khi dùng và đóng ngay sau đó — đừng cache
 `IServiceProvider` của scope vào field.
 
-`BackgroundService` cũng là Singleton, nên cả ba worker của Sprint 4
-(`ExpiredSeatCleaner`, `EmailOutboxWorker`, `DailyReportWorker`) đều phải theo đúng khuôn này.
+`BackgroundService` cũng là Singleton, nên mọi hosted service đều phải theo đúng khuôn này:
+`SeatLockCleaner` + `ExpiredBookingCleaner` (Web, có `IHubContext`), `EmailOutboxWorker` +
+`DailyReportWorker` (Worker).
+
+`SeatLockCleaner` cố ý chạy trong **process Web**: `ISeatLockManager` là Singleton in-memory của
+process đó, nếu đặt ở Worker thì nó quét một bảng lock rỗng và không bao giờ nhả được ghế của Web.
 
 ## 4. SignalR Hub không phải nơi giữ trạng thái
 

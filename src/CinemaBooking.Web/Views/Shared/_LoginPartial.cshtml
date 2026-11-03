@@ -29,6 +29,12 @@
                     <li><a class="dropdown-item" asp-area="Admin" asp-controller="Movies" asp-action="Index">Trang quản trị</a></li>
                     <li><hr class="dropdown-divider" /></li>
                 }
+                else if (User.IsInRole(AppRoles.BranchAdmin))
+                {
+                    @* BranchAdmin chỉ vào được phòng/ghế và suất chiếu của chi nhánh mình. *@
+                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Rooms" asp-action="Index">Quản lý chi nhánh</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                }
                 <li>
                     <a class="dropdown-item" asp-controller="Booking" asp-action="MyBookings">Vé của tôi</a>
                 </li>

@@ -16,8 +16,15 @@ public sealed record CheckoutViewModel(
 
 public sealed record CheckoutSeatItem(string Label, SeatType Type, decimal Price);
 
-/// <summary>Trang thanh toán: tóm tắt đơn (đọc từ Session) + form thông tin khách.</summary>
-public sealed record CheckoutPageViewModel(CheckoutViewModel Summary, CheckoutFormModel Form);
+/// <summary>
+/// Trang thanh toán: tóm tắt đơn (đọc từ Session) + form thông tin khách.
+/// <see cref="HoldSecondsRemaining"/> để view chạy đồng hồ đếm ngược — ghế chỉ được giữ 5 phút kể
+/// từ lúc bấm "Tiếp tục thanh toán", khách ngồi lâu quá thì phải quay lại chọn ghế.
+/// </summary>
+public sealed record CheckoutPageViewModel(
+    CheckoutViewModel Summary,
+    CheckoutFormModel Form,
+    int HoldSecondsRemaining = 0);
 
 /// <summary>
 /// Thông tin liên hệ của khách trên form thanh toán. Danh sách ghế KHÔNG nằm ở đây —

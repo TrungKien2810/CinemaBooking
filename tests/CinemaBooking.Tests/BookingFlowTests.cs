@@ -1,11 +1,13 @@
 using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
+using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Infrastructure.Services;
 using CinemaBooking.Web.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CinemaBooking.Tests;
 
@@ -164,6 +166,51 @@ public sealed class BookingFlowTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Half_a_couple_pair_is_rejected_but_the_full_pair_books()
+    {
+        // Hàng cuối của phòng là ghế đôi (SeatGenerator): C1–C2, C3–C4.
+        var couple = await _db.Seats
+            .Where(s => s.RoomId == _room.Id && s.SeatType == SeatType.Couple)
+            .OrderBy(s => s.ColumnNumber)
+            .Select(s => s.Id)
+            .ToListAsync();
+
+        Hold(new[] { couple[0] });
+        var half = await Service().PlaceAsync(Request(new[] { couple[0] }));
+
+        Assert.Equal(BookingResultKind.SeatsUnavailable, half.Kind);
+        Assert.Contains("cả cặp", half.Message);
+
+        Hold(couple.Take(2).ToList());
+        var full = await Service().PlaceAsync(Request(couple.Take(2).ToList()));
+
+        Assert.True(full.IsRedirectToPayment);
+    }
+
+    [Fact]
+    public async Task Unconfigured_vnpay_simulates_payment_so_checkout_can_finish_offline()
+    {
+        var seats = await StandardSeatIdsAsync(2);
+        Hold(seats);
+
+        // Máy demo chưa có Vnpay:HashSecret — cổng thanh toán trả lỗi cấu hình, nhưng cờ mô phỏng
+        // được bật nên đơn phải được xác nhận luôn thay vì chặn khách ở bước cuối.
+        var options = new VnpayOptions { SimulateWhenUnconfigured = true, HashSecret = string.Empty };
+        var result = await Service(vnpay: new FakeVnpayPaymentService(succeed: false), vnpayOptions: options)
+            .PlaceAsync(Request(seats));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(BookingResultKind.Success, result.Kind);
+
+        _db.ChangeTracker.Clear();
+        var booking = await _db.Bookings.Include(b => b.Payment).SingleAsync();
+        Assert.Equal(BookingStatus.Confirmed, booking.Status);
+        Assert.Equal(PaymentStatus.Succeeded, booking.Payment!.Status);
+        Assert.StartsWith("SIM-", booking.Payment.TransactionId);
+        Assert.Single(await _db.OutboxEmails.ToListAsync());
+    }
+
+    [Fact]
     public async Task Failed_payment_on_return_frees_the_seats_for_other_customers()
     {
         var seats = await StandardSeatIdsAsync(2);
@@ -256,17 +303,19 @@ public sealed class BookingFlowTests : IAsyncLifetime
 
     private BookingService Service(
         IBookedSeatQuery? bookedSeats = null,
-        IVnpayPaymentService? vnpay = null) =>
+        IVnpayPaymentService? vnpay = null,
+        VnpayOptions? vnpayOptions = null) =>
         new(_db,
             bookedSeats ?? new BookedSeatQuery(_db, new FixedTimeProvider(Now),
-                Microsoft.Extensions.Options.Options.Create(new CinemaBooking.Infrastructure.VnpayOptions())),
+                Microsoft.Extensions.Options.Options.Create(new VnpayOptions())),
             _locks,
             new SeatPricingService(),
             vnpay ?? new FakeVnpayPaymentService(succeed: true),
             new BookingCodeGenerator(),
             new FixedTimeProvider(Now),
-            Microsoft.Extensions.Options.Options.Create(new CinemaBooking.Infrastructure.VnpayOptions()),
-            new CinemaBooking.Web.Services.DisplayTimeZone());
+            Microsoft.Extensions.Options.Options.Create(vnpayOptions ?? new VnpayOptions()),
+            new DisplayTimeZone(),
+            NullLogger<BookingService>.Instance);
 
     private BookingRequest Request(IReadOnlyList<int> seatIds) =>
         new(_showtime.Id, seatIds, Connection, "Nguyễn Văn A", "a@example.com", "0900000000", null);

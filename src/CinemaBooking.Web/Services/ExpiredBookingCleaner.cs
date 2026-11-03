@@ -1,19 +1,24 @@
-using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Domain.Enums;
 using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
+using CinemaBooking.Web.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace CinemaBooking.Worker.Workers;
+namespace CinemaBooking.Web.Services;
 
 /// <summary>
 /// Hết hạn các đơn đặt vé <c>Pending</c> đã quá hạn chờ thanh toán VNPAY và trả ghế.
 /// <para>
 /// Đơn Pending giữ ghế bằng chính dòng <c>BookingSeats</c> (unique index (ShowtimeId, SeatId) không
 /// lọc theo trạng thái). Khách đóng tab ở cổng thanh toán hoặc giao dịch lỗi mà VNPAY không gọi về
-/// ReturnUrl/IPN thì đơn nằm Pending mãi — ghế bị khóa dù chưa ai trả tiền. Worker quét định kỳ để
-/// trả ghế và báo cho Web phát "ghế trống" tới các tab đang mở.
+/// ReturnUrl/IPN thì đơn nằm Pending mãi — ghế bị khóa dù chưa ai trả tiền. Vòng quét định kỳ trả ghế
+/// và báo cho các tab đang mở suất chiếu vẽ lại ghế ngay.
+/// </para>
+/// <para>
+/// Chạy trong process Web (không phải Worker) để dùng được <see cref="IHubContext{THub, T}"/> — bản cũ
+/// ở Worker phải mở HubConnection giả làm client, kéo theo một method công khai ai cũng gọi được.
 /// </para>
 /// </summary>
 public sealed class ExpiredBookingCleaner : BackgroundService
@@ -21,20 +26,20 @@ public sealed class ExpiredBookingCleaner : BackgroundService
     private static readonly TimeSpan ScanInterval = TimeSpan.FromSeconds(30);
 
     private readonly IServiceScopeFactory _scopes;
-    private readonly ISeatReleaseNotifier _notifier;
+    private readonly IHubContext<SeatHub, ISeatClient> _hub;
     private readonly VnpayOptions _vnpay;
     private readonly TimeProvider _clock;
     private readonly ILogger<ExpiredBookingCleaner> _log;
 
     public ExpiredBookingCleaner(
         IServiceScopeFactory scopes,
-        ISeatReleaseNotifier notifier,
+        IHubContext<SeatHub, ISeatClient> hub,
         IOptions<VnpayOptions> vnpay,
         TimeProvider clock,
         ILogger<ExpiredBookingCleaner> log)
     {
         _scopes = scopes;
-        _notifier = notifier;
+        _hub = hub;
         _vnpay = vnpay.Value;
         _clock = clock;
         _log = log;
@@ -57,7 +62,8 @@ public sealed class ExpiredBookingCleaner : BackgroundService
         }
     }
 
-    private async Task ExpireOnceAsync(CancellationToken ct)
+    /// <summary>internal để test gọi trực tiếp, không phải chờ đồng hồ của vòng lặp.</summary>
+    internal async Task ExpireOnceAsync(CancellationToken ct)
     {
         using var scope = _scopes.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<CinemaDbContext>();
@@ -68,6 +74,7 @@ public sealed class ExpiredBookingCleaner : BackgroundService
             .Include(b => b.Seats)
             .Include(b => b.Payment)
             .Where(b => b.Status == BookingStatus.Pending && b.BookingTimeUtc <= cutoff)
+            .OrderBy(b => b.BookingTimeUtc) // đơn cũ nhất trước: Take(200) phải xác định, không phụ thuộc thứ tự DB trả về
             .Take(200)
             .ToListAsync(ct);
 
@@ -89,7 +96,7 @@ public sealed class ExpiredBookingCleaner : BackgroundService
         await db.SaveChangesAsync(ct);
 
         foreach (var showtime in freed)
-            await _notifier.NotifyAsync(showtime.ShowtimeId, showtime.SeatIds, ct);
+            await _hub.Clients.Group(SeatHub.GroupName(showtime.ShowtimeId)).SeatUnlocked(showtime.SeatIds);
 
         _log.LogInformation("Đã hết hạn {Count} đơn chờ thanh toán và trả ghế.", stale.Count);
     }

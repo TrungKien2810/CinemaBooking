@@ -18,6 +18,10 @@ public static class IdentitySeeder
     private const string DefaultAdminEmail = "admin@cinemabooking.local";
     private const string DefaultAdminPassword = "Admin@12345";
 
+    private const string DefaultBranchAdminEmail = "branch@cinemabooking.local";
+    private const string DefaultBranchAdminPassword = "Branch@12345";
+    private const string DefaultBranchTheaterName = "CineSmart Cầu Giấy";
+
     /// <summary>
     /// Tạo vai trò Admin/Customer và một tài khoản admin nếu chưa có.
     /// Chạy được nhiều lần — mỗi bước đều kiểm tra tồn tại trước khi tạo.
@@ -31,6 +35,7 @@ public static class IdentitySeeder
         await EnsureDatabaseReadyAsync(sp, ct);
         await SeedRolesAsync(sp, logger);
         await SeedAdminAsync(sp, logger);
+        await SeedBranchAdminAsync(sp, logger);
     }
 
     /// <summary>
@@ -107,6 +112,69 @@ public static class IdentitySeeder
             logger.LogWarning(
                 "Tài khoản admin đang dùng mật khẩu mặc định trong mã nguồn. " +
                 "Đặt SeedAdmin:Password trong appsettings.Development.json hoặc user-secrets.");
+        }
+    }
+
+    /// <summary>
+    /// Tạo tài khoản quản lý chi nhánh (BranchAdmin) gắn với một chi nhánh có thật.
+    /// CatalogSeeder chạy TRƯỚC seeder này nên chi nhánh đã tồn tại; nếu đổi tên chi nhánh trong
+    /// cấu hình thì bỏ qua kèm cảnh báo, không làm sập khởi động.
+    /// </summary>
+    private static async Task SeedBranchAdminAsync(IServiceProvider sp, ILogger logger)
+    {
+        var config = sp.GetRequiredService<IConfiguration>();
+        var users = sp.GetRequiredService<UserManager<ApplicationUser>>();
+        var db = sp.GetRequiredService<CinemaDbContext>();
+
+        var theaterName = Setting(config, "SeedBranchAdmin:TheaterName", DefaultBranchTheaterName);
+        var theater = await db.Theaters.FirstOrDefaultAsync(t => t.Name == theaterName);
+        if (theater is null)
+        {
+            logger.LogWarning(
+                "Không tìm thấy chi nhánh '{Theater}' để gán cho tài khoản quản lý chi nhánh — bỏ qua.",
+                theaterName);
+            return;
+        }
+
+        var email = Setting(config, "SeedBranchAdmin:Email", DefaultBranchAdminEmail);
+        var password = Setting(config, "SeedBranchAdmin:Password", DefaultBranchAdminPassword);
+
+        var user = await users.FindByEmailAsync(email);
+        if (user is null)
+        {
+            user = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                FullName = Setting(config, "SeedBranchAdmin:FullName", "Quản lý chi nhánh"),
+                TheaterId = theater.Id,
+            };
+
+            var created = await users.CreateAsync(user, password);
+            if (!created.Succeeded) throw Failed($"tạo tài khoản quản lý chi nhánh {email}", created);
+
+            logger.LogInformation("Đã tạo tài khoản quản lý chi nhánh {Email} cho {Theater}.", email, theater.Name);
+        }
+        else if (user.TheaterId != theater.Id)
+        {
+            // Đổi cấu hình chi nhánh thì lần khởi động sau tự cập nhật lại phạm vi.
+            user.TheaterId = theater.Id;
+            var updated = await users.UpdateAsync(user);
+            if (!updated.Succeeded) throw Failed($"gán chi nhánh cho {email}", updated);
+        }
+
+        if (!await users.IsInRoleAsync(user, AppRoles.BranchAdmin))
+        {
+            var result = await users.AddToRoleAsync(user, AppRoles.BranchAdmin);
+            if (!result.Succeeded) throw Failed($"gán vai trò BranchAdmin cho {email}", result);
+        }
+
+        if (password == DefaultBranchAdminPassword)
+        {
+            logger.LogWarning(
+                "Tài khoản quản lý chi nhánh đang dùng mật khẩu mặc định trong mã nguồn. " +
+                "Đặt SeedBranchAdmin:Password trong appsettings.Development.json hoặc user-secrets.");
         }
     }
 

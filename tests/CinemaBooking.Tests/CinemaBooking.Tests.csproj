@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\src\CinemaBooking.Domain\CinemaBooking.Domain.csproj" />
     <ProjectReference Include="..\..\src\CinemaBooking.Infrastructure\CinemaBooking.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\CinemaBooking.Web\CinemaBooking.Web.csproj" />
+    <ProjectReference Include="..\..\src\CinemaBooking.Worker\CinemaBooking.Worker.csproj" />
   </ItemGroup>
 
 </Project>

@@ -29,6 +29,16 @@
             <p class="cb-muted mb-1">@Model.Summary.TheaterName (@Model.Summary.City) · @Model.Summary.RoomName</p>
             <p class="cb-muted">@Model.Summary.StartLocal.ToString("HH:mm dd/MM/yyyy")</p>
 
+            <div id="checkout-hold-timer" class="seat-timer checkout-hold-timer"
+                 role="timer" aria-live="polite"
+                 data-remaining-seconds="@Model.HoldSecondsRemaining"
+                 data-seat-map-url="@Url.Action("SeatMap", "Booking", new { id = Model.Summary.ShowtimeId })">
+                Đang tính thời gian giữ ghế…
+            </div>
+            <div id="checkout-expired" class="alert alert-warning mt-2" hidden>
+                Đã hết thời gian giữ ghế. Đang đưa bạn về sơ đồ ghế để chọn lại…
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-sm checkout-table">
                     <thead>
@@ -61,4 +71,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/checkout-timer.js" asp-append-version="true"></script>
 }

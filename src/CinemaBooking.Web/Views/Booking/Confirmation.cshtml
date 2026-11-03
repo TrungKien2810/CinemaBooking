@@ -63,11 +63,6 @@
     <div class="booking-actions">
         <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Về trang chủ</a>
         <a asp-controller="Booking" asp-action="Lookup" class="btn btn-outline-secondary">Tra cứu vé khác</a>
-        @if (confirmed && Model.CanCancel)
-        {
-            <a asp-controller="Booking" asp-action="Cancel" asp-route-code="@Model.BookingCode"
-               class="btn btn-outline-danger">Hủy vé</a>
-        }
         @if (User.Identity?.IsAuthenticated == true)
         {
             <a asp-controller="Booking" asp-action="MyBookings" class="btn btn-link">Vé của tôi</a>

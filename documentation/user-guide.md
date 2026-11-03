@@ -65,14 +65,19 @@ ghế realtime còn chờ B4.9 ⏳. Demo đầy đủ thì chạy cả hai cửa
 
 ### 1.3 Tài khoản dùng để demo
 
-| Vai trò | Đăng nhập ở | Giá trị |
-| --- | --- | --- |
-| `Admin` | `/Account/Login` | `admin@cinemabooking.local` · mật khẩu `Admin@12345` (mặc định trong mã nguồn, **chỉ để demo**) |
-| `Customer` | `/Account/Register` | Tự đăng ký; mật khẩu ≥ 8 ký tự |
+| Vai trò | Đăng nhập ở | Giá trị | Phạm vi |
+| --- | --- | --- | --- |
+| `Admin` | `/Account/Login` | `admin@cinemabooking.local` · mật khẩu `Admin@12345` (mặc định trong mã nguồn, **chỉ để demo**) | Toàn hệ thống: phim, chi nhánh, phòng, suất chiếu, đơn, doanh thu |
+| `BranchAdmin` | `/Account/Login` | `branch@cinemabooking.local` · mật khẩu `Branch@12345` — gắn với chi nhánh **CineSmart Cầu Giấy** (`SeedBranchAdmin:TheaterName`) | Chỉ phòng/ghế và suất chiếu của chi nhánh mình |
+| `Customer` | `/Account/Register` | Tự đăng ký; mật khẩu ≥ 8 ký tự | Đặt vé, tra cứu, vé của tôi |
 
-Tài khoản admin do `IdentitySeeder` tạo lúc khởi động; chạy lại bao nhiêu lần cũng không tạo trùng.
-Khi còn dùng mật khẩu mặc định, log khởi động in một dòng `warn` — đổi bằng
-`SeedAdmin:Password` trong `appsettings.Development.json` hoặc user-secrets (xem `README.md`).
+Tài khoản admin và quản lý chi nhánh do `IdentitySeeder` tạo lúc khởi động; chạy lại bao nhiêu lần
+cũng không tạo trùng. Khi còn dùng mật khẩu mặc định, log khởi động in một dòng `warn` — đổi bằng
+`SeedAdmin:Password` / `SeedBranchAdmin:Password` trong `appsettings.Development.json` hoặc user-secrets
+(xem `README.md`).
+
+Phạm vi của `BranchAdmin` đọc từ `ApplicationUser.TheaterId` trong DB, **không** đọc tham số trên URL:
+sửa `?theaterId=` hay `RoomId` trong form sang chi nhánh khác đều bị trả `403`.
 
 📷 `screenshots/09-dang-nhap.png`
 
@@ -130,7 +135,7 @@ phòng là ghế VIP**, còn lại ghế thường. Cùng một phòng luôn cho
 | Phòng nhỏ dưới 100 ghế | −15.000đ |
 | Suất bắt đầu từ 18:00 | +25.000đ |
 | Ghế VIP | ×1,2 giá gốc của suất |
-| Ghế đôi | ×2 giá gốc của suất |
+| Ghế đôi | bán theo **cặp**: mỗi nửa = 1 vé thường, cả cặp = 2 vé thường (không nhân đôi từng nửa) |
 
 Công thức nằm ở một chỗ duy nhất (`SeatPricingService`), nên giá hiện trên sơ đồ ghế và
 `PriceAtBooking` ghi vào đơn luôn khớp nhau.
@@ -168,10 +173,13 @@ Sơ đồ phòng chiếu vẽ theo đúng hàng × cột của phòng. Quy ướ
 | Người khác đang giữ | khoá tạm, đổi màu ngay khi họ click | không |
 | Đã đặt | đỏ, không bấm được (đọc từ `BookingSeats` trong DB) | không |
 
+**Ghế đôi** (hàng cuối) hiển thị thành **một khối chữ nhật rộng 2 cột** (ví dụ `J1–J2`), không phải
+hai ô rời: bấm là chọn/nhả cả cặp, giá hiện trên khối là giá cả cặp. Server chặn nếu client gửi lên
+nửa cặp, nên không thể đặt lẻ một nửa. Hàng có số ghế đôi lẻ (hoặc bị khuyết ghế) sẽ có một ghế đôi
+lẻ loi hiện mờ, không bán được.
+
 Ghế giữ **5 phút** kể từ lúc click (`SeatHold:DurationMinutes`). Hết 5 phút, ghế **coi như trống** với
-mọi người: lock hết hạn bị bỏ qua khi đọc trạng thái và người khác chọn được ngay, kể cả lúc tiến
-trình dọn ghế chưa kịp quét. Việc **bắn sự kiện** để các cửa sổ đang mở tự đổi màu ghế đó là phần của
-Worker + hub client (B4.6/B4.9) ⏳ — chưa merge thì phải tải lại trang mới thấy ghế trống.
+mọi người và cửa sổ khác tự đổi màu ngay (SeatLockCleaner trong Web phát `SeatUnlocked`).
 
 Chọn xong bấm **Tiếp tục** — server kiểm tra lại toàn bộ: ghế thuộc đúng phòng của suất, chưa ai đặt,
 và đang do **chính** kết nối này giữ. Sai một điều kiện thì quay lại sơ đồ kèm thông báo đỏ, ví dụ
@@ -185,6 +193,10 @@ và đang do **chính** kết nối này giữ. Sai một điều kiện thì qu
 Trang tóm tắt giỏ ghế (phim, chi nhánh, phòng, giờ, danh sách ghế và loại ghế) đọc từ **Session** —
 client không gửi lại danh sách ghế nên không sửa được giá trị. Session giữ 20 phút. Nút **Chọn lại
 ghế** quay về sơ đồ; vào thẳng `/Booking/Checkout` khi chưa chọn ghế thì bị đưa về trang chủ.
+
+Trang có **đồng hồ đếm ngược giữ ghế** (`Giữ ghế còn 4:32`) tính từ lúc bấm Tiếp tục. Hết giờ, nút
+thanh toán bị khoá và trang tự đưa về sơ đồ ghế sau 4 giây — không còn cảnh gõ xong form mới biết
+ghế đã hết hạn. Ghế đôi hiện **một dòng `J1–J2`** với giá cả cặp, khớp với khối trên sơ đồ.
 
 📷 `screenshots/06-thanh-toan.png`
 
@@ -203,9 +215,9 @@ thông báo tử tế chứ không phải trang lỗi 500.
 ### 3.6 Nhận mã vé và email ⏳
 
 Sau khi thanh toán, trang xác nhận hiện **mã đặt vé** (dạng `CB-XXXXXXXX`), phim, suất, ghế, tổng
-tiền. Email xác nhận do **Worker** gửi (mỗi 15 giây quét outbox, retry tối đa 5 lần); ở môi trường
-dev, `LoggingEmailSender` ghi nội dung email vào log của Worker — mở cửa sổ Worker để chụp làm bằng
-chứng.
+tiền. Email xác nhận do **Worker** gửi (mỗi 15 giây quét outbox, retry tối đa 5 lần). Chưa cấu hình
+`Email:Smtp:Host` thì `LoggingEmailSender` ghi nội dung email vào log của Worker (mở cửa sổ Worker để
+chụp làm bằng chứng); điền `Host`/`Port`/`UserName`/`Password` là tự chuyển sang gửi SMTP thật.
 
 📷 `screenshots/07-xac-nhan-dat-ve.png`
 📷 `screenshots/08-email-trong-log.png`
@@ -216,35 +228,33 @@ Tra cứu theo mã đặt vé (không cần đăng nhập) và danh sách vé c�
 
 ## 4. Luồng quản trị viên
 
-Đăng nhập bằng tài khoản `Admin`. Toàn bộ khu `/Admin/**` yêu cầu vai trò `Admin`; khách đã đăng
-nhập nhưng không phải admin bị đưa tới `/Account/AccessDenied`.
+Khu `/Admin/**` yêu cầu một trong hai vai trò `Admin` hoặc `BranchAdmin`; khách đã đăng nhập nhưng
+không có vai trò bị đưa tới `/Account/AccessDenied`. Bốn mục Phim / Chi nhánh / Đơn / Doanh thu chỉ
+dành cho `Admin` — `BranchAdmin` chỉ thấy menu **Phòng &amp; ghế** và **Suất chiếu**.
 
 | Trang | Đường dẫn | Làm được gì |
 | --- | --- | --- |
 | Phim | `/Admin/Movies` | Thêm/sửa phim; xoá là **ẩn** (`IsActive = false`) để không phá đơn cũ và suất đã bán |
 | Chi nhánh | `/Admin/Theaters` | Thêm/sửa/ẩn chi nhánh (tên, thành phố, địa chỉ) |
 | Phòng | `/Admin/Rooms?theaterId=…` | Thêm/sửa phòng theo số hàng × số cột; **đổi layout là sinh lại ghế**, ràng buộc `Seat(RoomId, RowNumber, ColumnNumber)` chặn ghế trùng |
+| Sửa ghế | `/Admin/Rooms/Seats/{id}` | Bấm từng ghế để đổi **Thường ↔ VIP**; hàng cuối tự động là **ghế đôi** (khóa, không sửa). BranchAdmin dùng được cho phòng của mình |
 | Suất chiếu | `/Admin/Showtimes` | Lọc theo chi nhánh và ngày, thêm/sửa suất: chọn phim từ danh mục, phòng, giờ, giá gốc; suất cùng phòng phải cách nhau ≥ 15 phút dọn phòng |
 | Đơn đặt vé | `/Admin/Bookings` | Lọc theo mã, chi nhánh, trạng thái (`Pending` / `Confirmed` / `Cancelled` / `Expired`); tối đa 100 đơn mới nhất mỗi lần xem |
 | Chi tiết đơn | `/Admin/Bookings/Details/{id}` | Thông tin khách, phim, suất, **danh sách ghế kèm giá từng ghế**, trạng thái thanh toán, mã giao dịch |
-| Hủy đơn | nút trên trang chi tiết | Đơn chuyển `Cancelled`, **xoá các dòng `BookingSeats` để trả ghế**, thanh toán đã thành công thì đánh dấu `Refunded` |
 | Doanh thu theo ngày | `/Admin/Revenue` | Mặc định 7 ngày gần nhất; bảng theo ngày × chi nhánh (số vé, doanh thu) + tổng theo chi nhánh |
 | Doanh thu chi tiết | `/Admin/Revenue/Breakdown` | Chia theo **phim** và theo **từng suất chiếu** (số vé / sức chứa phòng), lọc theo chi nhánh |
 
 Hai điều dễ hiểu sai khi demo:
 
 - **Doanh thu tính theo ngày ĐẶT vé** (lúc thu tiền), theo giờ rạp (UTC+7), **không phải ngày chiếu**.
-- Chỉ tính vé của đơn `Confirmed`. Hủy đơn xong, doanh thu ngày đó giảm ngay — đây là hành vi đúng,
-  và cũng là cách nhanh nhất để kiểm chứng nút hủy có thật sự trả ghế: mở lại sơ đồ ghế của suất đó.
-
-Hủy đơn **không** tự nhả lock RAM của người đang giữ ghế; lock hết hạn theo đồng hồ 5 phút là tự hết.
+- Chỉ tính vé của đơn `Confirmed`. Đơn `Pending` quá hạn thanh toán bị worker chuyển `Expired` và trả
+  ghế, nên không bao giờ lọt vào doanh thu.
 
 📷 `screenshots/10-admin-phim.png`
 📷 `screenshots/11-admin-chi-nhanh-phong.png`
 📷 `screenshots/12-admin-suat-chieu.png`
 📷 `screenshots/13-admin-don.png`
 📷 `screenshots/14-admin-chi-tiet-don.png`
-📷 `screenshots/15-admin-huy-don.png`
 📷 `screenshots/16-admin-doanh-thu.png`
 📷 `screenshots/17-admin-doanh-thu-chi-tiet.png`
 
@@ -277,10 +287,10 @@ Ghi chú khi demo:
 | `Cannot open database ...` | LocalDB chưa chạy hoặc sai chuỗi kết nối | Kiểm tra `ConnectionStrings:Default` trong `src/CinemaBooking.Web/appsettings.json`; không commit chuỗi thật (dùng `appsettings.Development.json`) |
 | Drop database báo "database in use" | Web/Worker đang chạy | Tắt hai tiến trình (script `reset-demo.ps1` tự làm) |
 | Bấm Tiếp tục báo "Chưa chọn ghế nào" | Client chưa đẩy `seatIds` vào form (JS SignalR của C3.x) | Đây là lỗi của bản chưa merge JS, không phải lỗi dữ liệu; kiểm tra đã merge nhánh Dev C chưa |
-| Ghế hết hạn nhưng cửa sổ khác không thấy đổi màu | Sự kiện nhả ghế do Worker bắn (B4.9) chưa merge | Không phải lock còn giữ: người khác **chọn được** ghế đó ngay; tải lại trang là thấy trống |
-| Không thấy log dọn ghế trong Worker | `ExpiredSeatCleaner` chạy trong **process Worker**, nơi bảng lock rỗng, nên log chỉ in khi có lock hết hạn trong chính process đó | Không ảnh hưởng luồng chọn ghế của Web; đây là việc tích hợp còn lại (B4.6/B4.9) |
+| Ghế hết hạn nhưng cửa sổ khác không đổi màu | Tab đó mất kết nối SignalR (mạng rớt / ngủ máy) | Không phải lock còn giữ: người khác **chọn được** ghế đó ngay; tải lại trang là thấy trống |
+| Muốn xem log dọn ghế | `SeatLockCleaner` chạy trong **process Web** (mỗi 10 giây) và `ExpiredBookingCleaner` mỗi 30 giây | Log nằm ở cửa sổ Web: "Đã giải phóng N ghế hết hạn…" / "Đã hết hạn N đơn chờ thanh toán…" |
 | Đăng nhập admin bị từ chối | Còn mật khẩu mặc định bị đổi ở `SeedAdmin:Password`, hoặc sai email | Xem log dòng `warn` lúc khởi động; `IdentitySeeder` tạo admin theo `SeedAdmin:Email` |
-| Bị đá sang `/Account/AccessDenied` | Tài khoản không có vai trò `Admin` | Đăng nhập bằng tài khoản admin, hoặc thêm vai trò cho tài khoản đang dùng |
+| Bị đá sang `/Account/AccessDenied` | Tài khoản không có vai trò `Admin`/`BranchAdmin`, hoặc BranchAdmin mở nhầm trang của Admin (Phim, Chi nhánh, Đơn, Doanh thu) | Đăng nhập đúng tài khoản; BranchAdmin chỉ dùng Phòng &amp; ghế và Suất chiếu của chi nhánh mình |
 | Ảnh poster trắng | Thiếu file trong `wwwroot/img/posters/` | Không phải lỗi: view tự dùng `poster-placeholder.svg` |
 
 ## 7. Đường dẫn nhanh

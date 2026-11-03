@@ -4,6 +4,7 @@ using CinemaBooking.Domain.Enums;
 using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace CinemaBooking.Web.Services;
@@ -28,6 +29,7 @@ public sealed class BookingService : IBookingService
     private readonly TimeProvider _clock;
     private readonly IOptions<VnpayOptions> _vnpayOptions;
     private readonly DisplayTimeZone _tz;
+    private readonly ILogger<BookingService> _log;
 
     public BookingService(
         CinemaDbContext db,
@@ -38,7 +40,8 @@ public sealed class BookingService : IBookingService
         IBookingCodeGenerator codes,
         TimeProvider clock,
         IOptions<VnpayOptions> vnpayOptions,
-        DisplayTimeZone tz)
+        DisplayTimeZone tz,
+        ILogger<BookingService> log)
     {
         _db = db;
         _bookedSeats = bookedSeats;
@@ -49,6 +52,7 @@ public sealed class BookingService : IBookingService
         _clock = clock;
         _vnpayOptions = vnpayOptions;
         _tz = tz;
+        _log = log;
     }
 
     public async Task<BookingResult> PlaceAsync(BookingRequest request, CancellationToken ct = default)
@@ -65,6 +69,11 @@ public sealed class BookingService : IBookingService
         var seats = showtime.Room!.Seats.Where(s => seatIds.Contains(s.Id)).ToList();
         if (seats.Count != seatIds.Count)
             return BookingResult.Failed(BookingResultKind.SeatsUnavailable, "Có ghế không thuộc phòng chiếu của suất này.");
+
+        // Chốt chặn cuối cho ghế đôi: client có thể gửi lên nửa cặp, nhưng không được bán nửa cặp.
+        var pairingError = SeatPairing.Validate(showtime.Room.Seats, seatIds);
+        if (pairingError is not null)
+            return BookingResult.Failed(BookingResultKind.SeatsUnavailable, pairingError);
 
         // Đơn Pending bỏ dở (khách đóng tab ở cổng VNPAY / thanh toán lỗi mà cổng không gọi về) đã
         // quá hạn chờ vẫn còn dòng BookingSeats — unique index sẽ chặn người khác đặt lại ghế. Dọn
@@ -123,6 +132,34 @@ public sealed class BookingService : IBookingService
 
         if (!vnpay.Success)
         {
+            // Máy dev/demo chưa có Vnpay:HashSecret: mô phỏng thanh toán thành công để luồng đặt vé
+            // chạy trọn vẹn. Cờ này mặc định TẮT trong code, chỉ bật ở appsettings demo — bật ở
+            // production nghĩa là bán vé miễn phí.
+            if (_vnpayOptions.Value.SimulateWhenUnconfigured
+                && string.IsNullOrWhiteSpace(_vnpayOptions.Value.HashSecret))
+            {
+                _log.LogWarning(
+                    "VNPAY chưa cấu hình (Vnpay:HashSecret trống) — MÔ PHỎNG thanh toán cho đơn {BookingCode}. " +
+                    "Đặt Vnpay:SimulateWhenUnconfigured=false khi chạy thật.",
+                    booking.BookingCode);
+
+                // Trả lock RAM như nhánh chuyển hướng VNPAY (DB đã giữ ghế bằng BookingSeats).
+                foreach (var key in keys) _locks.Release(key, request.ConnectionId);
+
+                // Đi qua đúng ConfirmAsync của luồng thật (ReturnUrl là request khác, DbContext khác),
+                // nên xóa change tracker để đọc lại đơn từ DB thay vì dùng entity đang track.
+                _db.ChangeTracker.Clear();
+                return await ConfirmAsync(booking.BookingCode, new VnpayVerifyResult(
+                    SignatureValid: true,
+                    PaymentSucceeded: true,
+                    TxnRef: booking.BookingCode,
+                    ResponseCode: "00",
+                    TransactionId: $"SIM-{booking.BookingCode}",
+                    BankCode: "SIMULATED",
+                    Amount: booking.TotalAmount,
+                    FailureReason: null), ct);
+            }
+
             // Không tạo được yêu cầu thanh toán: xóa BookingSeats để trả ghế, giữ lại Booking làm
             // lịch sử. Lock RAM của khách GIỮ NGUYÊN để họ bấm "Thanh toán" lại được ngay — ghế vẫn
             // là của họ trong thời gian giữ chỗ.

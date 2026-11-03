@@ -21,17 +21,13 @@ public sealed class VnpayOptions
     /// <summary>URL nhận kết quả sau khi khách thanh toán xong (vnp_ReturnUrl).</summary>
     public string ReturnUrl { get; set; } = "http://localhost:5005/Booking/PaymentReturn";
 
-    /// <summary>API hoàn tiền/kiểm tra giao dịch (server-to-server, POST JSON).</summary>
-    public string RefundUrl { get; set; } = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";
-
     /// <summary>
-    /// Bật gọi VNPAY refund thật. Tắt = hoàn tiền mô phỏng (chỉ đổi trạng thái), dùng khi merchant
-    /// sandbox chưa được cấp quyền REFUND.
+    /// Khi <see cref="HashSecret"/> chưa được cấu hình (máy dev/demo chưa có merchant secret), coi
+    /// như thanh toán thành công để luồng đặt vé chạy trọn vẹn thay vì chặn khách ở bước cuối.
+    /// Mặc định TẮT trong code; chỉ bật ở appsettings của môi trường demo. TUYỆT ĐỐI không bật
+    /// ở production — đơn sẽ được xác nhận mà không có đồng tiền nào được thu.
     /// </summary>
-    public bool RefundEnabled { get; set; }
-
-    /// <summary>Người khởi tạo hoàn tiền gửi sang VNPAY (vnp_CreateBy), thường là email admin.</summary>
-    public string CreateBy { get; set; } = "admin@cinemabooking.local";
+    public bool SimulateWhenUnconfigured { get; set; }
 
     public string Locale { get; set; } = "vn";
 

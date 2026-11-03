@@ -117,6 +117,11 @@ public class AccountController : Controller
             return View(model);
         }
 
+        // Quản lý chi nhánh đăng nhập là vào thẳng khu phòng/ghế của mình; Admin và khách giữ
+        // nguyên hành vi cũ (returnUrl hoặc trang chủ).
+        if (string.IsNullOrWhiteSpace(returnUrl) && await _users.IsInRoleAsync(user, AppRoles.BranchAdmin))
+            return RedirectToAction("Index", "Rooms", new { area = "Admin" });
+
         return RedirectToLocal(returnUrl);
     }
 

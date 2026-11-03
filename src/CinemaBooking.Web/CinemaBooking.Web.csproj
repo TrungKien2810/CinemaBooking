@@ -6,6 +6,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Test gọi thẳng CleanOnceAsync (internal) thay vì chờ PeriodicTimer của BackgroundService. -->
+    <InternalsVisibleTo Include="CinemaBooking.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

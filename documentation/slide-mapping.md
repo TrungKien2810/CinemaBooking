@@ -20,7 +20,7 @@
 | | Middleware & logging | Bắt lỗi một chỗ, mỗi request một log scope có trace | `src/CinemaBooking.Web/Middleware/ExceptionHandlingMiddleware.cs`, `Middleware/RequestLogScopeMiddleware.cs`, `Infrastructure/Logging/LoggingConfiguration.cs`, `tests/.../ExceptionHandlingMiddlewareTests.cs` | Mở `/Booking/SeatMap/999999` → trang lỗi có `traceId` và dòng log tương ứng |
 | **6 – Blazor** | *(ngoài phạm vi chính)* | — | `General.md` §1 "Quyết định phạm vi", `docs/project-state/IDEAS.md` | Nói rõ vì sao loại: MVC + SignalR JS khớp 8 tuần / 3 người; Blazor để ở nhánh thử nghiệm |
 | **7 – SignalR** | Hubs, Groups, broadcast | Giữ ghế real-time — trái tim của đề tài | `src/CinemaBooking.Web/Hubs/SeatHub.cs` (`GroupName`, `JoinShowtime`, `SelectSeat`, `ReleaseSeat`, `OnDisconnectedAsync`), `MapHub<SeatHub>("/hubs/seat")`, `Infrastructure/Services/InMemorySeatLockManager.cs` | Mở hai cửa sổ cùng suất: click ghế, cửa sổ kia đổi màu trong dưới 1 giây |
-| **8 – Worker Service** | `BackgroundService`, `PeriodicTimer`, `IServiceScopeFactory` | Dọn ghế hết hạn, gửi email trong outbox, tổng hợp báo cáo ngày | `src/CinemaBooking.Worker/Workers/{ExpiredSeatCleaner,EmailOutboxWorker,DailyReportWorker}.cs`, `src/CinemaBooking.Worker/Program.cs` | Chạy Worker và Web cạnh nhau; đặt vé → log Worker in nội dung email xác nhận |
+| **8 – Worker Service** | `BackgroundService`, `PeriodicTimer`, `IServiceScopeFactory` | Gửi email trong outbox, tổng hợp báo cáo ngày (dọn ghế chạy trong Web vì bảng lock là in-memory của process đó) | `src/CinemaBooking.Worker/Workers/{EmailOutboxWorker,DailyReportWorker}.cs`, `src/CinemaBooking.Web/Services/{SeatLockCleaner,ExpiredBookingCleaner}.cs`, `src/CinemaBooking.Worker/Program.cs` | Chạy Worker và Web cạnh nhau; đặt vé → log Worker in nội dung email xác nhận |
 
 ## 2. Chi tiết từng slide
 
@@ -124,7 +124,7 @@ cáo ngày 1 giờ). Điểm "học được" của slide nằm ở chỗ phải
 
 | Slide | Chức năng (`General.md` §3) | Test chứng minh |
 | --- | --- | --- |
-| 1 | Đặt vé + thanh toán giả lập | `AdminBookingCancellationTests` (đơn có thanh toán), `RevenueAggregationTests` |
+| 1 | Đặt vé + thanh toán giả lập | `BookingFlowTests` (đơn có thanh toán), `RevenueAggregationTests` |
 | 2 | Truy vấn catalog/lịch chiếu, gửi email theo lô | `MovieCatalogServiceTests`, `ShowtimeQueryServiceTests` |
 | 3 | Giữ ghế, mọi service trong hệ thống | `SeatLockManagerTests` (khoá, hết hạn, tranh chấp) |
 | 4 & 5 | Form admin, form đăng ký, giỏ ghế, khu quản trị | `RegisterViewModelTests`, `AdminCatalogRulesTests`, `AdminAuthorizationTests`, `SeatMapViewModelTests`, `ExceptionHandlingMiddlewareTests` |
@@ -146,8 +146,9 @@ dotnet format --verify-no-changes  # CI cũng chạy hai lệnh này
 | Chọn ghế real-time **trên UI** (JS SignalR, đếm ngược, toast) | ⏳ C3.3–C3.10 chưa merge | Slide 7 — chưa có phần này thì demo 2 cửa sổ không chạy |
 | Đặt vé end-to-end: transaction, thanh toán, mã vé, email | ⏳ B4.1–B4.5, C4.1–C4.3 chưa merge | Slide 1, 4 & 5 |
 | Trang danh sách suất chiếu cho khách | ⏳ C2.6/C2.7 chưa merge | Slide 4 & 5 |
-| `ExpiredSeatCleaner` chạy **trong process Web** (hiện nằm ở Worker nên nó đọc bảng lock rỗng của chính mình), phần broadcast `SeatUnlocked` còn `TODO` trong mã | ⏳ cần chốt trước demo | Slide 7, 8 |
-| `DailyReportWorker` ghi `TheaterId` khi tổng hợp (AD-6, B4.8) | ⏳ chưa ghi | Slide 8, dashboard doanh thu |
+| Dọn ghế hết hạn chạy trong **process Web**: `SeatLockCleaner` (lock RAM, 10s) + `ExpiredBookingCleaner` (đơn Pending quá hạn, 30s), broadcast `SeatUnlocked` qua `IHubContext` — không còn method hub công khai | ✅ xong | Slide 7, 8 |
+| `DailyReportWorker` ghi `TheaterId` + gom theo ngày giờ rạp (AD-6, B4.8) | ✅ xong | Slide 8, dashboard doanh thu |
+| Gửi email thật qua SMTP | ✅ có `SmtpEmailSender`, bật bằng `Email:Smtp:Host` (chưa cấu hình thì vẫn chỉ log) | Slide 8 |
 | Ảnh cho [hướng dẫn sử dụng](user-guide.md) | ⏳ chờ merge rồi chụp | [`screenshots/CHECKLIST.md`](screenshots/CHECKLIST.md) |
 
 ## 5. Dàn slide gợi ý cho buổi bảo vệ (10 slide)
@@ -162,7 +163,7 @@ dotnet format --verify-no-changes  # CI cũng chạy hai lệnh này
 | 6 | MVC & validation | Form admin, kiểm tra nghiệp vụ ở server, Session giỏ ghế | `Areas/Admin/Models`, `SeatSelection.cs` |
 | 7 | DI & vòng đời | Bảng vòng đời, captive dependency, scope trong worker | `di-lifetimes.md` |
 | 8 | Worker Service | Ba background service, outbox email, báo cáo ngày | `src/CinemaBooking.Worker` |
-| 9 | Quyết định kỹ thuật | PLINQ vs SQL, một rạp nhiều chi nhánh, hủy vé trả ghế | [ADR 0001](adr/0001-catalog-filtering-plinq-vs-sql.md), `technical-design.md` |
+| 9 | Quyết định kỹ thuật | PLINQ vs SQL, một rạp nhiều chi nhánh, đơn Pending quá hạn trả ghế | [ADR 0001](adr/0001-catalog-filtering-plinq-vs-sql.md), `technical-design.md` |
 | 10 | Kết quả & hạn chế | Test xanh, CI, việc còn lại (§4 ở trên) | `dotnet test`, `.github/workflows/ci.yml` |
 
 Nguyên tắc khi dựng slide: **mỗi slide kỹ thuật phải có một dòng "mở file này trong repo"** — người

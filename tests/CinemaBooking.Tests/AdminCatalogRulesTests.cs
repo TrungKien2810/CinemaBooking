@@ -18,7 +18,8 @@ public class AdminCatalogRulesTests
     private static readonly DateTime ExistingStartUtc = new(2026, 10, 2, 3, 0, 0, DateTimeKind.Utc);
 
     private static ShowtimesController CreateController(CinemaDbContext db) =>
-        new(db, new ShowtimeScheduler(db), Options.Create(new DisplayTimeZone()), new FixedTimeProvider(Now));
+        new(db, new ShowtimeScheduler(db), Options.Create(new DisplayTimeZone()), new FixedTimeProvider(Now),
+            FakeBranchScope.Admin());
 
     private static async Task<(CinemaDbContext Db, Movie Movie, Room Room)> SeedWithShowtimeAsync()
     {
@@ -200,7 +201,7 @@ public class AdminCatalogRulesTests
         await db.SaveChangesAsync();
 
         var form = new RoomFormModel { RoomName = "Phòng 1", TotalRows = 5, TotalColumns = 6 };
-        var result = await new RoomsController(db).Edit(room.Id, form, CancellationToken.None);
+        var result = await new RoomsController(db, FakeBranchScope.Admin()).Edit(room.Id, form, CancellationToken.None);
 
         Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal(30, await db.Seats.CountAsync(s => s.RoomId == room.Id));
@@ -226,7 +227,7 @@ public class AdminCatalogRulesTests
             Seats = { new BookingSeat { Seat = seat, ShowtimeId = showtime.Id } },
         });
         await db.SaveChangesAsync();
-        var controller = new RoomsController(db);
+        var controller = new RoomsController(db, FakeBranchScope.Admin());
 
         var result = await controller.Edit(
             room.Id, new RoomFormModel { RoomName = room.RoomName, TotalRows = 2, TotalColumns = 2 }, CancellationToken.None);

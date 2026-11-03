@@ -33,18 +33,25 @@ public class CinemaDbContext : IdentityDbContext<ApplicationUser>
         b.Entity<Theater>().HasIndex(t => t.Name).IsUnique();
         b.Entity<Theater>().HasIndex(t => t.City);
 
+        // Branch admin gắn với đúng một chi nhánh. Xóa chi nhánh thì tài khoản vẫn còn nhưng mất
+        // phạm vi (SetNull) — không xóa luôn tài khoản đăng nhập.
+        b.Entity<ApplicationUser>()
+            .HasOne(u => u.Theater).WithMany()
+            .HasForeignKey(u => u.TheaterId)
+            .OnDelete(DeleteBehavior.SetNull);
+        b.Entity<ApplicationUser>().HasIndex(u => u.TheaterId);
+
         b.Entity<Showtime>().Property(s => s.BasePrice).HasPrecision(18, 2);
         b.Entity<Booking>().Property(x => x.TotalAmount).HasPrecision(18, 2);
         b.Entity<BookingSeat>().Property(x => x.PriceAtBooking).HasPrecision(18, 2);
         b.Entity<Payment>().Property(x => x.Amount).HasPrecision(18, 2);
-        b.Entity<Payment>().Property(x => x.RefundedAmount).HasPrecision(18, 2);
         b.Entity<DailyRevenueReport>().Property(x => x.Revenue).HasPrecision(18, 2);
 
         b.Entity<Booking>().HasIndex(x => x.BookingCode).IsUnique();
 
         // Chốt chặn cuối chống đặt trùng: dù lock trong RAM có sai, DB vẫn từ chối.
-        // Index KHÔNG lọc theo trạng thái đơn (BookingSeats không có cột trạng thái) — hủy vé phải
-        // xóa dòng BookingSeats thì ghế mới được đặt lại.
+        // Index KHÔNG lọc theo trạng thái đơn (BookingSeats không có cột trạng thái) — đơn hết hạn
+        // phải xóa dòng BookingSeats thì ghế mới được đặt lại.
         b.Entity<BookingSeat>()
             .HasIndex(x => new { x.ShowtimeId, x.SeatId })
             .IsUnique();

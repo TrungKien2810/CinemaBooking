@@ -25,7 +25,7 @@ builder.Services.AddCinemaInfrastructure(builder.Configuration);
 // ── Dev B: truy vấn catalog & lịch chiếu ──
 builder.Services.Configure<DisplayTimeZone>(
     builder.Configuration.GetSection(DisplayTimeZone.SectionName));
-// BookingService/BookingCancellationService nhận trực tiếp DisplayTimeZone (không qua IOptions)
+// BookingService nhận trực tiếp DisplayTimeZone (không qua IOptions)
 // để không phải inject IOptions ở mọi nơi.
 builder.Services.AddSingleton(sp =>
     sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<DisplayTimeZone>>().Value);
@@ -41,13 +41,15 @@ builder.Services.AddSingleton<ISeatPricingService, SeatPricingService>();
 // ── Dev B: SeatHub kiểm tra ghế ở DB trước khi cấp lock ──
 builder.Services.AddScoped<ISeatAvailabilityQuery, SeatAvailabilityQuery>();
 
+// ── Dọn ghế phải chạy TRONG process Web: bảng lock là in-memory singleton của process này, và chỉ ở
+//    đây mới có IHubContext để báo SeatUnlocked cho các tab đang mở suất chiếu. ──
+builder.Services.AddHostedService<SeatLockCleaner>();       // lock RAM hết hạn (mỗi 10s)
+builder.Services.AddHostedService<ExpiredBookingCleaner>(); // đơn Pending quá hạn thanh toán (mỗi 30s)
+
 // ── Dev B: luồng đặt vé (kiểm ghế + lock → ghi Booking trong một transaction → thu tiền → outbox) ──
 builder.Services.AddScoped<IBookingService, BookingService>();
 
-// ── Hủy vé + hoàn tiền VNPAY (khách tự hủy hoặc admin hủy) ──
-builder.Services.Configure<BookingCancellationOptions>(
-    builder.Configuration.GetSection(BookingCancellationOptions.SectionName));
-builder.Services.AddScoped<IBookingCancellationService, BookingCancellationService>();
+// ── Vé điện tử: mã QR in trên vé ──
 builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
 
 builder.Services
@@ -80,6 +82,10 @@ builder.Services.ConfigureApplicationCookie(o =>
 
 // ── Dev C: danh bạ chi nhánh cho bộ lọc thành phố và trang chi nhánh ──
 builder.Services.AddScoped<IBranchDirectory, BranchDirectory>();
+
+// ── Phạm vi dữ liệu của tài khoản quản lý chi nhánh (BranchAdmin) ──
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IBranchScope, BranchScope>();
 // ── Dev C: thông báo lỗi model binding bằng tiếng Việt (cả server lẫn data-val-number) ──
 builder.Services.Configure<MvcOptions>(VietnameseModelBindingMessages.Apply);
 

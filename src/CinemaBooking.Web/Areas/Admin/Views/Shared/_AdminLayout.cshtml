@@ -17,16 +17,27 @@
             <span class="admin-sidebar-title">Quản trị</span>
         </div>
         <nav class="admin-nav">
-            <a asp-area="Admin" asp-controller="Movies" asp-action="Index"
-               class="admin-nav-link @ActiveIf("Movies")" data-icon="🎬">Phim</a>
-            <a asp-area="Admin" asp-controller="Theaters" asp-action="Index"
-               class="admin-nav-link @ActiveIf("Theaters", "Rooms")" data-icon="🏢">Chi nhánh &amp; phòng</a>
-            <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
-               class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">Suất chiếu</a>
-            <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
-               class="admin-nav-link @ActiveIf("Bookings")" data-icon="🎟️">Đặt vé</a>
-            <a asp-area="Admin" asp-controller="Revenue" asp-action="Index"
-               class="admin-nav-link @ActiveIf("Revenue")" data-icon="📊">Doanh thu</a>
+            @if (User.IsInRole(AppRoles.Admin))
+            {
+                <a asp-area="Admin" asp-controller="Movies" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Movies")" data-icon="🎬">Phim</a>
+                <a asp-area="Admin" asp-controller="Theaters" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Theaters", "Rooms")" data-icon="🏢">Chi nhánh &amp; phòng</a>
+                <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">Suất chiếu</a>
+                <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Bookings")" data-icon="🎟️">Đặt vé</a>
+                <a asp-area="Admin" asp-controller="Revenue" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Revenue")" data-icon="📊">Doanh thu</a>
+            }
+            else
+            {
+                @* BranchAdmin: chỉ phòng/ghế và suất chiếu của chi nhánh mình. *@
+                <a asp-area="Admin" asp-controller="Rooms" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Rooms")" data-icon="🪑">Phòng &amp; ghế</a>
+                <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">Suất chiếu</a>
+            }
         </nav>
         <div class="admin-sidebar-foot">
             <a asp-area="" asp-controller="Home" asp-action="Index" class="admin-nav-link">← Về trang khách</a>

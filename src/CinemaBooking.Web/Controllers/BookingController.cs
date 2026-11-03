@@ -26,7 +26,6 @@ public class BookingController : Controller
     private readonly ISeatLockManager _locks;
     private readonly ISeatPricingService _pricing;
     private readonly IBookingService _bookings;
-    private readonly IBookingCancellationService _cancellations;
     private readonly IQrCodeService _qr;
     private readonly IVnpayPaymentService _vnpay;
     private readonly IHubContext<SeatHub, ISeatClient> _seats;
@@ -41,7 +40,6 @@ public class BookingController : Controller
         ISeatLockManager locks,
         ISeatPricingService pricing,
         IBookingService bookings,
-        IBookingCancellationService cancellations,
         IQrCodeService qr,
         IVnpayPaymentService vnpay,
         IHubContext<SeatHub, ISeatClient> seats,
@@ -55,7 +53,6 @@ public class BookingController : Controller
         _locks = locks;
         _pricing = pricing;
         _bookings = bookings;
-        _cancellations = cancellations;
         _qr = qr;
         _vnpay = vnpay;
         _seats = seats;
@@ -122,7 +119,9 @@ public class BookingController : Controller
             return RedirectToAction(nameof(SeatMap), new { id = showtimeId });
         }
 
-        HttpContext.Session.SetSeatSelection(new SeatSelection(showtimeId, ids, holdToken));
+        // Mốc hết hạn để trang thanh toán chạy đồng hồ đếm ngược — cùng một con số với lock.
+        var expiresUtc = _clock.GetUtcNow().UtcDateTime.Add(_hold.Duration);
+        HttpContext.Session.SetSeatSelection(new SeatSelection(showtimeId, ids, holdToken, expiresUtc));
         return RedirectToAction(nameof(Checkout));
     }
 
@@ -138,6 +137,15 @@ public class BookingController : Controller
 
         var page = await BuildCheckoutPageAsync(selection, await BuildCheckoutFormAsync(ct), ct);
         if (page is null) return RedirectToAction("Index", "Home");
+
+        // Hết hạn giữ ghế thì không cho điền form nữa: đưa về sơ đồ ghế kèm thông báo, tránh
+        // cảnh khách gõ xong mới bị báo "ghế đã hết hạn".
+        if (page.HoldSecondsRemaining <= 0)
+        {
+            HttpContext.Session.ClearSeatSelection();
+            TempData["Error"] = "Đã hết thời gian giữ ghế. Vui lòng chọn lại.";
+            return RedirectToAction(nameof(SeatMap), new { id = selection.ShowtimeId });
+        }
 
         return View(page);
     }
@@ -295,8 +303,7 @@ public class BookingController : Controller
         if (booking is null)
             return View("BookingNotFound", code.Trim());
 
-        var eligibility = await _cancellations.GetEligibilityAsync(booking, ct);
-        return View(ToDetails(booking, eligibility.CanCancel, eligibility.RefundAmount));
+        return View(ToDetails(booking));
     }
 
     /// <summary>
@@ -335,9 +342,8 @@ public class BookingController : Controller
                 null));
         }
 
-        var eligibility = await _cancellations.GetEligibilityAsync(booking, ct);
         return View(new BookingLookupViewModel(
-            booking.BookingCode, null, ToDetails(booking, eligibility.CanCancel, eligibility.RefundAmount)));
+            booking.BookingCode, null, ToDetails(booking)));
     }
 
     /// <summary>Vé của tài khoản đang đăng nhập, mới nhất trước.</summary>
@@ -363,8 +369,6 @@ public class BookingController : Controller
             (b.Status is BookingStatus.Confirmed or BookingStatus.Pending) && b.Showtime!.StartTimeUtc > now);
         var historyCount = bookings.Count(b =>
             b.Status == BookingStatus.Confirmed && b.Showtime!.StartTimeUtc <= now);
-        var cancelledCount = bookings.Count(b =>
-            b.Status is BookingStatus.Cancelled or BookingStatus.Expired);
 
         var selected = string.IsNullOrWhiteSpace(tab) ? "all" : tab.Trim().ToLowerInvariant();
         var filtered = selected switch
@@ -373,100 +377,13 @@ public class BookingController : Controller
                 (b.Status is BookingStatus.Confirmed or BookingStatus.Pending) && b.Showtime!.StartTimeUtc > now),
             "history" => bookings.Where(b =>
                 b.Status == BookingStatus.Confirmed && b.Showtime!.StartTimeUtc <= now),
-            "cancelled" => bookings.Where(b =>
-                b.Status is BookingStatus.Cancelled or BookingStatus.Expired),
             _ => bookings,
         };
 
-        var items = new List<BookingTicketViewModel>();
-        foreach (var booking in filtered)
-        {
-            var eligibility = await _cancellations.GetEligibilityAsync(booking, ct);
-            items.Add(ToDetails(booking, eligibility.CanCancel, eligibility.RefundAmount));
-        }
+        var items = filtered.Select(ToDetails).ToList();
 
         return View(new MyBookingsViewModel(
-            items, selected, upcomingCount, historyCount, cancelledCount));
-    }
-
-    /// <summary>
-    /// Trang xác nhận hủy vé. Khách đã đăng nhập chỉ xem được vé của mình; khách guest phải
-    /// nhập lại email khi bấm hủy ở bước POST.
-    /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> Cancel(string code, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(code))
-            return View("BookingNotFound", (string?)null);
-
-        var booking = await FindBookingAsync(code, ct);
-        if (booking is null)
-            return View("BookingNotFound", code.Trim());
-
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (User.Identity?.IsAuthenticated == true)
-        {
-            var email = User.Identity.Name;
-            var owns = string.Equals(booking.UserId, userId, StringComparison.Ordinal)
-                       || (booking.UserId is null
-                           && string.Equals(booking.CustomerEmail, email, StringComparison.OrdinalIgnoreCase));
-            if (!owns) return Forbid();
-        }
-        else if (booking.UserId is not null)
-        {
-            // Vé đã gắn tài khoản: bắt đăng nhập rồi quay lại trang hủy.
-            return RedirectToAction("Login", "Account", new { returnUrl = Url.Action(nameof(Cancel), new { code }) });
-        }
-
-        var eligibility = await _cancellations.GetEligibilityAsync(booking, ct);
-        var details = ToDetails(booking, eligibility.CanCancel, eligibility.RefundAmount);
-
-        return View(new CancelBookingPageViewModel(
-            details,
-            eligibility.CanCancel,
-            eligibility.Reason,
-            eligibility.RefundAmount,
-            RequiresEmail: User.Identity?.IsAuthenticated != true));
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Cancel(string code, string? email, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(code))
-            return View("BookingNotFound", (string?)null);
-
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var isAdmin = User.IsInRole("Admin");
-        var authEmail = User.Identity?.IsAuthenticated == true ? User.Identity.Name : email?.Trim();
-        var actor = isAdmin
-            ? $"admin:{userId}"
-            : userId is not null
-                ? $"customer:{userId}"
-                : $"guest:{authEmail}";
-
-        var result = await _cancellations.CancelAsync(
-            new CancelBookingRequest(code, userId, authEmail, isAdmin, actor), ct);
-
-        if (result.IsSuccess)
-        {
-            if (result.ShowtimeId > 0 && result.SeatIds is { Count: > 0 })
-            {
-                await _seats.Clients.Group(SeatHub.GroupName(result.ShowtimeId))
-                    .SeatUnlocked(result.SeatIds);
-            }
-
-            TempData["Success"] = result.Message;
-            return User.Identity?.IsAuthenticated == true
-                ? RedirectToAction(nameof(MyBookings))
-                : RedirectToAction(nameof(Confirmation), new { code });
-        }
-
-        TempData["Error"] = result.Message;
-        if (result.Outcome == CancelBookingOutcome.NotFound)
-            return View("BookingNotFound", code);
-
-        return RedirectToAction(nameof(Cancel), new { code });
+            items, selected, upcomingCount, historyCount));
     }
 
     /// <summary>Gửi lại email xác nhận; khách guest phải nhập đúng email trên vé.</summary>
@@ -514,24 +431,62 @@ public class BookingController : Controller
             return null;
         }
 
-        var seats = showtime.Room!.Seats
-            .Where(s => selection.SeatIds.Contains(s.Id))
-            .OrderBy(s => s.RowNumber).ThenBy(s => s.ColumnNumber)
-            .Select(s => new CheckoutSeatItem(
-                s.Label, s.SeatType, _pricing.PriceFor(showtime.BasePrice, s.SeatType)))
-            .ToList();
+        var seats = BuildCheckoutSeats(showtime, selection.SeatIds);
 
         var summary = new CheckoutViewModel(
             showtime.Id,
             showtime.Movie!.Title,
-            showtime.Room.Theater!.Name,
+            showtime.Room!.Theater!.Name,
             showtime.Room.Theater.City,
             showtime.Room.RoomName,
             _tz.ToLocalTime(showtime.StartTimeUtc),
             seats,
             seats.Sum(s => s.Price));
 
-        return new CheckoutPageViewModel(summary, form);
+        var nowUtc = _clock.GetUtcNow().UtcDateTime;
+        var remaining = selection.ExpiresUtc is { } expiresUtc
+            ? (int)Math.Max(0, (expiresUtc - nowUtc).TotalSeconds)
+            : (int)_hold.Duration.TotalSeconds;
+
+        return new CheckoutPageViewModel(summary, form, remaining);
+    }
+
+    /// <summary>
+    /// Một dòng cho mỗi ghế, riêng ghế đôi gộp cả cặp thành một dòng "J1–J2" với giá của cả cặp —
+    /// khớp với khối ghế trên sơ đồ, không để khách thấy hai dòng nửa ghế.
+    /// </summary>
+    private List<CheckoutSeatItem> BuildCheckoutSeats(Showtime showtime, IReadOnlyCollection<int> selectedIds)
+    {
+        var allSeats = showtime.Room!.Seats.ToList();
+        var byId = allSeats.ToDictionary(s => s.Id);
+        var partners = SeatPairing.BuildPartnerMap(allSeats);
+        var selected = selectedIds.ToHashSet();
+
+        var items = new List<CheckoutSeatItem>();
+        var consumed = new HashSet<int>();
+
+        foreach (var seat in allSeats
+                     .Where(s => selected.Contains(s.Id))
+                     .OrderBy(s => s.RowNumber).ThenBy(s => s.ColumnNumber))
+        {
+            if (!consumed.Add(seat.Id)) continue;
+
+            var unitPrice = _pricing.PriceFor(showtime.BasePrice, seat.SeatType);
+
+            if (seat.SeatType == SeatType.Couple
+                && partners.TryGetValue(seat.Id, out var partnerId)
+                && selected.Contains(partnerId))
+            {
+                consumed.Add(partnerId);
+                var partner = byId[partnerId];
+                items.Add(new CheckoutSeatItem($"{seat.Label}–{partner.Label}", SeatType.Couple, unitPrice * 2));
+                continue;
+            }
+
+            items.Add(new CheckoutSeatItem(seat.Label, seat.SeatType, unitPrice));
+        }
+
+        return items;
     }
 
     private async Task<CheckoutFormModel> BuildCheckoutFormAsync(CancellationToken ct)
@@ -564,7 +519,7 @@ public class BookingController : Controller
             .FirstOrDefaultAsync(b => b.BookingCode == normalized, ct);
     }
 
-    private BookingTicketViewModel ToDetails(Booking booking, bool canCancel = false, decimal refundAmount = 0)
+    private BookingTicketViewModel ToDetails(Booking booking)
     {
         var showtime = booking.Showtime!;
 
@@ -590,9 +545,7 @@ public class BookingController : Controller
             booking.CustomerEmail,
             booking.CustomerPhone,
             booking.TotalAmount,
-            seats,
-            canCancel,
-            refundAmount);
+            seats);
     }
 
     private async Task<string?> ValidateSelectionAsync(Showtime showtime, List<int> ids, string? connectionId, CancellationToken ct)
@@ -602,6 +555,10 @@ public class BookingController : Controller
 
         var inRoom = showtime.Room!.Seats.Count(s => ids.Contains(s.Id));
         if (inRoom != ids.Count) return "Có ghế không thuộc phòng chiếu của suất này.";
+
+        // Ghế đôi phải đi theo cặp — kiểm tra trước khi chuyển lock sang hold-token.
+        var pairingError = SeatPairing.Validate(showtime.Room!.Seats, ids);
+        if (pairingError is not null) return pairingError;
 
         var booked = await _bookedSeats.GetBookedSeatIdsAsync(showtime.Id, ct);
         if (ids.Any(booked.Contains)) return "Có ghế vừa được người khác đặt.";

@@ -43,36 +43,11 @@ public sealed record VnpayVerifyResult(
     string? FailureReason,
     string? PayDate = null);
 
-public sealed record VnpayRefundRequest(
-    string RequestId,
-    string TxnRef,
-    decimal Amount,
-    string? TransactionNo,
-    string TransactionDate,
-    string OrderInfo,
-    string CreateBy,
-    string IpAddr,
-    bool FullRefund = true);
-
-public sealed record VnpayRefundResult(
-    bool Success,
-    string? ResponseCode,
-    string? TransactionStatus,
-    string? RefundTransactionNo,
-    string? Message,
-    string? RawResponse = null);
-
 public interface IVnpayPaymentService
 {
     Task<VnpayPaymentResult> CreateVnpayPaymentAsync(VnpayPaymentRequest request, CancellationToken ct = default);
 
     Task<VnpayVerifyResult> VerifyVnpayPaymentAsync(VnpayPaymentRequest request, IDictionary<string, string?> response, CancellationToken ct = default);
-}
-
-/// <summary>Gọi API hoàn tiền VNPAY (server-to-server).</summary>
-public interface IVnpayRefundService
-{
-    Task<VnpayRefundResult> RefundAsync(VnpayRefundRequest request, CancellationToken ct = default);
 }
 
 public interface IPaymentService

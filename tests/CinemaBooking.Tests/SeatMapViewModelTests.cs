@@ -44,7 +44,43 @@ public class SeatMapViewModelTests
         Assert.Equal(6, model.TotalColumns);
         Assert.All(model.Rows, r => Assert.Equal(6, r.Seats.Count));
         Assert.Equal(["A", "B", "C", "D"], model.Rows.Select(r => r.Label));
-        Assert.Equal("D6", model.Rows[3].Seats[5]!.Label);
+
+        // Hàng D là ghế đôi: 6 ghế → 3 khối, nửa phải của mỗi khối chỉ giữ chỗ trong lưới.
+        Assert.Equal("D5–D6", model.Rows[3].Seats[4]!.Label);
+        Assert.True(model.Rows[3].Seats[5]!.IsCoveredByPair);
+    }
+
+    [Fact]
+    public void Couple_seats_merge_into_one_block_priced_as_two_tickets()
+    {
+        // 6 hàng: hàng F (cuối) là ghế đôi, 6 cột → 3 khối J1–J2, J3–J4, J5–J6.
+        var model = Build(BuildShowtime(rows: 6, columns: 6, basePrice: 100_000m));
+        var row = model.Rows[5];
+
+        Assert.Equal("F1–F2", row.Seats[0]!.Label);
+        Assert.Equal("F3–F4", row.Seats[2]!.Label);
+        Assert.Equal("F5–F6", row.Seats[4]!.Label);
+
+        Assert.True(row.Seats[1]!.IsCoveredByPair);
+        Assert.True(row.Seats[3]!.IsCoveredByPair);
+        Assert.True(row.Seats[5]!.IsCoveredByPair);
+
+        var pair = row.Seats[0]!;
+        Assert.True(pair.IsPair);
+        Assert.Equal(2, pair.SeatIds.Count);
+        // Cả cặp = 2 vé thường, KHÔNG phải 2 lần giá ghế đôi.
+        Assert.Equal(200_000m, pair.Price);
+    }
+
+    [Fact]
+    public void Odd_number_of_couple_seats_leaves_an_unbookable_orphan()
+    {
+        // Hàng B có 3 ghế đôi: B1–B2 ghép cặp, B3 lẻ loi.
+        var model = Build(BuildShowtime(rows: 2, columns: 3));
+
+        Assert.Equal("B1–B2", model.Rows[1].Seats[0]!.Label);
+        Assert.True(model.Rows[1].Seats[2]!.IsOrphan);
+        Assert.False(model.Rows[1].Seats[2]!.IsPair);
     }
 
     [Fact]
@@ -79,11 +115,15 @@ public class SeatMapViewModelTests
     {
         // 6 hàng: A-B thường, C-D VIP, E thường, F ghế đôi (quy ước của SeatGenerator).
         var model = Build(BuildShowtime(rows: 6, columns: 2, basePrice: 100_000m));
-        var byLabel = model.Rows.SelectMany(r => r.Seats).ToDictionary(s => s!.Label, s => s!);
+        var byLabel = model.Rows.SelectMany(r => r.Seats)
+            .Where(s => s is { IsCoveredByPair: false })
+            .ToDictionary(s => s!.Label, s => s!);
 
         Assert.Equal((SeatType.Standard, 100_000m), (byLabel["A1"].Type, byLabel["A1"].Price));
         Assert.Equal((SeatType.Vip, 120_000m), (byLabel["C1"].Type, byLabel["C1"].Price));
-        Assert.Equal((SeatType.Couple, 200_000m), (byLabel["F1"].Type, byLabel["F1"].Price));
+
+        // Ghế đôi hiển thị theo cặp: mỗi nửa một vé thường → cả cặp F1–F2 = 200.000.
+        Assert.Equal((SeatType.Couple, 200_000m), (byLabel["F1–F2"].Type, byLabel["F1–F2"].Price));
     }
 
     [Fact]

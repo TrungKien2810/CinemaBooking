@@ -1,0 +1,122 @@
+@using CinemaBooking.Domain.Enums
+@model RoomSeatsViewModel
+@{
+    ViewData["Title"] = "Sửa loại ghế — " + Model.RoomName;
+
+    static string CssFor(SeatType t) => t switch
+    {
+        SeatType.Vip => "seat-vip",
+        SeatType.Couple => "seat-couple",
+        _ => "seat-standard",
+    };
+}
+
+<div class="admin-page-head">
+    <div>
+        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="back-link">← Phòng chiếu · @Model.TheaterName</a>
+        <h1 class="page-title">Sửa loại ghế · @Model.RoomName</h1>
+        <p class="cb-muted page-subtitle">
+            @Model.TotalRows hàng × @Model.TotalColumns ghế · bấm vào ghế để đổi <strong>Thường ↔ VIP</strong>.
+            Hàng cuối (@(Model.Rows.Count > 0 ? Model.Rows[^1].Label : "?")) tự động là <strong>ghế đôi</strong>, không sửa được.
+        </p>
+    </div>
+</div>
+
+@if (TempData["Message"] is string message)
+{
+    <div class="alert alert-success">@message</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<form asp-action="Seats" asp-route-id="@Model.RoomId" method="post" class="cb-card">
+    @* Form tag helper tự gắn antiforgery token. *@
+    <input type="hidden" name="types" id="seat-types" value="" />
+
+    <div class="seat-preview">
+        <div class="seat-screen" aria-hidden="true">Màn hình</div>
+
+        <div class="seat-preview-scroll">
+            <div class="seat-preview-grid room-seat-editor" style="--seat-cols: @Model.TotalColumns"
+                 aria-label="Sơ đồ ghế @Model.RoomName">
+                @foreach (var row in Model.Rows)
+                {
+                    <span class="seat-row-label">@row.Label</span>
+                    @foreach (var seat in row.Seats)
+                    {
+                        if (row.IsCoupleRow)
+                        {
+                            <span class="seat-dot seat-couple seat-locked"
+                                  title="Ghế đôi @seat.Label — tự động ở hàng cuối"
+                                  aria-label="Ghế đôi @seat.Label, tự động ở hàng cuối"></span>
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="seat-dot @CssFor(seat.Type) seat-editable"
+                                    data-seat-id="@seat.SeatId"
+                                    data-seat-label="@seat.Label"
+                                    data-type="@seat.Type"
+                                    aria-pressed="@(seat.Type == SeatType.Vip ? "true" : "false")"
+                                    aria-label="Ghế @seat.Label, @seat.Type — bấm để đổi Thường hoặc VIP"
+                                    title="Ghế @seat.Label · @seat.Type"></button>
+                        }
+                    }
+                }
+            </div>
+        </div>
+
+        <ul class="seat-legend">
+            <li><span class="seat-dot seat-standard"></span> Thường · <span id="count-standard">@Model.StandardCount</span></li>
+            <li><span class="seat-dot seat-vip"></span> VIP · <span id="count-vip">@Model.VipCount</span></li>
+            <li><span class="seat-dot seat-couple"></span> Ghế đôi (hàng cuối) · @Model.CoupleCount</li>
+            <li class="cb-muted">Tổng @(Model.TotalRows * Model.TotalColumns) ghế</li>
+        </ul>
+    </div>
+
+    <div class="admin-form-actions">
+        <button type="submit" class="btn btn-primary">Lưu loại ghế</button>
+        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="btn btn-link">Hủy</a>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        // Bấm ghế = đổi Thường ↔ VIP rồi ghi cả sơ đồ vào input ẩn dạng "id=Vip;id=Standard;…".
+        // Hàng cuối là span khóa (không có nút) nên không bao giờ bị gửi lên.
+        (function () {
+            var buttons = Array.prototype.slice.call(document.querySelectorAll('.seat-editable'));
+            var input = document.getElementById('seat-types');
+            var vipCount = document.getElementById('count-vip');
+            var standardCount = document.getElementById('count-standard');
+
+            function serialize() {
+                return buttons.map(function (b) {
+                    return b.dataset.seatId + '=' + b.dataset.type;
+                }).join(';');
+            }
+
+            function refreshCounts() {
+                var vip = buttons.filter(function (b) { return b.dataset.type === 'Vip'; }).length;
+                if (vipCount) vipCount.textContent = vip;
+                if (standardCount) standardCount.textContent = buttons.length - vip;
+            }
+
+            buttons.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    btn.dataset.type = btn.dataset.type === 'Vip' ? 'Standard' : 'Vip';
+                    btn.classList.toggle('seat-vip', btn.dataset.type === 'Vip');
+                    btn.classList.toggle('seat-standard', btn.dataset.type !== 'Vip');
+                    btn.setAttribute('aria-pressed', btn.dataset.type === 'Vip' ? 'true' : 'false');
+                    btn.title = 'Ghế ' + btn.dataset.seatLabel + ' · ' + btn.dataset.type;
+                    input.value = serialize();
+                    refreshCounts();
+                });
+            });
+
+            input.value = serialize();
+        })();
+    </script>
+}

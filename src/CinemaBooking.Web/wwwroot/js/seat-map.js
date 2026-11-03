@@ -25,13 +25,21 @@
     var continueBtn = document.getElementById('seat-continue');
     var toasts = document.getElementById('seat-toasts');
 
+    // Ghế đôi là MỘT button mang 2 seat id; map mọi id về cùng button để sự kiện realtime
+    // (vốn đi theo từng ghế) vẫn tìm được khối tương ứng.
     var seatButtons = new Map();
-    root.querySelectorAll('.seat[data-seat-id]').forEach(function (btn) {
-        seatButtons.set(Number(btn.dataset.seatId), btn);
+    root.querySelectorAll('.seat[data-seat-ids]').forEach(function (btn) {
+        unitIds(btn).forEach(function (id) { seatButtons.set(id, btn); });
     });
 
-    // seatId -> { label, price, expiresAt }
+    // button -> { label, price, expiresAt, seatIds }
     var selected = new Map();
+
+    function unitIds(btn) {
+        return btn.dataset.seatIds.split(',')
+            .map(Number)
+            .filter(function (id) { return id > 0; });
+    }
 
     var money = new Intl.NumberFormat('vi-VN', {
         style: 'currency',
@@ -71,12 +79,14 @@
 
     function renderSelection() {
         selectedInputs.innerHTML = '';
-        selected.forEach(function (item, seatId) {
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'seatIds';
-            input.value = seatId;
-            selectedInputs.appendChild(input);
+        selected.forEach(function (item) {
+            item.seatIds.forEach(function (seatId) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'seatIds';
+                input.value = seatId;
+                selectedInputs.appendChild(input);
+            });
         });
 
         if (selected.size === 0) {
@@ -103,18 +113,20 @@
         if (!btn) return;
 
         setState(btn, 'mine');
-        selected.set(seatId, {
+        selected.set(btn, {
             label: btn.dataset.seatLabel,
             price: Number(btn.dataset.seatPrice) || 0,
-            expiresAt: Date.now() + (seconds || holdSeconds) * 1000
+            expiresAt: Date.now() + (seconds || holdSeconds) * 1000,
+            seatIds: unitIds(btn)
         });
         renderSelection();
     }
 
     function removeSelected(seatId) {
-        if (selected.delete(seatId)) renderSelection();
         var btn = seatButtons.get(seatId);
-        if (btn && !isBooked(btn)) setState(btn, 'free');
+        if (!btn) return;
+        if (selected.delete(btn)) renderSelection();
+        if (!isBooked(btn)) setState(btn, 'free');
     }
 
     function markHeld(seatId) {
@@ -126,22 +138,21 @@
     function markFree(seatId) {
         var btn = seatButtons.get(seatId);
         if (!btn || isBooked(btn)) return;
-        if (selected.delete(seatId)) renderSelection();
+        if (selected.delete(btn)) renderSelection();
         setState(btn, 'free');
     }
 
     function markBooked(seatId) {
         var btn = seatButtons.get(seatId);
         if (!btn) return;
-        selected.delete(seatId);
+        selected.delete(btn);
         renderSelection();
         setState(btn, 'booked');
     }
 
     function clearSelection() {
-        selected.forEach(function (item, seatId) {
-            var btn = seatButtons.get(seatId);
-            if (btn && !isBooked(btn)) setState(btn, 'free');
+        selected.forEach(function (item, btn) {
+            if (!isBooked(btn)) setState(btn, 'free');
         });
         selected.clear();
         renderSelection();
@@ -159,12 +170,11 @@
         var soonest = Infinity;
         var changed = false;
 
-        selected.forEach(function (item, seatId) {
+        selected.forEach(function (item, btn) {
             var left = item.expiresAt - now;
             if (left <= 0) {
-                var btn = seatButtons.get(seatId);
-                selected.delete(seatId);
-                if (btn && !isBooked(btn)) setState(btn, 'free');
+                selected.delete(btn);
+                if (!isBooked(btn)) setState(btn, 'free');
                 toast('Ghế ' + item.label + ' đã hết thời gian giữ.', true);
                 changed = true;
             } else if (left < soonest) {
@@ -234,6 +244,15 @@
     });
 
     connection.on('SeatRejected', function (seatId, message) {
+        // Ghế đôi gửi 2 yêu cầu: nếu nửa thứ hai bị từ chối thì nhả luôn nửa đã giữ được để
+        // không ai bị kẹt nửa cặp. Server bỏ qua ReleaseSeat của ghế không thuộc connection này.
+        var btn = seatButtons.get(seatId);
+        if (btn) {
+            unitIds(btn).forEach(function (id) {
+                connection.invoke('ReleaseSeat', showtimeId, id).catch(function () { });
+            });
+            removeSelected(seatId);
+        }
         toast(message || 'Ghế đang được người khác chọn.', true);
     });
 
@@ -277,7 +296,8 @@
             });
     }
 
-    seatButtons.forEach(function (btn, seatId) {
+    // Mỗi button chỉ gắn listener một lần (ghế đôi có 2 seat id cùng trỏ về một button).
+    new Set(seatButtons.values()).forEach(function (btn) {
         btn.addEventListener('click', function () {
             if (isBooked(btn)) return;
 
@@ -287,8 +307,10 @@
             }
 
             if (isMine(btn)) {
-                connection.invoke('ReleaseSeat', showtimeId, seatId).catch(function () { });
-                removeSelected(seatId);
+                unitIds(btn).forEach(function (id) {
+                    connection.invoke('ReleaseSeat', showtimeId, id).catch(function () { });
+                });
+                removeSelected(Number(btn.dataset.seatIds.split(',')[0]));
                 return;
             }
 
@@ -297,9 +319,12 @@
                 return;
             }
 
-            // Ghế trống: xin lock. UI chỉ đổi khi server gửi SeatHeldByMe.
-            connection.invoke('SelectSeat', showtimeId, seatId).catch(function () {
-                toast('Không gửi được yêu cầu giữ ghế.', true);
+            // Ghế trống: xin lock cho TỪNG ghế của khối (ghế đôi gửi cả 2 nửa).
+            // UI chỉ đổi khi server gửi SeatHeldByMe.
+            unitIds(btn).forEach(function (id) {
+                connection.invoke('SelectSeat', showtimeId, id).catch(function () {
+                    toast('Không gửi được yêu cầu giữ ghế.', true);
+                });
             });
         });
     });
