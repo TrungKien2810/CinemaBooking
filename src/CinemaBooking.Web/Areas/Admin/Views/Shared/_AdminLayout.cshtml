@@ -32,11 +32,19 @@
             }
             else
             {
-                @* BranchAdmin: chỉ phòng/ghế và suất chiếu của chi nhánh mình. *@
+                @* BranchAdmin: tổng quan, phòng/ghế, suất chiếu, đơn và doanh thu của chi nhánh mình. *@
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Dashboard")" data-icon="🏠">Tổng quan</a>
                 <a asp-area="Admin" asp-controller="Rooms" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Rooms")" data-icon="🪑">Phòng &amp; ghế</a>
                 <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">Suất chiếu</a>
+                <a asp-area="Admin" asp-controller="Promotions" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Promotions")" data-icon="🎁">Khuyến mãi</a>
+                <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Bookings")" data-icon="🎟️">Đơn đặt vé</a>
+                <a asp-area="Admin" asp-controller="Revenue" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Revenue")" data-icon="📊">Doanh thu</a>
             }
         </nav>
         <div class="admin-sidebar-foot">

@@ -1,0 +1,56 @@
+@model PromotionsIndexViewModel
+@{
+    ViewData["Title"] = $"Khuyến mãi — {Model.TheaterName}";
+}
+
+<div class="admin-page-head">
+    <div>
+        @if (User.IsInRole(AppRoles.Admin))
+        {
+            <a asp-controller="Theaters" asp-action="Index" class="back-link">← Danh sách chi nhánh</a>
+        }
+        <h1 class="page-title">Khuyến mãi · @Model.TheaterName</h1>
+        <p class="cb-muted page-subtitle">Hiện ở trang chi tiết chi nhánh của khách. Mỗi chi nhánh có chương trình riêng.</p>
+    </div>
+    <a asp-action="Create" asp-route-theaterId="@Model.TheaterId" class="btn btn-primary">Thêm khuyến mãi</a>
+</div>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="cb-card empty-state">
+        <p class="empty-title">Chi nhánh chưa có khuyến mãi</p>
+        <p class="cb-muted">Thêm chương trình để khách thấy ngay trên trang chi nhánh.</p>
+    </div>
+}
+else
+{
+    <div class="cb-card admin-table-wrap">
+        <table class="table admin-table align-middle mb-0">
+            <thead>
+                <tr><th>Chương trình</th><th>Nhãn</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.Items)
+                {
+                    <tr>
+                        <td class="fw-semibold">@p.Title</td>
+                        <td>@p.Badge</td>
+                        <td class="text-nowrap">@p.StartDate.ToString("dd/MM/yyyy") – @p.EndDate.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            @if (p.IsRunning) { <span class="badge text-bg-success">Đang chạy</span> }
+                            else if (!p.IsActive) { <span class="badge text-bg-secondary">Tắt</span> }
+                            else { <span class="badge text-bg-light">Ngoài thời gian</span> }
+                        </td>
+                        <td class="admin-actions">
+                            <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
+                            <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="d-inline"
+                                  data-confirm="Xóa khuyến mãi “@p.Title”?">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

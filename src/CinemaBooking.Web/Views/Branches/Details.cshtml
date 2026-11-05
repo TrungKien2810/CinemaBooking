@@ -1,0 +1,90 @@
+@using CinemaBooking.Web.Services
+@model BranchDetails
+@{
+    ViewData["Title"] = Model.Name;
+    var tz = (DisplayTimeZone)ViewData["Tz"]!;
+}
+
+<a asp-action="Index" class="back-link">← Hệ thống rạp</a>
+
+<section class="page-head">
+    <h1 class="page-title">🏢 @Model.Name</h1>
+    <p class="cb-muted page-subtitle">@Model.City · 📍 @(Model.Address ?? "Đang cập nhật địa chỉ")</p>
+</section>
+
+<section aria-labelledby="promo-title" class="mb-4">
+    <h2 class="section-title" id="promo-title">🎁 Khuyến mãi tại chi nhánh</h2>
+    @if (Model.Promotions.Count == 0)
+    {
+        <div class="cb-card empty-state"><p class="cb-muted mb-0">Chi nhánh hiện chưa có khuyến mãi.</p></div>
+    }
+    else
+    {
+        <ul class="branch-grid">
+            @foreach (var p in Model.Promotions)
+            {
+                <li class="cb-card branch-card">
+                    @if (!string.IsNullOrWhiteSpace(p.Badge))
+                    {
+                        <span class="badge text-bg-danger mb-2">@p.Badge</span>
+                    }
+                    <h3 class="branch-name">@p.Title</h3>
+                    @if (!string.IsNullOrWhiteSpace(p.Description))
+                    {
+                        <p class="mb-2">@p.Description</p>
+                    }
+                    <p class="cb-muted small mb-0">Áp dụng đến @p.EndDate.ToString("dd/MM/yyyy")</p>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+<section aria-labelledby="movies-title" class="mb-4">
+    <h2 class="section-title" id="movies-title">🎬 Phim đang chiếu tại đây</h2>
+    @if (Model.Movies.Count == 0)
+    {
+        <div class="cb-card empty-state"><p class="cb-muted mb-0">Chi nhánh chưa có suất chiếu sắp tới.</p></div>
+    }
+    else
+    {
+        <ul class="branch-grid">
+            @foreach (var m in Model.Movies)
+            {
+                <li class="cb-card branch-card">
+                    <h3 class="branch-name">
+                        <a asp-controller="Movies" asp-action="Details" asp-route-id="@m.MovieId" asp-route-theaterId="@Model.Id" class="stretched-link">@m.Title</a>
+                    </h3>
+                    <p class="cb-muted mb-1">@(m.Genre ?? "Chưa phân loại") · @m.DurationMinutes phút</p>
+                    <p class="mb-0 small">
+                        @m.UpcomingShowtimes suất sắp chiếu · gần nhất @tz.ToLocalTime(m.NextShowtimeUtc).ToString("HH:mm dd/MM") ·
+                        từ @m.FromPrice.ToString("N0") đ
+                    </p>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+<section aria-labelledby="rooms-title">
+    <h2 class="section-title" id="rooms-title">🪑 Phòng chiếu</h2>
+    @if (Model.Rooms.Count == 0)
+    {
+        <div class="cb-card empty-state"><p class="cb-muted mb-0">Chưa có phòng chiếu.</p></div>
+    }
+    else
+    {
+        <ul class="branch-grid">
+            @foreach (var r in Model.Rooms)
+            {
+                <li class="cb-card branch-card">
+                    <h3 class="branch-name">@r.Name</h3>
+                    <p class="mb-1">@r.SeatCount ghế · @r.Rows hàng × @r.Columns cột</p>
+                    <p class="cb-muted small mb-0">
+                        @(r.SeatCount - r.VipCount - r.CoupleCount) thường · @r.VipCount VIP · @r.CoupleCount ghế đôi
+                    </p>
+                </li>
+            }
+        </ul>
+    }
+</section>
