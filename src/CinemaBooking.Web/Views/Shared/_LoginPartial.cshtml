@@ -32,17 +32,17 @@
                 else if (User.IsInRole(AppRoles.BranchAdmin))
                 {
                     @* BranchAdmin chỉ vào được phòng/ghế và suất chiếu của chi nhánh mình. *@
-                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Rooms" asp-action="Index">Quản lý chi nhánh</a></li>
+                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Quản lý chi nhánh</a></li>
                     <li><hr class="dropdown-divider" /></li>
                 }
                 <li>
-                    <a class="dropdown-item" asp-controller="Booking" asp-action="MyBookings">Vé của tôi</a>
+                    <a class="dropdown-item" asp-area="" asp-controller="Booking" asp-action="MyBookings">Vé của tôi</a>
                 </li>
                 <li>
-                    <a class="dropdown-item" asp-controller="Account" asp-action="Profile">Tài khoản</a>
+                    <a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Profile">Tài khoản</a>
                 </li>
                 <li>
-                    <a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">Đổi mật khẩu</a>
+                    <a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="ChangePassword">Đổi mật khẩu</a>
                 </li>
                 <li>
                     <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
