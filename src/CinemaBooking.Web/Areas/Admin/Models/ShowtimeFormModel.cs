@@ -37,7 +37,7 @@ public sealed class ShowtimeFormModel
 
 public sealed record ShowtimeAdminItem(
     int Id, string MovieTitle, string TheaterName, string RoomName,
-    DateTime StartLocal, DateTime EndLocal, decimal BasePrice, int BookingCount);
+    DateTime StartLocal, DateTime EndLocal, decimal BasePrice, int BookingCount, bool IsActive = true);
 
 public sealed record ShowtimesIndexViewModel(
     DateOnly Date, int? TheaterId, List<SelectListItem> Theaters, List<ShowtimeAdminItem> Items);

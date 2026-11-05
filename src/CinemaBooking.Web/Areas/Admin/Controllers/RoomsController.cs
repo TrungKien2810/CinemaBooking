@@ -78,6 +78,7 @@ public class RoomsController : AdminControllerBase
         if (theater is null) return NotFound();
 
         form.TheaterName = theater.Name;
+        await CheckDuplicateNameAsync(form, theater.Id, null, ct);
         if (!ModelState.IsValid) return View("Form", form);
 
         var room = new Room
@@ -125,6 +126,7 @@ public class RoomsController : AdminControllerBase
             ModelState.AddModelError(string.Empty,
                 "Không đổi được sơ đồ ghế: phòng đã có vé được đặt. Chỉ sửa được tên phòng.");
         }
+        await CheckDuplicateNameAsync(form, room.TheaterId, id, ct);
         if (!ModelState.IsValid) return View("Form", form);
 
         room.RoomName = form.RoomName.Trim();
@@ -137,6 +139,16 @@ public class RoomsController : AdminControllerBase
         await _db.SaveChangesAsync(ct);
 
         return RedirectToAction(nameof(Index), new { theaterId = room.TheaterId });
+    }
+
+    /// <summary>Tên phòng phải duy nhất trong chi nhánh (không phân biệt hoa thường theo collation DB).</summary>
+    private async Task CheckDuplicateNameAsync(RoomFormModel form, int theaterId, int? excludeId, CancellationToken ct)
+    {
+        var name = (form.RoomName ?? string.Empty).Trim();
+        if (name.Length == 0) return;
+
+        if (await _db.Rooms.AnyAsync(r => r.TheaterId == theaterId && r.RoomName == name && r.Id != excludeId, ct))
+            ModelState.AddModelError(nameof(form.RoomName), "Chi nhánh đã có phòng trùng tên này.");
     }
 
     /// <summary>

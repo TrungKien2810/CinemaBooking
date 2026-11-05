@@ -11,6 +11,7 @@ public class CinemaDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Movie> Movies => Set<Movie>();
     public DbSet<Theater> Theaters => Set<Theater>();
     public DbSet<Room> Rooms => Set<Room>();
+    public DbSet<Promotion> Promotions => Set<Promotion>();
     public DbSet<Seat> Seats => Set<Seat>();
     public DbSet<Showtime> Showtimes => Set<Showtime>();
     public DbSet<Booking> Bookings => Set<Booking>();
@@ -29,6 +30,10 @@ public class CinemaDbContext : IdentityDbContext<ApplicationUser>
 
         b.Entity<Showtime>()
             .HasIndex(s => new { s.RoomId, s.StartTimeUtc });
+
+        b.Entity<Room>().HasIndex(r => new { r.TheaterId, r.RoomName }).IsUnique();
+
+        b.Entity<Promotion>().HasIndex(p => new { p.TheaterId, p.EndDate });
 
         b.Entity<Theater>().HasIndex(t => t.Name).IsUnique();
         b.Entity<Theater>().HasIndex(t => t.City);

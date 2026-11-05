@@ -73,14 +73,15 @@ public class AdminAuthorizationTests
     }
 
     /// <summary>
-    /// BranchAdmin chỉ được vào phòng/ghế và suất chiếu; phim, chi nhánh, đơn, doanh thu là của
+    /// BranchAdmin vào được phòng/ghế, suất chiếu, tổng quan, đơn và doanh thu (đã lọc theo chi nhánh
+    /// trong action); phim và chi nhánh là của
     /// Admin toàn hệ thống.
     /// </summary>
     [Theory]
     [MemberData(nameof(AdminControllerTypes))]
-    public async Task Branch_admin_is_allowed_only_on_rooms_and_showtimes(Type controller)
+    public async Task Branch_admin_is_blocked_only_from_movies_and_theaters(Type controller)
     {
-        var expected = controller == typeof(RoomsController) || controller == typeof(ShowtimesController);
+        var expected = controller != typeof(MoviesController) && controller != typeof(TheatersController);
         Assert.Equal(expected, await IsAuthorizedAsync(controller, SignedIn(AppRoles.BranchAdmin)));
     }
 

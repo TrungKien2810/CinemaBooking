@@ -583,6 +583,6 @@ public class BookingController : Controller
             .Include(s => s.Room!).ThenInclude(r => r.Seats)
             .AsSplitQuery()
             .FirstOrDefaultAsync(s => s.Id == id && s.StartTimeUtc > nowUtc
-                                      && s.Movie!.IsActive && s.Room!.Theater!.IsActive, ct);
+                                      && s.IsActive && s.Movie!.IsActive && s.Room!.Theater!.IsActive, ct);
     }
 }

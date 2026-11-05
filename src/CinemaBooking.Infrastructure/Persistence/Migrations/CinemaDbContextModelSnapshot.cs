@@ -355,6 +355,46 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
                     b.ToTable("Payments");
                 });
 
+            modelBuilder.Entity("CinemaBooking.Domain.Entities.Promotion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Badge")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("TheaterId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TheaterId", "EndDate");
+
+                    b.ToTable("Promotions");
+                });
+
             modelBuilder.Entity("CinemaBooking.Domain.Entities.Room", b =>
                 {
                     b.Property<int>("Id")
@@ -379,7 +419,8 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TheaterId");
+                    b.HasIndex("TheaterId", "RoomName")
+                        .IsUnique();
 
                     b.ToTable("Rooms");
                 });
@@ -426,6 +467,9 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime>("EndTimeUtc")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<int>("MovieId")
                         .HasColumnType("int");
@@ -695,6 +739,17 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Booking");
+                });
+
+            modelBuilder.Entity("CinemaBooking.Domain.Entities.Promotion", b =>
+                {
+                    b.HasOne("CinemaBooking.Domain.Entities.Theater", "Theater")
+                        .WithMany()
+                        .HasForeignKey("TheaterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Theater");
                 });
 
             modelBuilder.Entity("CinemaBooking.Domain.Entities.Room", b =>

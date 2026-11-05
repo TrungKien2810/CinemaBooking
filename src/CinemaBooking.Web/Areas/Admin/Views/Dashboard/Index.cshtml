@@ -1,0 +1,45 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Tổng quan";
+}
+
+<div class="admin-page-head">
+    <div>
+        <h1 class="page-title">Tổng quan · @Model.Scope</h1>
+        <p class="cb-muted page-subtitle">Hôm nay, @Model.Today.ToString("dd/MM/yyyy")</p>
+    </div>
+</div>
+
+<div class="admin-stats">
+    <div class="cb-card admin-stat"><span class="cb-muted">Suất chiếu hôm nay</span><strong class="admin-stat-value">@Model.ShowtimesToday</strong></div>
+    <div class="cb-card admin-stat"><span class="cb-muted">Vé bán hôm nay</span><strong class="admin-stat-value">@Model.TicketsToday</strong></div>
+    <div class="cb-card admin-stat"><span class="cb-muted">Doanh thu hôm nay</span><strong class="admin-stat-value is-accent">@Model.RevenueToday.ToString("N0") ₫</strong></div>
+    <div class="cb-card admin-stat"><span class="cb-muted">Lấp đầy các suất hôm nay</span><strong class="admin-stat-value">@Model.OccupancyToday.ToString("P0")</strong></div>
+    <div class="cb-card admin-stat"><span class="cb-muted">7 ngày: vé / doanh thu</span><strong class="admin-stat-value">@Model.Tickets7Days · @Model.Revenue7Days.ToString("N0") ₫</strong></div>
+</div>
+
+<h2 class="h5 mt-4">Suất sắp chiếu hôm nay</h2>
+@if (Model.Upcoming.Count == 0)
+{
+    <div class="cb-card empty-state"><p class="empty-title">Không còn suất nào hôm nay</p></div>
+}
+else
+{
+    <div class="cb-card admin-table-wrap">
+        <table class="table admin-table align-middle mb-0">
+            <thead><tr><th>Giờ</th><th>Phim</th><th>Phòng</th><th class="text-end">Đã bán</th><th class="text-end">Lấp đầy</th></tr></thead>
+            <tbody>
+            @foreach (var s in Model.Upcoming)
+            {
+                <tr>
+                    <td class="fw-semibold">@s.StartLocal.ToString("HH:mm")</td>
+                    <td>@s.MovieTitle@if (!s.IsActive) { <span class="badge text-bg-secondary ms-1">Đang ẩn</span> }</td>
+                    <td>@s.RoomName</td>
+                    <td class="text-end">@s.Sold / @s.Capacity</td>
+                    <td class="text-end">@s.Occupancy.ToString("P0")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

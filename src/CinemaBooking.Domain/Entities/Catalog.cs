@@ -71,4 +71,24 @@ public class Showtime
     /// <summary>Suy ra từ StartTimeUtc + Movie.DurationMinutes khi tạo, lưu lại để truy vấn trùng lịch.</summary>
     public DateTime EndTimeUtc { get; set; }
     public decimal BasePrice { get; set; }
+    /// <summary>Tạm ẩn: suất ẩn không hiện và không bán cho khách, nhưng giữ nguyên đơn đã đặt.</summary>
+    public bool IsActive { get; set; } = true;
+}
+
+/// <summary>
+/// Khuyến mãi riêng của một chi nhánh, hiển thị trên trang chi tiết chi nhánh. Mỗi chi nhánh tự đặt
+/// chương trình của mình. Hiện chỉ là thông tin quảng bá — chưa tự trừ vào giá vé khi thanh toán.
+/// </summary>
+public class Promotion
+{
+    public int Id { get; set; }
+    public int TheaterId { get; set; }
+    public Theater? Theater { get; set; }
+    [Required, MaxLength(150)] public string Title { get; set; } = string.Empty;
+    [MaxLength(1000)] public string? Description { get; set; }
+    /// <summary>Nhãn ngắn hiện nổi bật, ví dụ "-20%", "Đồng giá 60k".</summary>
+    [MaxLength(40)] public string? Badge { get; set; }
+    public DateOnly StartDate { get; set; }
+    public DateOnly EndDate { get; set; }
+    public bool IsActive { get; set; } = true;
 }

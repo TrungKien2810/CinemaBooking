@@ -28,6 +28,40 @@ public static class CatalogSeeder
 
     public static async Task SeedAsync(CinemaDbContext db, CancellationToken ct = default)
     {
+        await SeedCatalogAsync(db, ct);
+        await SeedPromotionsAsync(db, ct);
+    }
+
+    /// <summary>
+    /// Khuyến mãi mẫu, mỗi chi nhánh một bộ khác nhau. Chạy cả khi catalog đã có (DB cũ chưa có bảng
+    /// khuyến mãi); chỉ thêm khi bảng còn trống để không đè lên dữ liệu chủ chi nhánh đã nhập.
+    /// </summary>
+    private static async Task SeedPromotionsAsync(CinemaDbContext db, CancellationToken ct)
+    {
+        if (await db.Promotions.AnyAsync(ct)) return;
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow + VietnamOffset);
+        var plans = new Dictionary<string, (string Title, string Badge, string Description)[]>
+        {
+            ["CineSmart Nguyễn Huệ"] = [("Thứ 3 đồng giá", "Đồng giá 60k", "Mọi suất chiếu thứ 3 chỉ 60.000đ/vé, mọi loại ghế thường.")],
+            ["CineSmart Thảo Điền"] = [("Combo cặp đôi", "Ghế đôi -15%", "Giảm 15% khi đặt ghế đôi các suất sau 18:00."), ("Sinh viên", "-20%", "Xuất trình thẻ sinh viên tại quầy để được giảm 20%.")],
+            ["CineSmart Cầu Giấy"] = [("Suất sớm", "-25%", "Giảm 25% cho các suất bắt đầu trước 12:00 các ngày trong tuần.")],
+        };
+
+        var theaters = await db.Theaters.Where(t => plans.Keys.Contains(t.Name)).ToListAsync(ct);
+        foreach (var theater in theaters)
+            foreach (var (title, badge, description) in plans[theater.Name])
+                db.Promotions.Add(new Promotion
+                {
+                    TheaterId = theater.Id, Title = title, Badge = badge, Description = description,
+                    StartDate = today, EndDate = today.AddDays(60),
+                });
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static async Task SeedCatalogAsync(CinemaDbContext db, CancellationToken ct)
+    {
         if (await db.Movies.AnyAsync(ct)) return;
 
         var movies = new List<Movie>
