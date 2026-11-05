@@ -21,13 +21,18 @@
         <label for="to" class="form-label">Đến ngày</label>
         <input id="to" name="to" type="date" value="@Model.To.ToString("yyyy-MM-dd")" class="form-control" />
     </div>
-    <div class="col-auto">
+    @if (!User.IsInRole(AppRoles.BranchAdmin))
+    {
+
+        <div class="col-auto">
         <label for="theaterId" class="form-label">Chi nhánh</label>
         <select id="theaterId" name="theaterId" class="form-select"
                 asp-items="@(new SelectList(Model.Theaters, "Value", "Text", Model.TheaterId))">
             <option value="">Tất cả chi nhánh</option>
         </select>
     </div>
+
+    }
     <div class="col-auto">
         <button type="submit" class="btn btn-outline-primary">Xem</button>
     </div>

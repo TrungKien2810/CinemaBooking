@@ -16,13 +16,18 @@
         <label for="code" class="form-label">Mã đơn</label>
         <input id="code" name="code" value="@Model.Code" class="form-control" placeholder="CB-..." />
     </div>
-    <div class="col-auto">
+    @if (!User.IsInRole(AppRoles.BranchAdmin))
+    {
+
+        <div class="col-auto">
         <label for="theaterId" class="form-label">Chi nhánh</label>
         <select id="theaterId" name="theaterId" class="form-select"
                 asp-items="@(new SelectList(Model.Theaters, "Value", "Text", Model.TheaterId))">
             <option value="">Tất cả chi nhánh</option>
         </select>
     </div>
+
+    }
     <div class="col-auto">
         <label for="status" class="form-label">Trạng thái</label>
         <select id="status" name="status" class="form-select">

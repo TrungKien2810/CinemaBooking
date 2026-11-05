@@ -11,8 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace CinemaBooking.Web.Areas.Admin.Controllers;
 
-/// <summary>Tra cứu đơn đặt vé của mọi chi nhánh: lọc theo mã, chi nhánh, trạng thái; xem chi tiết.</summary>
-[Authorize(Roles = AppRoles.Admin)]
+/// <summary>Tra cứu đơn đặt vé: Admin thấy mọi chi nhánh, chủ chi nhánh chỉ thấy chi nhánh mình: lọc theo mã, chi nhánh, trạng thái; xem chi tiết.</summary>
 public class BookingsController : AdminControllerBase
 {
     /// <summary>Số đơn tối đa trên một trang danh sách — đơn mới nhất trước, lọc để thu hẹp.</summary>
@@ -20,15 +19,24 @@ public class BookingsController : AdminControllerBase
 
     private readonly CinemaDbContext _db;
     private readonly DisplayTimeZone _tz;
+    private readonly IBranchScope _branches;
 
-    public BookingsController(CinemaDbContext db, IOptions<DisplayTimeZone> tz)
+    public BookingsController(CinemaDbContext db, IOptions<DisplayTimeZone> tz, IBranchScope branches)
     {
         _db = db;
         _tz = tz.Value;
+        _branches = branches;
     }
 
     public async Task<IActionResult> Index(string? code, int? theaterId, BookingStatus? status, CancellationToken ct)
     {
+        var scoped = await _branches.TheaterIdAsync(ct);
+        if (scoped is not null)
+        {
+            if (theaterId is not null && theaterId != scoped) return Forbid();
+            theaterId = scoped;
+        }
+
         var query = _db.Bookings.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(code))
         {
@@ -64,7 +72,9 @@ public class BookingsController : AdminControllerBase
                 r.SeatCount, r.TotalAmount, r.Status))
             .ToList();
 
-        var theaters = await _db.Theaters.AsNoTracking()
+        var theatersQuery = _db.Theaters.AsNoTracking();
+        if (scoped is not null) theatersQuery = theatersQuery.Where(t => t.Id == scoped);
+        var theaters = await theatersQuery
             .OrderBy(t => t.City).ThenBy(t => t.Name)
             .Select(t => new SelectListItem(t.City + " · " + t.Name, t.Id.ToString()))
             .ToListAsync(ct);
@@ -88,6 +98,7 @@ public class BookingsController : AdminControllerBase
                 x.Showtime!.Movie!.Title,
                 TheaterName = x.Showtime.Room!.Theater!.Name,
                 x.Showtime.Room.RoomName,
+                x.Showtime.Room.TheaterId,
                 x.Showtime.StartTimeUtc,
                 x.TotalAmount,
                 PaymentStatus = (PaymentStatus?)x.Payment!.Status,
@@ -99,6 +110,7 @@ public class BookingsController : AdminControllerBase
             })
             .FirstOrDefaultAsync(ct);
         if (b is null) return NotFound();
+        if (!await _branches.CanAccessTheaterAsync(b.TheaterId, ct)) return Forbid();
 
         var seats = b.Seats
             .Select(s => new BookingSeatLine(s.Seat!.Label, s.Seat.SeatType, s.PriceAtBooking))

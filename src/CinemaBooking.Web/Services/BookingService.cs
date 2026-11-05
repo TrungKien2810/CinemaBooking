@@ -402,6 +402,7 @@ public sealed class BookingService : IBookingService
             .Include(s => s.Room!).ThenInclude(r => r.Seats)
             .FirstOrDefaultAsync(s => s.Id == showtimeId
                 && s.StartTimeUtc > nowUtc
+                && s.IsActive
                 && s.Movie!.IsActive
                 && s.Room!.Theater!.IsActive, ct);
     }

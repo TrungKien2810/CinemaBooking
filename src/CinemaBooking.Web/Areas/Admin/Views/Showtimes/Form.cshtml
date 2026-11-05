@@ -29,6 +29,12 @@
         </select>
         <span asp-validation-for="RoomId" class="text-danger small"></span>
     </div>
+    <div class="mb-3" data-slot-picker data-url="@Url.Action("Suggest")" data-exclude="@Model.Id">
+        <label for="suggest-date" class="form-label">Ngày chiếu</label>
+        <input id="suggest-date" type="date" class="form-control" style="max-width:12rem" />
+        <div id="slot-chips" class="d-flex flex-wrap gap-2 mt-2" aria-live="polite"></div>
+        <div id="slot-hint" class="form-text">Chọn phim, phòng và ngày để xem giờ gợi ý còn trống; bấm một giờ để điền vào ô bên dưới. <span class="badge text-bg-success">Liền sau</span> = ngay sau suất trước.</div>
+    </div>
     <div class="row">
         <div class="col-sm-7 mb-3">
             <label asp-for="StartTimeLocal" class="form-label"></label>
@@ -54,5 +60,42 @@
 </form>
 
 @section Scripts {
+    <script>
+    (() => {
+        const root = document.querySelector("[data-slot-picker]");
+        if (!root) return;
+        const movie = document.getElementById("MovieId"), room = document.getElementById("RoomId");
+        const dateEl = document.getElementById("suggest-date"), start = document.getElementById("StartTimeLocal");
+        const chips = document.getElementById("slot-chips"), hint = document.getElementById("slot-hint");
+        const fmt = d => d.toISOString().slice(0, 10);
+        dateEl.value = start.value ? start.value.slice(0, 10) : fmt(new Date());
+        dateEl.min = fmt(new Date());
+
+        async function load() {
+            chips.textContent = "";
+            if (!+movie.value || !+room.value || !dateEl.value) return;
+            const q = new URLSearchParams({ roomId: room.value, movieId: movie.value, date: dateEl.value });
+            if (root.dataset.exclude) q.set("excludeId", root.dataset.exclude);
+            try {
+                const res = await fetch(root.dataset.url + "?" + q);
+                if (!res.ok) throw new Error();
+                const slots = await res.json();
+                hint.hidden = slots.length > 0;
+                if (!slots.length) { chips.textContent = "Không còn giờ trống trong ngày này — thử ngày khác."; return; }
+                for (const s of slots) {
+                    const b = document.createElement("button");
+                    b.type = "button";
+                    b.className = "btn btn-sm " + (s.snug ? "btn-success" : "btn-outline-secondary");
+                    b.textContent = s.text;
+                    b.title = s.snug ? "Liền sau suất trước" : "";
+                    b.addEventListener("click", () => { start.value = s.value; start.dispatchEvent(new Event("input", { bubbles: true })); });
+                    chips.appendChild(b);
+                }
+            } catch { chips.textContent = "Không tải được giờ gợi ý."; }
+        }
+        [movie, room, dateEl].forEach(e => e.addEventListener("change", load));
+        load();
+    })();
+    </script>
     @await Html.PartialAsync("_ValidationScriptsPartial")
 }
