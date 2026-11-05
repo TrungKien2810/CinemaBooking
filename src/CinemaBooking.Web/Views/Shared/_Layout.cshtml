@@ -27,7 +27,7 @@
     <header>
         <nav class="navbar navbar-expand-md site-navbar" aria-label="Điều hướng chính">
             <div class="container">
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
                     <span class="brand-mark" aria-hidden="true">🎬</span>
                     <span class="brand-text">CinemaBooking<span class="brand-accent">.Smart</span></span>
                 </a>
@@ -41,15 +41,15 @@
                 <div class="collapse navbar-collapse" id="siteNav">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a class="@NavClass("Home", "Index")" asp-controller="Home" asp-action="Index"
+                            <a class="@NavClass("Home", "Index")" asp-area="" asp-controller="Home" asp-action="Index"
                                aria-current="@(IsCurrent("Home", "Index") ? "page" : null)">Phim đang chiếu</a>
                         </li>
                         <li class="nav-item">
-                            <a class="@NavClass("Branches", "Index")" asp-controller="Branches" asp-action="Index"
+                            <a class="@NavClass("Branches", "Index")" asp-area="" asp-controller="Branches" asp-action="Index"
                                aria-current="@(IsCurrent("Branches", "Index") ? "page" : null)">Hệ thống rạp</a>
                         </li>
                         <li class="nav-item">
-                            <a class="@NavClass("Booking", "Lookup")" asp-controller="Booking" asp-action="Lookup"
+                            <a class="@NavClass("Booking", "Lookup")" asp-area="" asp-controller="Booking" asp-action="Lookup"
                                aria-current="@(IsCurrent("Booking", "Lookup") ? "page" : null)">Tra cứu vé</a>
                         </li>
                     </ul>
@@ -77,17 +77,17 @@
                 <div>
                     <div class="footer-heading">Khám phá</div>
                     <ul class="footer-links">
-                        <li><a asp-controller="Home" asp-action="Index">Phim đang chiếu</a></li>
-                        <li><a asp-controller="Branches" asp-action="Index">Hệ thống rạp</a></li>
-                        <li><a asp-controller="Booking" asp-action="Lookup">Tra cứu vé</a></li>
+                        <li><a asp-area="" asp-controller="Home" asp-action="Index">Phim đang chiếu</a></li>
+                        <li><a asp-area="" asp-controller="Branches" asp-action="Index">Hệ thống rạp</a></li>
+                        <li><a asp-area="" asp-controller="Booking" asp-action="Lookup">Tra cứu vé</a></li>
                     </ul>
                 </div>
                 <div>
                     <div class="footer-heading">Tài khoản</div>
                     <ul class="footer-links">
-                        <li><a asp-controller="Account" asp-action="Login">Đăng nhập</a></li>
-                        <li><a asp-controller="Account" asp-action="Register">Đăng ký</a></li>
-                        <li><a asp-controller="Home" asp-action="Privacy">Chính sách riêng tư</a></li>
+                        <li><a asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a></li>
+                        <li><a asp-area="" asp-controller="Account" asp-action="Register">Đăng ký</a></li>
+                        <li><a asp-area="" asp-controller="Home" asp-action="Privacy">Chính sách riêng tư</a></li>
                     </ul>
                 </div>
             </div>
