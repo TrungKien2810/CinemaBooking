@@ -12,7 +12,10 @@
         <h1 class="page-title">Phòng chiếu · @Model.TheaterName</h1>
         <p class="cb-muted page-subtitle">@Model.Rooms.Count phòng · @Model.Rooms.Sum(r => r.SeatCount) ghế</p>
     </div>
-    <a asp-action="Create" asp-route-theaterId="@Model.TheaterId" class="btn btn-primary">Thêm phòng</a>
+    <div class="d-flex gap-2">
+        <a asp-controller="Promotions" asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="btn btn-outline-secondary">Khuyến mãi</a>
+        <a asp-action="Create" asp-route-theaterId="@Model.TheaterId" class="btn btn-primary">Thêm phòng</a>
+    </div>
 </div>
 
 @if (TempData["Error"] is string error)

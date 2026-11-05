@@ -30,9 +30,10 @@ else
                 @foreach (var b in city)
                 {
                     <li class="cb-card branch-card">
-                        <h3 class="branch-name">🏢 @b.Name</h3>
+                        <h3 class="branch-name">🏢 <a asp-action="Details" asp-route-id="@b.Id" class="stretched-link">@b.Name</a></h3>
                         <p class="cb-muted mb-2">📍 @(b.Address ?? "Đang cập nhật địa chỉ")</p>
                         <p class="branch-rooms">🎬 @b.RoomCount phòng chiếu</p>
+                        <p class="mb-0 small">Xem phim, phòng và khuyến mãi →</p>
                     </li>
                 }
             </ul>
