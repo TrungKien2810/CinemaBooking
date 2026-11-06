@@ -44,20 +44,10 @@
             <input asp-for="Form.Date" type="date" id="Date" name="Date" class="form-control" />
             <span asp-validation-for="Form.Date" class="text-danger small"></span>
         </div>
-        <div class="col-md-2 mb-3">
-            @await Html.PartialAsync("_PriceInput", new PriceInputModel("BasePrice", "Giá vé cơ bản", form.BasePrice))
-        </div>
-        <div class="col-md-2 mb-3">
-            @await Html.PartialAsync("_PriceInput", new PriceInputModel("PrimeSurcharge", "Phụ thu giờ vàng", form.PrimeSurcharge, "0 = không phụ thu"))
-        </div>
     </div>
 
-    <div class="form-check mb-3">
-        <input type="checkbox" class="form-check-input" id="UsePricing" name="UsePricing" value="true" checked="@form.UsePricing" />
-        <input type="hidden" name="UsePricing" value="false" />
-        <label for="UsePricing" class="form-check-label fw-semibold">Dùng bảng giá của chi nhánh</label>
-        <div class="form-text">Giá mỗi suất tính theo loại phòng, giờ và ngày (xem <a asp-controller="Pricing" asp-action="Index" asp-route-theaterId="@form.TheaterId">Bảng giá vé</a>). Bỏ chọn để dùng giá cơ bản và phụ thu giờ vàng nhập bên trên.</div>
-    </div>
+    <input type="hidden" name="UsePricing" value="true" />
+    <p class="form-text mb-3">Giá mỗi suất tự tính theo loại phòng, giờ và ngày chiếu của chi nhánh (xem <a asp-controller="Pricing" asp-action="Index" asp-route-theaterId="@form.TheaterId">Bảng giá vé</a>), không phụ thuộc phim.</p>
 
     <div class="mb-3">
         <label asp-for="Form.Language" class="form-label"></label>

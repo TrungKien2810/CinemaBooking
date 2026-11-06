@@ -51,10 +51,11 @@
             <span asp-validation-for="StartTimeLocal" class="text-danger small"></span>
         </div>
         <div class="col-sm-5 mb-3">
-            @await Html.PartialAsync("_PriceInput", new PriceInputModel("BasePrice", "Giá ghế thường", Model.BasePrice))
-            <div class="form-text" id="price-suggest" data-url="@Url.Action("SuggestPrice")" hidden>
-                Theo bảng giá chi nhánh: <strong id="price-suggest-text"></strong>
-                <button type="button" class="btn btn-link btn-sm p-0 ms-1" id="price-suggest-apply">Dùng giá này</button>
+            <label class="form-label">Giá ghế thường</label>
+            <input type="hidden" asp-for="BasePrice" />
+            <div class="form-control-plaintext fw-semibold" id="price-auto">@Model.BasePrice.Vnd()</div>
+            <div class="form-text" id="price-suggest" data-url="@Url.Action("SuggestPrice")">
+                Tự tính theo <a asp-controller="Pricing" asp-action="Index">bảng giá chi nhánh</a> (loại phòng, giờ và ngày chiếu), không nhập tay và không phụ thuộc phim.
             </div>
         </div>
     </div>
@@ -108,32 +109,19 @@
         load();
     })();
 
-    // Gợi ý giá theo bảng giá chi nhánh: phòng + giờ bắt đầu → giá ghế thường. Chỉ tự điền khi admin chưa tự sửa ô giá.
+    // Giá tự tính theo bảng giá chi nhánh: phòng + giờ bắt đầu → giá ghế thường (chỉ hiển thị; server tính lại khi lưu).
     (() => {
-        const box = document.getElementById("price-suggest");
+        const box = document.getElementById("price-suggest"), label = document.getElementById("price-auto");
         const room = document.getElementById("RoomId"), start = document.getElementById("StartTimeLocal");
-        const price = document.getElementById("BasePrice");
-        if (!box || !room || !start || !price) return;
-        const text = document.getElementById("price-suggest-text"), apply = document.getElementById("price-suggest-apply");
-        let suggested = null, touched = @(Model.Id is null ? "false" : "true");
-        price.addEventListener("input", e => { if (e.isTrusted) touched = true; });
-
-        function fill() {
-            if (suggested === null) return;
-            price.value = String(suggested.thousands);
-            price.dispatchEvent(new Event("input", { bubbles: true }));
-        }
+        if (!box || !label || !room || !start) return;
         async function refresh() {
-            if (!+room.value || !start.value) { box.hidden = true; return; }
+            if (!+room.value || !start.value) return;
             try {
                 const res = await fetch(box.dataset.url + "?" + new URLSearchParams({ roomId: room.value, start: start.value }));
                 const data = res.ok ? await res.json() : { found: false };
-                if (!data.found) { box.hidden = true; suggested = null; return; }
-                suggested = data; text.textContent = data.text; box.hidden = false;
-                if (!touched) fill();
-            } catch { box.hidden = true; }
+                if (data.found) label.textContent = data.text;
+            } catch { }
         }
-        apply.addEventListener("click", () => { touched = false; fill(); });
         [room, start].forEach(e => e.addEventListener("change", refresh));
         start.addEventListener("input", refresh);
         refresh();

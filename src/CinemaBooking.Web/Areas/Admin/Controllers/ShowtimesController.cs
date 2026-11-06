@@ -266,6 +266,9 @@ public class ShowtimesController : AdminControllerBase
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
         int copied = 0, skipped = 0;
 
+        var pricings = new Dictionary<int, TheaterPricing?>();
+        var roomInfo = await _db.Rooms.AsNoTracking().ToDictionaryAsync(r => r.Id, r => (r.TheaterId, r.RoomType), ct);
+
         foreach (var src in sources)
         {
             var candidate = new Showtime { MovieId = src.MovieId, StartTimeUtc = src.StartTimeUtc + shift };
@@ -279,7 +282,15 @@ public class ShowtimesController : AdminControllerBase
             }
 
             candidate.RoomId = src.RoomId;
+            // Giá theo bảng giá chi nhánh cho ngày/giờ mới (chiếu cuối tuần có thể khác ngày thường); chưa có bảng giá thì giữ giá cũ.
             candidate.BasePrice = src.BasePrice;
+            if (roomInfo.TryGetValue(src.RoomId, out var ri))
+            {
+                if (!pricings.TryGetValue(ri.TheaterId, out var pr))
+                    pricings[ri.TheaterId] = pr = await PricingLoader.LoadAsync(_db, ri.TheaterId, ct);
+                if (pr is not null)
+                    candidate.BasePrice = PricingRules.BasePrice(pr, ri.RoomType, _tz.ToLocalTime(candidate.StartTimeUtc));
+            }
             candidate.Language = src.Language;
             _db.Showtimes.Add(candidate);
             await _db.SaveChangesAsync(ct); // lưu từng suất để suất sau thấy suất trước khi kiểm tra trùng
@@ -574,7 +585,16 @@ public class ShowtimesController : AdminControllerBase
         showtime.RoomId = form.RoomId;
         showtime.StartTimeUtc = candidate.StartTimeUtc;
         showtime.EndTimeUtc = candidate.EndTimeUtc;
-        showtime.BasePrice = form.BasePrice;
+        // Giá do bảng giá chi nhánh quyết định (loại phòng, giờ, ngày), admin không nhập tay. Suất đã có vé giữ nguyên giá.
+        var hasBookings = showtime.Id != 0 && await _db.Bookings.AnyAsync(b => b.ShowtimeId == showtime.Id, ct);
+        if (!hasBookings)
+        {
+            var pricing = await PricingLoader.LoadAsync(_db, roomTheaterId!.Value, ct);
+            var roomType = await _db.Rooms.Where(r => r.Id == form.RoomId).Select(r => r.RoomType).FirstAsync(ct);
+            showtime.BasePrice = pricing is null
+                ? form.BasePrice
+                : PricingRules.BasePrice(pricing, roomType, form.StartTimeLocal!.Value);
+        }
         showtime.Language = form.Language;
         return true;
     }
