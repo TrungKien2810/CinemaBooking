@@ -49,6 +49,8 @@ public class CinemaDbContext : IdentityDbContext<ApplicationUser>
         b.Entity<Showtime>().Property(s => s.BasePrice).HasPrecision(18, 2);
         b.Entity<Booking>().Property(x => x.TotalAmount).HasPrecision(18, 2);
         b.Entity<BookingSeat>().Property(x => x.PriceAtBooking).HasPrecision(18, 2);
+        b.Entity<BookingSeat>().Property(x => x.DiscountAmount).HasPrecision(18, 2);
+        b.Entity<Promotion>().Property(p => p.FixedPrice).HasPrecision(18, 2);
         b.Entity<Payment>().Property(x => x.Amount).HasPrecision(18, 2);
         b.Entity<DailyRevenueReport>().Property(x => x.Revenue).HasPrecision(18, 2);
 

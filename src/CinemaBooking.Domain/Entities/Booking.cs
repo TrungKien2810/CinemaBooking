@@ -20,6 +20,12 @@ public class Booking
     public decimal TotalAmount { get; set; }
     public BookingStatus Status { get; set; } = BookingStatus.Pending;
 
+    /// <summary>Thời điểm nhân viên soát vé tại rạp; null = chưa vào rạp. Một vé chỉ soát được một lần.</summary>
+    public DateTime? CheckedInUtc { get; set; }
+
+    /// <summary>Email tài khoản nhân viên đã soát vé (để truy vết).</summary>
+    [MaxLength(256)] public string? CheckedInBy { get; set; }
+
     public ICollection<BookingSeat> Seats { get; set; } = new List<BookingSeat>();
     public Payment? Payment { get; set; }
 }
@@ -34,7 +40,14 @@ public class BookingSeat
     /// <summary>Lặp lại từ Booking để đặt unique index (ShowtimeId, SeatId) — chốt chặn chống đặt trùng ở tầng DB.</summary>
     public int ShowtimeId { get; set; }
     public Showtime? Showtime { get; set; }
+    /// <summary>Giá khách thực trả cho ghế này (đã trừ khuyến mãi).</summary>
     public decimal PriceAtBooking { get; set; }
+
+    /// <summary>Số tiền khuyến mãi đã trừ khỏi giá niêm yết của ghế này (0 nếu không có).</summary>
+    public decimal DiscountAmount { get; set; }
+
+    /// <summary>Tên khuyến mãi đã áp dụng, chụp lại lúc đặt (sửa/xóa khuyến mãi sau này không đổi vé cũ).</summary>
+    [MaxLength(150)] public string? PromotionTitle { get; set; }
 }
 
 public class Payment
