@@ -1,3 +1,4 @@
+using CinemaBooking.Web.Services;
 using CinemaBooking.Domain;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Infrastructure.Persistence;
@@ -16,15 +17,29 @@ public class TheatersController : AdminControllerBase
 
     public TheatersController(CinemaDbContext db) => _db = db;
 
-    public async Task<IActionResult> Index(CancellationToken ct)
+    /// <param name="q">Tìm theo tên, địa chỉ hoặc thành phố (không phân biệt dấu).</param>
+    /// <param name="status">"active" = đang hoạt động, "closed" = đã đóng; bỏ trống = tất cả.</param>
+    public async Task<IActionResult> Index(string? q, string? city, string? status, CancellationToken ct)
     {
-        var theaters = await _db.Theaters.AsNoTracking()
+        var all = await _db.Theaters.AsNoTracking()
             .OrderBy(t => t.City)
             .ThenBy(t => t.Name)
-            .Select(t => new TheaterListItem(t.Id, t.Name, t.City, t.Address, t.IsActive, t.Rooms.Count))
+            .Select(t => new TheaterListItem(t.Id, t.Name, t.City, t.Address, t.IsActive, t.Rooms.Count, t.Phone,
+                _db.Users.Where(u => u.TheaterId == t.Id).Select(u => u.Email).FirstOrDefault()))
             .ToListAsync(ct);
 
-        return View(theaters);
+        var cities = all.Select(t => t.City).Distinct().ToList();
+        var selectedCity = cities.FirstOrDefault(c => string.Equals(c, city?.Trim(), StringComparison.OrdinalIgnoreCase));
+        var keyword = string.IsNullOrWhiteSpace(q) ? null : q.Trim();
+        var statusFilter = status is "active" or "closed" ? status : null;
+
+        var items = all
+            .Where(t => selectedCity is null || t.City == selectedCity)
+            .Where(t => statusFilter is null || t.IsActive == (statusFilter == "active"))
+            .Where(t => TextSearch.Matches(keyword, t.Name, t.Address, t.City))
+            .ToList();
+
+        return View(new TheatersIndexViewModel(items, keyword, selectedCity, statusFilter, cities, all.Count));
     }
 
     [HttpGet]

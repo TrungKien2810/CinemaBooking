@@ -15,7 +15,8 @@ namespace CinemaBooking.Web.Areas.Admin.Controllers;
 public class BookingsController : AdminControllerBase
 {
     /// <summary>Số đơn tối đa trên một trang danh sách — đơn mới nhất trước, lọc để thu hẹp.</summary>
-    public const int MaxItems = 100;
+    /// <summary>Số đơn mỗi trang của danh sách đơn đặt vé.</summary>
+    public const int PageSize = 40;
 
     private readonly CinemaDbContext _db;
     private readonly DisplayTimeZone _tz;
@@ -28,8 +29,14 @@ public class BookingsController : AdminControllerBase
         _branches = branches;
     }
 
-    public async Task<IActionResult> Index(string? code, int? theaterId, BookingStatus? status, CancellationToken ct)
+    /// <param name="q">Tìm theo mã đơn, tên, email hoặc số điện thoại khách.</param>
+    /// <param name="code">Tên tham số cũ của <paramref name="q"/> (link đã lưu vẫn chạy).</param>
+    /// <param name="from">Đặt từ ngày (giờ rạp).</param>
+    /// <param name="to">Đặt đến ngày (giờ rạp).</param>
+    public async Task<IActionResult> Index(
+        string? q, string? code, int? theaterId, BookingStatus? status, DateOnly? from, DateOnly? to, int? page, CancellationToken ct)
     {
+        q = string.IsNullOrWhiteSpace(q) ? code : q;
         var scoped = await _branches.TheaterIdAsync(ct);
         if (scoped is not null)
         {
@@ -38,19 +45,27 @@ public class BookingsController : AdminControllerBase
         }
 
         var query = _db.Bookings.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(code))
+        if (!string.IsNullOrWhiteSpace(q))
         {
-            var normalized = code.Trim().ToUpperInvariant();
-            query = query.Where(b => b.BookingCode.Contains(normalized));
+            var term = q.Trim();
+            var upper = term.ToUpperInvariant();
+            query = query.Where(b => b.BookingCode.Contains(upper) || b.CustomerName.Contains(term)
+                                     || b.CustomerEmail.Contains(term) || (b.CustomerPhone != null && b.CustomerPhone.Contains(term)));
         }
+        if (from is not null && to is not null && from > to) (from, to) = (to, from);
+        if (from is not null) query = query.Where(b => b.BookingTimeUtc >= _tz.DayRangeUtc(from.Value).FromUtc);
+        if (to is not null) query = query.Where(b => b.BookingTimeUtc < _tz.DayRangeUtc(to.Value).ToUtc);
         if (theaterId is not null)
             query = query.Where(b => b.Showtime!.Room!.TheaterId == theaterId);
         if (status is not null)
             query = query.Where(b => b.Status == status);
 
+        var total = await query.CountAsync(ct);
+        var current = CinemaBooking.Web.Models.PageInfo.Clamp(page, total, PageSize);
         var rows = await query
             .OrderByDescending(b => b.BookingTimeUtc)
-            .Take(MaxItems)
+            .Skip((current - 1) * PageSize)
+            .Take(PageSize)
             .Select(b => new
             {
                 b.Id,
@@ -79,7 +94,8 @@ public class BookingsController : AdminControllerBase
             .Select(t => new SelectListItem(t.City + " · " + t.Name, t.Id.ToString()))
             .ToListAsync(ct);
 
-        return View(new BookingsIndexViewModel(code, theaterId, status, theaters, items, MaxItems));
+        return View(new BookingsIndexViewModel(
+            q?.Trim(), theaterId, status, theaters, items, PageSize, from, to, new CinemaBooking.Web.Models.PageInfo(current, PageSize, total)));
     }
 
     public async Task<IActionResult> Details(int id, CancellationToken ct)

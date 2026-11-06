@@ -6,7 +6,7 @@
     string GenreLink(string? genre) => Url.Action("Index", new { q = Model.Keyword, genre })!;
 
     // Poster cho banner hero: tối đa 6 phim đang chiếu.
-    var heroMovies = Model.Movies.Take(6).ToList();
+    var heroMovies = Model.NowShowing.Take(6).ToList();
 }
 
 <section class="home-hero">
@@ -67,8 +67,11 @@
 <div class="home-toolbar cb-card">
     <form method="get" asp-action="Index" class="movie-search" role="search">
         <label for="q" class="visually-hidden">Tìm phim</label>
-        <input id="q" name="q" type="search" value="@Model.Keyword" class="form-control"
+        <input id="q" name="q" type="search" value="@Model.Keyword" class="form-control" list="movie-suggestions"
                placeholder="Tìm theo tên phim hoặc thể loại…" maxlength="100" autocomplete="off" />
+        <datalist id="movie-suggestions">
+            @foreach (var s in Model.SuggestionOptions) { <option value="@s"></option> }
+        </datalist>
         @if (Model.Genre is not null)
         {
             <input type="hidden" name="genre" value="@Model.Genre" />
@@ -102,10 +105,10 @@
 
 <div class="section-head">
     <h2 class="section-title">Phim đang chiếu</h2>
-    <span class="cb-muted">@Model.Movies.Count phim</span>
+    <span class="cb-muted">@Model.NowShowing.Count phim</span>
 </div>
 
-@if (!Model.HasMovies)
+@if (!Model.HasMovies || Model.NowShowing.Count == 0 && Model.ComingSoon.Count == 0)
 {
     <div class="cb-card empty-state">
         <div class="error-icon" aria-hidden="true">🎬</div>
@@ -127,13 +130,29 @@
 else
 {
     <ul class="movie-list">
-        @foreach (var movie in Model.Movies)
+        @foreach (var movie in Model.NowShowing)
         {
             <li>
                 <partial name="_MovieCard" model="movie" />
             </li>
         }
     </ul>
+
+    @if (Model.ComingSoon.Count > 0)
+    {
+        <div class="section-head">
+            <h2 class="section-title">Sắp chiếu</h2>
+            <span class="cb-muted">@Model.ComingSoon.Count phim</span>
+        </div>
+        <ul class="movie-list">
+            @foreach (var movie in Model.ComingSoon)
+            {
+                <li>
+                    <partial name="_MovieCard" model="movie" />
+                </li>
+            }
+        </ul>
+    }
 }
 
 @section Scripts {

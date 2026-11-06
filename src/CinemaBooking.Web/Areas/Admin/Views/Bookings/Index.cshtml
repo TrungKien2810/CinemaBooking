@@ -7,14 +7,26 @@
 <div class="admin-page-head">
     <div>
         <h1 class="page-title">Đơn đặt vé</h1>
-        <p class="cb-muted page-subtitle">Tra cứu và lọc đơn theo mã, chi nhánh hoặc trạng thái.</p>
+        <p class="cb-muted page-subtitle">
+            Tra cứu theo mã đơn, tên, email hoặc số điện thoại; lọc theo chi nhánh, trạng thái và ngày đặt.
+            @if (Model.Paging is { } p0) { <text>· @p0.Total đơn</text> }
+        </p>
     </div>
 </div>
 
-<form method="get" class="row g-2 align-items-end mb-3">
+<form method="get" class="admin-filter-grid">
     <div class="col-auto">
-        <label for="code" class="form-label">Mã đơn</label>
-        <input id="code" name="code" value="@Model.Code" class="form-control" placeholder="CB-..." />
+        <label for="q" class="form-label">Tìm đơn</label>
+        <input id="q" name="q" value="@Model.Query" type="search" class="form-control" style="min-width:15rem"
+               placeholder="Mã đơn, tên, email, SĐT…" maxlength="100" />
+    </div>
+    <div class="col-auto">
+        <label for="from" class="form-label">Đặt từ ngày</label>
+        <input id="from" name="from" type="date" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control" />
+    </div>
+    <div class="col-auto">
+        <label for="to" class="form-label">Đến ngày</label>
+        <input id="to" name="to" type="date" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control" />
     </div>
     @if (!User.IsInRole(AppRoles.BranchAdmin))
     {
@@ -40,6 +52,7 @@
     </div>
     <div class="col-auto">
         <button type="submit" class="btn btn-outline-primary">Lọc</button>
+        @if (Model.IsFiltered) { <a asp-action="Index" class="btn btn-link">Xóa lọc</a> }
     </div>
 </form>
 
@@ -61,14 +74,14 @@
         @foreach (var b in Model.Items)
         {
             <tr>
-                <td><a asp-action="Details" asp-route-id="@b.Id">@b.BookingCode</a></td>
+                <td><a asp-action="Details" asp-route-id="@b.Id" class="code-link">@b.BookingCode</a></td>
                 <td>@b.CustomerName</td>
                 <td>@b.MovieTitle</td>
                 <td>@b.TheaterName</td>
                 <td>@b.ShowtimeStartLocal.ToString("dd/MM HH:mm")</td>
                 <td>@b.BookedLocal.ToString("dd/MM HH:mm")</td>
                 <td class="text-end">@b.SeatCount</td>
-                <td class="text-end">@b.TotalAmount.ToString("N0")</td>
+                <td class="text-end">@b.TotalAmount.Vnd()</td>
                 <td>@b.Status</td>
             </tr>
         }
@@ -79,7 +92,12 @@
     </tbody>
 </table></div>
 
-@if (Model.Items.Count == Model.MaxItems)
+@if (Model.Paging is { } paging)
 {
-    <p class="text-muted small">Chỉ hiện @Model.MaxItems đơn mới nhất — lọc theo mã hoặc chi nhánh để thu hẹp.</p>
+    var route = new Dictionary<string, object?>
+    {
+        ["q"] = Model.Query, ["theaterId"] = Model.TheaterId, ["status"] = Model.Status,
+        ["from"] = Model.From?.ToString("yyyy-MM-dd"), ["to"] = Model.To?.ToString("yyyy-MM-dd"),
+    };
+    @await Html.PartialAsync("_Pager", new PagerModel("Index", paging, route))
 }

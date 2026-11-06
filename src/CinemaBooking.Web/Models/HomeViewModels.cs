@@ -7,9 +7,22 @@ public sealed record HomeIndexViewModel(
     IReadOnlyList<MovieCardViewModel> Movies,
     string? Keyword = null,
     string? Genre = null,
-    IReadOnlyList<string>? Genres = null)
+    IReadOnlyList<string>? Genres = null,
+    DateOnly? Today = null,
+    IReadOnlyList<string>? Suggestions = null)
 {
+    /// <summary>Gợi ý cho ô tìm kiếm: tên phim và thể loại (hiện khi gõ).</summary>
+    public IReadOnlyList<string> SuggestionOptions => Suggestions ?? [];
+
     public bool HasMovies => Movies.Count > 0;
+
+    /// <summary>Phim đã khởi chiếu (hoặc không rõ hôm nay) — mục "Phim đang chiếu".</summary>
+    public IReadOnlyList<MovieCardViewModel> NowShowing =>
+        Today is null ? Movies : Movies.Where(m => m.ReleaseDate <= Today).ToList();
+
+    /// <summary>Phim có ngày khởi chiếu ở tương lai — mục "Sắp chiếu", chưa có suất để đặt.</summary>
+    public IReadOnlyList<MovieCardViewModel> ComingSoon =>
+        Today is null ? [] : Movies.Where(m => m.ReleaseDate > Today).OrderBy(m => m.ReleaseDate).ToList();
 
     public bool IsFiltered => Keyword is not null || Genre is not null;
 

@@ -8,8 +8,12 @@ public sealed record BookingAdminItem(
     DateTime ShowtimeStartLocal, DateTime BookedLocal, int SeatCount, decimal TotalAmount, BookingStatus Status);
 
 public sealed record BookingsIndexViewModel(
-    string? Code, int? TheaterId, BookingStatus? Status,
-    List<SelectListItem> Theaters, List<BookingAdminItem> Items, int MaxItems);
+    string? Query, int? TheaterId, BookingStatus? Status,
+    List<SelectListItem> Theaters, List<BookingAdminItem> Items, int PageSize,
+    DateOnly? From = null, DateOnly? To = null, CinemaBooking.Web.Models.PageInfo? Paging = null)
+{
+    public bool IsFiltered => !string.IsNullOrWhiteSpace(Query) || TheaterId is not null || Status is not null || From is not null || To is not null;
+}
 
 public sealed record BookingSeatLine(string Label, SeatType SeatType, decimal Price);
 
