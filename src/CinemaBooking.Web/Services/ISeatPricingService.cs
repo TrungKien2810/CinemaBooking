@@ -1,3 +1,4 @@
+using CinemaBooking.Domain;
 using CinemaBooking.Domain.Enums;
 
 namespace CinemaBooking.Web.Services;
@@ -9,6 +10,12 @@ namespace CinemaBooking.Web.Services;
 public interface ISeatPricingService
 {
     decimal PriceFor(decimal basePrice, SeatType type);
+
+    /// <summary>
+    /// Giá theo bảng giá chi nhánh: giá cơ bản của suất + phụ thu loại ghế (VIP, mỗi nửa ghế đôi). <paramref name="surcharges"/>
+    /// null (chi nhánh chưa có bảng giá) thì dùng công thức cũ nhân hệ số.
+    /// </summary>
+    decimal PriceFor(decimal basePrice, SeatType type, SeatSurcharges? surcharges);
 }
 
 /// <summary>
@@ -23,6 +30,9 @@ public sealed class SeatPricingService : ISeatPricingService
     /// <summary>Giá một NỬA ghế đôi so với vé thường. Muốn ghế đôi có phụ thu thì nâng số này
     /// (ví dụ 1.1 → cả cặp = 2,2 vé thường).</summary>
     public const decimal CoupleHalfMultiplier = 1m;
+
+    public decimal PriceFor(decimal basePrice, SeatType type, SeatSurcharges? surcharges) =>
+        surcharges is null ? PriceFor(basePrice, type) : basePrice + surcharges.For(type);
 
     public decimal PriceFor(decimal basePrice, SeatType type) => type switch
     {

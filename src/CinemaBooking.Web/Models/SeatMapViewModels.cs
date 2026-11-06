@@ -1,3 +1,4 @@
+using CinemaBooking.Domain;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
 using CinemaBooking.Web.Services;
@@ -28,7 +29,8 @@ public sealed record SeatMapViewModel(
         ISeatPricingService pricing,
         DateTime startLocal,
         int holdSeconds,
-        IReadOnlyList<Promotion>? promotions = null)
+        IReadOnlyList<Promotion>? promotions = null,
+        SeatSurcharges? surcharges = null)
     {
         var room = showtime.Room ?? throw new ArgumentException("Chưa nạp Room của suất chiếu.", nameof(showtime));
         var theater = room.Theater ?? throw new ArgumentException("Chưa nạp Room.Theater.", nameof(showtime));
@@ -56,7 +58,7 @@ public sealed record SeatMapViewModel(
                     // Ghép tại nửa bên trái; nửa bên phải là ô bị che, view bỏ qua khi render
                     // (vẫn giữ phần tử để số cột của hàng không đổi).
                     var pairQuote = PromotionRules.Quote(
-                        pricing.PriceFor(showtime.BasePrice, SeatType.Couple), SeatType.Couple, startLocal, promotions);
+                        pricing.PriceFor(showtime.BasePrice, SeatType.Couple, surcharges), SeatType.Couple, startLocal, promotions);
                     cells[col - 1] = partner.ColumnNumber > seat.ColumnNumber
                         ? new SeatCellViewModel(
                             [seat.Id, partner.Id],
@@ -72,7 +74,7 @@ public sealed record SeatMapViewModel(
 
                 // Ghế đôi lẻ loi (hàng lẻ ghế / khuyết ghế): không bán được vì không có cặp.
                 var quote = PromotionRules.Quote(
-                    pricing.PriceFor(showtime.BasePrice, seat.SeatType), seat.SeatType, startLocal, promotions);
+                    pricing.PriceFor(showtime.BasePrice, seat.SeatType, surcharges), seat.SeatType, startLocal, promotions);
                 cells[col - 1] = new SeatCellViewModel(
                     [seat.Id],
                     seat.Label,

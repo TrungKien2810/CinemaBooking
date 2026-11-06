@@ -20,6 +20,12 @@ public class Booking
     public decimal TotalAmount { get; set; }
     public BookingStatus Status { get; set; } = BookingStatus.Pending;
 
+    /// <summary>Mã giảm giá khách đã nhập (chụp lại lúc đặt); null = không dùng mã.</summary>
+    [MaxLength(30)] public string? VoucherCode { get; set; }
+
+    /// <summary>Tổng tiền mã giảm giá đã trừ (đã phân bổ vào giá từng ghế nên doanh thu khớp).</summary>
+    public decimal VoucherDiscount { get; set; }
+
     /// <summary>Thời điểm nhân viên soát vé tại rạp; null = chưa vào rạp. Một vé chỉ soát được một lần.</summary>
     public DateTime? CheckedInUtc { get; set; }
 
@@ -45,6 +51,9 @@ public class BookingSeat
 
     /// <summary>Số tiền khuyến mãi đã trừ khỏi giá niêm yết của ghế này (0 nếu không có).</summary>
     public decimal DiscountAmount { get; set; }
+
+    /// <summary>Phần mã giảm giá của đơn được chia cho ghế này (đã trừ vào <see cref="PriceAtBooking"/>).</summary>
+    public decimal VoucherShare { get; set; }
 
     /// <summary>Tên khuyến mãi đã áp dụng, chụp lại lúc đặt (sửa/xóa khuyến mãi sau này không đổi vé cũ).</summary>
     [MaxLength(150)] public string? PromotionTitle { get; set; }

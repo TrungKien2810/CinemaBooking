@@ -134,3 +134,79 @@ public class Promotion
 
     public bool AppliesAutomatically => DiscountPercent is > 0 || FixedPrice is > 0;
 }
+
+/// <summary>
+/// Bảng giá vé của MỘT chi nhánh. Giá vé không phụ thuộc phim mà phụ thuộc <b>loại phòng</b> (2D/3D/IMAX/4DX),
+/// <b>loại ghế</b> (thường/VIP/đôi), <b>khung giờ</b> (từ giờ cao điểm trở đi) và <b>ngày</b> (cuối tuần) — cách các
+/// cụm rạp lớn niêm yết giá. Giá một ghế = giá phòng + phụ thu ghế + phụ thu giờ cao điểm + phụ thu cuối tuần.
+/// </summary>
+public class TheaterPricing
+{
+    public int Id { get; set; }
+    public int TheaterId { get; set; }
+    public Theater? Theater { get; set; }
+
+    /// <summary>Giá ghế THƯỜNG, ngày thường, trước giờ cao điểm, theo loại phòng.</summary>
+    public decimal StandardPrice { get; set; } = 80_000m;
+    public decimal ThreeDPrice { get; set; } = 100_000m;
+    public decimal ImaxPrice { get; set; } = 130_000m;
+    public decimal FourDxPrice { get; set; } = 150_000m;
+
+    /// <summary>Phụ thu cho MỖI ghế VIP / mỗi nửa ghế đôi (cả cặp = 2 ghế).</summary>
+    public decimal VipSurcharge { get; set; } = 20_000m;
+    public decimal CoupleSurcharge { get; set; } = 10_000m;
+
+    /// <summary>Phụ thu cho suất bắt đầu từ <see cref="PeakFromHour"/> trở đi.</summary>
+    public decimal PeakSurcharge { get; set; } = 20_000m;
+    public int PeakFromHour { get; set; } = 17;
+
+    /// <summary>Phụ thu cuối tuần (Thứ 6 từ giờ cao điểm, Thứ 7, Chủ nhật).</summary>
+    public decimal WeekendSurcharge { get; set; } = 10_000m;
+
+    public DateTime? UpdatedUtc { get; set; }
+
+    public decimal RoomPrice(RoomType type) => type switch
+    {
+        RoomType.ThreeD => ThreeDPrice,
+        RoomType.Imax => ImaxPrice,
+        RoomType.FourDx => FourDxPrice,
+        _ => StandardPrice,
+    };
+}
+
+/// <summary>
+/// Mã giảm giá khách nhập ở bước thanh toán. Khác <see cref="Promotion"/> (tự áp theo suất/ghế): mã chỉ có hiệu lực khi
+/// khách nhập đúng, tính trên TỔNG tiền vé (sau khuyến mãi), có thể giới hạn chi nhánh, đơn tối thiểu, số lần dùng.
+/// </summary>
+public class Voucher
+{
+    public int Id { get; set; }
+
+    /// <summary>Mã khách gõ (không phân biệt hoa thường, lưu IN HOA), duy nhất toàn hệ thống.</summary>
+    [Required, MaxLength(30)] public string Code { get; set; } = string.Empty;
+    [Required, MaxLength(150)] public string Title { get; set; } = string.Empty;
+    [MaxLength(500)] public string? Description { get; set; }
+
+    /// <summary>null = dùng được ở mọi chi nhánh; có giá trị = chỉ chi nhánh đó.</summary>
+    public int? TheaterId { get; set; }
+    public Theater? Theater { get; set; }
+
+    /// <summary>Giảm theo phần trăm tổng tiền (1–100). Loại trừ với <see cref="DiscountAmount"/>.</summary>
+    public int? DiscountPercent { get; set; }
+    /// <summary>Giảm thẳng một số tiền cố định trên tổng đơn.</summary>
+    public decimal? DiscountAmount { get; set; }
+    /// <summary>Trần số tiền giảm khi giảm theo phần trăm.</summary>
+    public decimal? MaxDiscountAmount { get; set; }
+    /// <summary>Tổng tiền vé tối thiểu để được dùng mã.</summary>
+    public decimal? MinOrderAmount { get; set; }
+
+    public DateOnly StartDate { get; set; }
+    public DateOnly EndDate { get; set; }
+
+    /// <summary>Tổng số lần được dùng (đơn Pending/Confirmed); null = không giới hạn.</summary>
+    public int? UsageLimit { get; set; }
+    /// <summary>Số lần mỗi khách (tài khoản hoặc email) được dùng; 0 = không giới hạn.</summary>
+    public int PerCustomerLimit { get; set; } = 1;
+
+    public bool IsActive { get; set; } = true;
+}
