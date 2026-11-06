@@ -5,7 +5,7 @@ using CinemaBooking.Domain.Enums;
 namespace CinemaBooking.Web.Models;
 
 /// <summary>Một dòng của bảng giá: kịch bản (ngày + khung giờ) và giá từng loại ghế.</summary>
-public sealed record PriceScenarioRow(string Label, decimal Standard, decimal Vip, decimal CoupleSeat)
+public sealed record PriceScenarioRow(string Label, string Detail, bool IsPeak, bool IsWeekend, decimal Standard, decimal Vip, decimal CoupleSeat)
 {
     /// <summary>Ghế đôi bán theo cặp: giá một cặp = 2 ghế.</summary>
     public decimal CouplePair => CoupleSeat * 2;
@@ -26,17 +26,17 @@ public sealed record PriceMatrixModel(TheaterPricing Pricing, IReadOnlyList<Room
         var monday = new DateTime(2026, 11, 2);
         var saturday = new DateTime(2026, 11, 7);
 
-        var scenarios = new (string Label, DateTime Start)[]
+        var scenarios = new (string Label, string Detail, bool Peak, bool Weekend, DateTime Start)[]
         {
-            ($"Thứ 2 – Thứ 5 · trước {peak}:00", monday.AddHours(dayHour)),
-            ($"Thứ 2 – Thứ 5 · từ {peak}:00", monday.AddHours(peak)),
-            ($"Thứ 6 (từ {peak}:00), Thứ 7, Chủ nhật · trước {peak}:00", saturday.AddHours(dayHour)),
-            ($"Thứ 6 (từ {peak}:00), Thứ 7, Chủ nhật · từ {peak}:00", saturday.AddHours(peak)),
+            ("Ngày thường", $"Thứ 2 – Thứ 6, suất bắt đầu trước {peak}:00", false, false, monday.AddHours(dayHour)),
+            ("Ngày thường · giờ cao điểm", $"Thứ 2 – Thứ 5, suất bắt đầu từ {peak}:00", true, false, monday.AddHours(peak)),
+            ("Cuối tuần", $"Thứ 7, Chủ nhật, suất bắt đầu trước {peak}:00", false, true, saturday.AddHours(dayHour)),
+            ("Cuối tuần · giờ cao điểm", $"Thứ 6 từ {peak}:00, Thứ 7, Chủ nhật, suất bắt đầu từ {peak}:00", true, true, saturday.AddHours(peak)),
         };
 
         var tables = roomTypes.Distinct().OrderBy(t => t).Select(t => new RoomPriceTable(t,
             scenarios.Select(s => new PriceScenarioRow(
-                s.Label,
+                s.Label, s.Detail, s.Peak, s.Weekend,
                 PricingRules.SeatPrice(p, t, SeatType.Standard, s.Start),
                 PricingRules.SeatPrice(p, t, SeatType.Vip, s.Start),
                 PricingRules.SeatPrice(p, t, SeatType.Couple, s.Start))).ToList())).ToList();

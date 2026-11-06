@@ -1,5 +1,9 @@
 @model PriceMatrixModel
 @* Bảng giá vé theo loại phòng → khung giờ/ngày → loại ghế. Giá/ghế; ghế đôi bán theo cặp (2 ghế). *@
+<div class="price-legend" role="note">
+    <span><span class="badge price-tag price-tag-peak">🔥 Cao điểm</span> suất bắt đầu từ <strong>@Model.Pricing.PeakFromHour:00</strong> trở đi, phụ thu <strong>@Model.Pricing.PeakSurcharge.Vnd()</strong>/ghế</span>
+    <span><span class="badge price-tag price-tag-weekend">Cuối tuần</span> Thứ 7, Chủ nhật và Thứ 6 từ @Model.Pricing.PeakFromHour:00, phụ thu <strong>@Model.Pricing.WeekendSurcharge.Vnd()</strong>/ghế</span>
+</div>
 <div class="price-tables">
     @foreach (var table in Model.Tables)
     {
@@ -22,8 +26,13 @@
                     <tbody>
                         @foreach (var row in table.Rows)
                         {
-                            <tr>
-                                <th scope="row" class="fw-semibold">@row.Label</th>
+                            <tr class="@(row.IsPeak ? "price-row-peak" : null) @(row.IsWeekend ? "price-row-weekend" : null)">
+                                <th scope="row">
+                                    <span class="fw-semibold">@row.Label</span>
+                                    @if (row.IsPeak) { <span class="badge price-tag price-tag-peak">🔥 Cao điểm</span> }
+                                    @if (row.IsWeekend) { <span class="badge price-tag price-tag-weekend">Cuối tuần</span> }
+                                    <span class="d-block small fw-normal cb-muted">@row.Detail</span>
+                                </th>
                                 <td class="text-end">@row.Standard.Vnd()</td>
                                 <td class="text-end">@row.Vip.Vnd()</td>
                                 <td class="text-end">@row.CoupleSeat.Vnd()</td>
