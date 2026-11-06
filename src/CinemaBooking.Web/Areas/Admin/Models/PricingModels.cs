@@ -43,6 +43,10 @@ public sealed class PricingFormModel
     [Range(0, 1_000_000, ErrorMessage = SurchargeRange)]
     public decimal WeekendSurcharge { get => _weekend; set => _weekend = MoneyFormat.ExpandThousands(value); }
 
+    /// <summary>Công tắc: bỏ chọn = không thu phụ thu (lưu 0).</summary>
+    public bool PeakEnabled { get; set; } = true;
+    public bool WeekendEnabled { get; set; } = true;
+
     [Display(Name = "Giờ cao điểm bắt đầu từ")]
     [Range(10, 23, ErrorMessage = "Giờ cao điểm từ 10 đến 23 giờ.")]
     public int PeakFromHour { get; set; } = 17;
@@ -58,13 +62,14 @@ public sealed class PricingFormModel
         StandardPrice = p.StandardPrice, ThreeDPrice = p.ThreeDPrice, ImaxPrice = p.ImaxPrice, FourDxPrice = p.FourDxPrice,
         VipSurcharge = p.VipSurcharge, CoupleSurcharge = p.CoupleSurcharge,
         PeakSurcharge = p.PeakSurcharge, WeekendSurcharge = p.WeekendSurcharge, PeakFromHour = p.PeakFromHour,
+        PeakEnabled = p.PeakSurcharge > 0m, WeekendEnabled = p.WeekendSurcharge > 0m,
     };
 
     public void ApplyTo(TheaterPricing p)
     {
         p.StandardPrice = StandardPrice; p.ThreeDPrice = ThreeDPrice; p.ImaxPrice = ImaxPrice; p.FourDxPrice = FourDxPrice;
         p.VipSurcharge = VipSurcharge; p.CoupleSurcharge = CoupleSurcharge;
-        p.PeakSurcharge = PeakSurcharge; p.WeekendSurcharge = WeekendSurcharge; p.PeakFromHour = PeakFromHour;
+        p.PeakSurcharge = PeakEnabled ? PeakSurcharge : 0m; p.WeekendSurcharge = WeekendEnabled ? WeekendSurcharge : 0m; p.PeakFromHour = PeakFromHour;
     }
 
     public TheaterPricing ToPricing() { var p = new TheaterPricing { TheaterId = TheaterId }; ApplyTo(p); return p; }

@@ -687,3 +687,34 @@ public class DemoPricingSeedTests
         }
     }
 }
+
+public class SurchargeSwitchTests
+{
+    private static CinemaBooking.Domain.Entities.TheaterPricing Pricing(decimal peak, decimal weekend)
+    {
+        var p = CinemaBooking.Domain.PricingRules.DefaultFor(1, 90_000m);
+        p.PeakSurcharge = peak; p.WeekendSurcharge = weekend;
+        return p;
+    }
+
+    [Theory]
+    [InlineData(25_000, 10_000, 4)]
+    [InlineData(25_000, 0, 2)]
+    [InlineData(0, 10_000, 2)]
+    [InlineData(0, 0, 1)]
+    public void Matrix_only_lists_rows_that_still_differ(int peak, int weekend, int rows)
+    {
+        var m = CinemaBooking.Web.Models.PriceMatrixModel.Build(Pricing(peak, weekend), [CinemaBooking.Domain.Enums.RoomType.Standard]);
+        Assert.Equal(rows, m.Tables[0].Rows.Count);
+    }
+
+    [Fact]
+    public void Turning_both_off_gives_one_flat_price()
+    {
+        var p = Pricing(0, 0);
+        var sat = new DateTime(2026, 11, 7, 20, 0, 0);
+        var mon = new DateTime(2026, 11, 2, 10, 0, 0);
+        Assert.Equal(CinemaBooking.Domain.PricingRules.BasePrice(p, CinemaBooking.Domain.Enums.RoomType.Standard, mon),
+                     CinemaBooking.Domain.PricingRules.BasePrice(p, CinemaBooking.Domain.Enums.RoomType.Standard, sat));
+    }
+}
