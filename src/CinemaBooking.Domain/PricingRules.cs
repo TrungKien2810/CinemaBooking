@@ -21,6 +21,12 @@ public sealed record SeatSurcharges(decimal Vip, decimal Couple)
 /// </summary>
 public static class PricingRules
 {
+    /// <summary>Chi nhánh có thu phụ thu giờ cao điểm không (phụ thu 0 = tắt).</summary>
+    public static bool PeakEnabled(TheaterPricing p) => p.PeakSurcharge > 0m;
+
+    /// <summary>Chi nhánh có thu phụ thu cuối tuần không (phụ thu 0 = tắt).</summary>
+    public static bool WeekendEnabled(TheaterPricing p) => p.WeekendSurcharge > 0m;
+
     /// <summary>Suất bắt đầu từ giờ cao điểm trở đi.</summary>
     public static bool IsPeak(TheaterPricing p, DateTime startLocal) => startLocal.Hour >= p.PeakFromHour;
 

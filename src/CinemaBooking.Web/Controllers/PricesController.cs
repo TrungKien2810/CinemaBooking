@@ -42,9 +42,15 @@ public class PricesController : Controller
         foreach (var t in theaters)
         {
             if (!pricings.TryGetValue(t.Id, out var p)) continue;
-            var rows = PriceMatrixModel.Build(p, [RoomType.Standard]).Tables[0].Rows;
+            // Phòng 2D: thứ Hai trước giờ cao điểm, thứ Hai từ giờ cao điểm, thứ Bảy từ giờ cao điểm (độc lập với việc bảng chi tiết ẩn dòng nào).
+            var monday = new DateTime(2026, 11, 2);
+            var saturday = new DateTime(2026, 11, 7);
             compare.Add(new BranchPriceSummary(
-                t.Id, t.Name, t.City, rows[0].Standard, rows[1].Standard, rows[3].Standard, p.VipSurcharge, t.Id == chosen?.Id));
+                t.Id, t.Name, t.City,
+                PricingRules.BasePrice(p, RoomType.Standard, monday.AddHours(Math.Max(0, p.PeakFromHour - 1))),
+                PricingRules.BasePrice(p, RoomType.Standard, monday.AddHours(p.PeakFromHour)),
+                PricingRules.BasePrice(p, RoomType.Standard, saturday.AddHours(p.PeakFromHour)),
+                p.VipSurcharge, t.Id == chosen?.Id));
         }
 
         PriceMatrixModel? matrix = null;

@@ -26,13 +26,32 @@ public sealed record PriceMatrixModel(TheaterPricing Pricing, IReadOnlyList<Room
         var monday = new DateTime(2026, 11, 2);
         var saturday = new DateTime(2026, 11, 7);
 
-        var scenarios = new (string Label, string Detail, bool Peak, bool Weekend, DateTime Start)[]
+        // Phụ thu = 0 nghĩa là chi nhánh tắt khoản đó: bảng chỉ còn các dòng thật sự khác giá nhau.
+        var peakOn = PricingRules.PeakEnabled(p);
+        var weekendOn = PricingRules.WeekendEnabled(p);
+        var list = new List<(string Label, string Detail, bool Peak, bool Weekend, DateTime Start)>();
+        if (peakOn && weekendOn)
         {
-            ("Ngày thường", $"Thứ 2 – Thứ 6, suất bắt đầu trước {peak}:00", false, false, monday.AddHours(dayHour)),
-            ("Ngày thường · giờ cao điểm", $"Thứ 2 – Thứ 5, suất bắt đầu từ {peak}:00", true, false, monday.AddHours(peak)),
-            ("Cuối tuần", $"Thứ 7, Chủ nhật, suất bắt đầu trước {peak}:00", false, true, saturday.AddHours(dayHour)),
-            ("Cuối tuần · giờ cao điểm", $"Thứ 6 từ {peak}:00, Thứ 7, Chủ nhật, suất bắt đầu từ {peak}:00", true, true, saturday.AddHours(peak)),
-        };
+            list.Add(("Ngày thường", $"Thứ 2 – Thứ 6, suất bắt đầu trước {peak}:00", false, false, monday.AddHours(dayHour)));
+            list.Add(("Ngày thường · giờ cao điểm", $"Thứ 2 – Thứ 5, suất bắt đầu từ {peak}:00", true, false, monday.AddHours(peak)));
+            list.Add(("Cuối tuần", $"Thứ 7, Chủ nhật, suất bắt đầu trước {peak}:00", false, true, saturday.AddHours(dayHour)));
+            list.Add(("Cuối tuần · giờ cao điểm", $"Thứ 6 từ {peak}:00, Thứ 7, Chủ nhật, suất bắt đầu từ {peak}:00", true, true, saturday.AddHours(peak)));
+        }
+        else if (peakOn)
+        {
+            list.Add(("Giờ thường", $"Mọi ngày, suất bắt đầu trước {peak}:00", false, false, monday.AddHours(dayHour)));
+            list.Add(("Giờ cao điểm", $"Mọi ngày, suất bắt đầu từ {peak}:00", true, false, monday.AddHours(peak)));
+        }
+        else if (weekendOn)
+        {
+            list.Add(("Ngày thường", $"Thứ 2 – Thứ 5, và Thứ 6 trước {peak}:00", false, false, monday.AddHours(dayHour)));
+            list.Add(("Cuối tuần", $"Thứ 6 từ {peak}:00, Thứ 7, Chủ nhật", false, true, saturday.AddHours(peak)));
+        }
+        else
+        {
+            list.Add(("Mọi ngày, mọi giờ chiếu", "Không có phụ thu giờ cao điểm hay cuối tuần", false, false, monday.AddHours(dayHour)));
+        }
+        var scenarios = list;
 
         var tables = roomTypes.Distinct().OrderBy(t => t).Select(t => new RoomPriceTable(t,
             scenarios.Select(s => new PriceScenarioRow(

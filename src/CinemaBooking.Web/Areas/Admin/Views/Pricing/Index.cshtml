@@ -48,8 +48,22 @@
 
             <h2 class="h6 fw-bold mt-2">Phụ thu thời gian</h2>
             <div class="row">
-                <div class="col-6 mb-3">@await Html.PartialAsync("_PriceInput", new PriceInputModel("PeakSurcharge", "Giờ cao điểm", Model.PeakSurcharge))</div>
-                <div class="col-6 mb-3">@await Html.PartialAsync("_PriceInput", new PriceInputModel("WeekendSurcharge", "Cuối tuần", Model.WeekendSurcharge))</div>
+                <div class="col-6 mb-3" data-surcharge-group>
+                    <div class="form-check form-switch mb-2">
+                        <input type="checkbox" class="form-check-input" id="PeakEnabled" name="PeakEnabled" value="true" checked="@Model.PeakEnabled" data-surcharge-toggle />
+                        <input type="hidden" name="PeakEnabled" value="false" />
+                        <label class="form-check-label" for="PeakEnabled">Thu phụ thu giờ cao điểm</label>
+                    </div>
+                    @await Html.PartialAsync("_PriceInput", new PriceInputModel("PeakSurcharge", "Phụ thu giờ cao điểm", Model.PeakSurcharge))
+                </div>
+                <div class="col-6 mb-3" data-surcharge-group>
+                    <div class="form-check form-switch mb-2">
+                        <input type="checkbox" class="form-check-input" id="WeekendEnabled" name="WeekendEnabled" value="true" checked="@Model.WeekendEnabled" data-surcharge-toggle />
+                        <input type="hidden" name="WeekendEnabled" value="false" />
+                        <label class="form-check-label" for="WeekendEnabled">Thu phụ thu cuối tuần</label>
+                    </div>
+                    @await Html.PartialAsync("_PriceInput", new PriceInputModel("WeekendSurcharge", "Phụ thu cuối tuần", Model.WeekendSurcharge))
+                </div>
                 <div class="col-6 mb-3">
                     <label asp-for="PeakFromHour" class="form-label"></label>
                     <div class="input-group">
@@ -59,7 +73,7 @@
                     <span asp-validation-for="PeakFromHour" class="text-danger small"></span>
                 </div>
             </div>
-            <p class="form-text">Cuối tuần = Thứ 7, Chủ nhật và Thứ 6 từ giờ cao điểm. Giá một ghế = giá phòng + phụ thu ghế + phụ thu giờ + phụ thu cuối tuần.</p>
+            <p class="form-text">Tắt công tắc nếu chi nhánh không tăng giá giờ cao điểm hoặc cuối tuần. Cuối tuần = Thứ 7, Chủ nhật và Thứ 6 từ giờ cao điểm. Giá một ghế = giá phòng + phụ thu ghế + phụ thu giờ + phụ thu cuối tuần.</p>
 
             <div class="admin-form-actions">
                 <button type="submit" class="btn btn-primary">Lưu bảng giá</button>
@@ -83,4 +97,11 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        document.querySelectorAll("[data-surcharge-group]").forEach(g => {
+            const toggle = g.querySelector("[data-surcharge-toggle]"), input = g.querySelector("input[type=text], input[inputmode]");
+            const sync = () => { g.querySelectorAll(".input-group input").forEach(i => i.disabled = !toggle.checked); g.classList.toggle("opacity-50", !toggle.checked); };
+            toggle.addEventListener("change", sync); sync();
+        });
+    </script>
 }
