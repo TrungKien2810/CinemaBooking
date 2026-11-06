@@ -27,14 +27,43 @@
     </div>
     <div class="mb-3">
         <label asp-for="Address" class="form-label"></label>
-        <input asp-for="Address" class="form-control" />
+        <input asp-for="Address" class="form-control" placeholder="Số nhà, đường, phường/xã, quận/huyện" />
         <span asp-validation-for="Address" class="text-danger small"></span>
+    </div>
+    <div class="row">
+        <div class="col-sm-6 mb-3">
+            <label asp-for="Phone" class="form-label"></label>
+            <input asp-for="Phone" class="form-control" inputmode="tel" placeholder="1900 6017" />
+            <span asp-validation-for="Phone" class="text-danger small"></span>
+        </div>
+        <div class="col-sm-6 mb-3">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" type="email" class="form-control" placeholder="chinhanh@cinesmart.vn" />
+            <span asp-validation-for="Email" class="text-danger small"></span>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label asp-for="OpeningHours" class="form-label"></label>
+        <input asp-for="OpeningHours" class="form-control" placeholder="08:00 – 23:30 hằng ngày" />
+        <span asp-validation-for="OpeningHours" class="text-danger small"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" rows="3" class="form-control" placeholder="Vị trí, tiện ích, bãi đỗ xe..."></textarea>
+        <span asp-validation-for="Description" class="text-danger small"></span>
     </div>
     <div class="form-check mb-1">
         <input asp-for="IsActive" class="form-check-input" />
         <label asp-for="IsActive" class="form-check-label"></label>
     </div>
     <p class="form-text mt-0">Chi nhánh đã đóng vẫn giữ phòng, suất chiếu và vé cũ để tra cứu.</p>
+    @if (Model.Id is null)
+    {
+        <div class="alert alert-info small">
+            Sau khi tạo chi nhánh: thêm <strong>phòng chiếu</strong> (mục Phòng chiếu) và tạo <strong>tài khoản quản lý chi nhánh</strong>
+            ở mục <a asp-controller="Users" asp-action="Create">Tài khoản</a> để chi nhánh bắt đầu xếp lịch được.
+        </div>
+    }
 
     <div class="admin-form-actions">
         <button type="submit" class="btn btn-primary">Lưu</button>

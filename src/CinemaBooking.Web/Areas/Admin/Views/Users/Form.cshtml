@@ -1,0 +1,60 @@
+@model UserFormModel
+@{
+    var isEdit = Model.Id is not null;
+    ViewData["Title"] = isEdit ? "Sửa tài khoản" : "Tạo tài khoản quản lý chi nhánh";
+    var needsTheater = !isEdit || Model.Role == AppRoles.BranchAdmin;
+}
+
+<div class="admin-page-head">
+    <div>
+        <a asp-action="Index" class="back-link">← Danh sách tài khoản</a>
+        <h1 class="page-title">@ViewData["Title"]</h1>
+    </div>
+</div>
+
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form admin-form-narrow">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" type="email" class="form-control" readonly="@isEdit" autocomplete="off" placeholder="quanly@cinesmart.vn" />
+        <span asp-validation-for="Email" class="text-danger small"></span>
+        @if (isEdit) { <div class="form-text">Email đăng nhập không đổi được. Vai trò: <strong>@Model.Role</strong>.</div> }
+    </div>
+    <div class="mb-3">
+        <label asp-for="FullName" class="form-label"></label>
+        <input asp-for="FullName" class="form-control" />
+        <span asp-validation-for="FullName" class="text-danger small"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="PhoneNumber" class="form-label"></label>
+        <input asp-for="PhoneNumber" class="form-control" inputmode="tel" />
+        <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+    </div>
+    @if (needsTheater)
+    {
+        <div class="mb-3">
+            <label asp-for="TheaterId" class="form-label"></label>
+            <select asp-for="TheaterId" asp-items="Model.Theaters" class="form-select">
+                <option value="">— Chọn chi nhánh —</option>
+            </select>
+            <span asp-validation-for="TheaterId" class="text-danger small"></span>
+            <div class="form-text">Tài khoản chỉ thấy và quản lý phòng, suất chiếu, khuyến mãi, đơn và doanh thu của chi nhánh này.</div>
+        </div>
+    }
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label">@(isEdit ? "Đặt lại mật khẩu (để trống nếu không đổi)" : "Mật khẩu")</label>
+        <input asp-for="Password" type="password" class="form-control" autocomplete="new-password" />
+        <span asp-validation-for="Password" class="text-danger small"></span>
+        <div class="form-text">Tối thiểu 8 ký tự, có chữ hoa, chữ thường và số.</div>
+    </div>
+
+    <div class="admin-form-actions">
+        <button type="submit" class="btn btn-primary">Lưu</button>
+        <a asp-action="Index" class="btn btn-link">Hủy</a>
+    </div>
+</form>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

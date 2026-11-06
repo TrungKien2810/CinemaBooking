@@ -48,7 +48,7 @@
             <tr>
                 <td>@s.Label</td>
                 <td>@s.SeatType</td>
-                <td class="text-end">@s.Price.ToString("N0")</td>
+                <td class="text-end">@s.Price.Vnd()</td>
             </tr>
         }
         @if (Model.Seats.Count == 0)
@@ -59,7 +59,7 @@
     <tfoot>
         <tr>
             <th colspan="2">Tổng tiền</th>
-            <th class="text-end">@Model.TotalAmount.ToString("N0")</th>
+            <th class="text-end">@Model.TotalAmount.Vnd()</th>
         </tr>
     </tfoot>
 </table></div>

@@ -9,9 +9,17 @@ public class HomeController : Controller
 {
     private readonly IMovieCatalogService _catalog;
     private readonly ILogger<HomeController> _logger;
+    private readonly TimeProvider _clock;
+    private readonly DisplayTimeZone _tz;
 
-    public HomeController(IMovieCatalogService catalog, ILogger<HomeController> logger)
+    public HomeController(
+        IMovieCatalogService catalog,
+        ILogger<HomeController> logger,
+        TimeProvider? clock = null,
+        Microsoft.Extensions.Options.IOptions<DisplayTimeZone>? tz = null)
     {
+        _clock = clock ?? TimeProvider.System;
+        _tz = tz?.Value ?? new DisplayTimeZone();
         _catalog = catalog;
         _logger = logger;
     }
@@ -31,9 +39,16 @@ public class HomeController : Controller
             _logger.LogWarning("Không có phim nào đang hoạt động — kiểm tra seed catalog đã chạy chưa.");
         }
 
+        // Gợi ý luôn lấy từ TOÀN BỘ phim, kể cả khi đang lọc (nếu không thì gõ xong một từ là hết gợi ý khác).
+        var everything = query == MovieSearchQuery.All ? movies : await _catalog.SearchAsync(MovieSearchQuery.All, ct);
+        var suggestions = everything.Select(m => m.Title).Concat(genres)
+            .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(s => s, StringComparer.CurrentCultureIgnoreCase).ToList();
+
         return View(new HomeIndexViewModel(
             movies.Select(MovieCardViewModel.FromListItem).ToList(),
-            query.Keyword, query.Genre, genres));
+            query.Keyword, query.Genre, genres,
+            Today: _tz.ToLocalDate(_clock.GetUtcNow().UtcDateTime),
+            Suggestions: suggestions));
     }
 
     public IActionResult Privacy()

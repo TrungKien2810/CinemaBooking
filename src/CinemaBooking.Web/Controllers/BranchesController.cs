@@ -18,14 +18,25 @@ public class BranchesController : Controller
         _clock = clock;
     }
 
-    public async Task<IActionResult> Index(CancellationToken ct)
+    /// <param name="q">Tìm theo tên chi nhánh, địa chỉ hoặc thành phố (không phân biệt dấu).</param>
+    /// <param name="city">Lọc đúng một thành phố.</param>
+    public async Task<IActionResult> Index(string? q, string? city, CancellationToken ct)
     {
+        var all = await _branches.GetActiveAsync(ct);
+        var cities = all.Select(b => b.City).Distinct().ToList();
+
+        // city đến từ URL: chỉ nhận thành phố có thật.
+        var selectedCity = cities.FirstOrDefault(c => string.Equals(c, city?.Trim(), StringComparison.OrdinalIgnoreCase));
+        var keyword = string.IsNullOrWhiteSpace(q) ? null : q.Trim();
+
         // Service đã sắp theo thành phố rồi tên; GroupBy giữ nguyên thứ tự đó.
-        var byCity = (await _branches.GetActiveAsync(ct))
+        var byCity = all
+            .Where(b => selectedCity is null || b.City == selectedCity)
+            .Where(b => TextSearch.Matches(keyword, b.Name, b.Address, b.City))
             .GroupBy(b => b.City)
             .ToList();
 
-        return View(byCity);
+        return View(new BranchSearchViewModel(byCity, keyword, selectedCity, cities, all.Count));
     }
 
     /// <summary>Phim, phòng chiếu và khuyến mãi của riêng một chi nhánh.</summary>

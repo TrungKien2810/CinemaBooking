@@ -1,23 +1,51 @@
-@model List<TheaterListItem>
+@using CinemaBooking.Web.Services
+@model TheatersIndexViewModel
 @{
     ViewData["Title"] = "Quản lý chi nhánh";
     // Controller đã sắp theo City rồi Name, GroupBy giữ nguyên thứ tự đó.
-    var byCity = Model.GroupBy(t => t.City).ToList();
+    var byCity = Model.Items.GroupBy(t => t.City).ToList();
 }
 
 <div class="admin-page-head">
     <div>
         <h1 class="page-title">Chi nhánh</h1>
-        <p class="cb-muted page-subtitle">@Model.Count chi nhánh · @byCity.Count thành phố · @Model.Sum(t => t.RoomCount) phòng chiếu</p>
+        <p class="cb-muted page-subtitle">@Model.Items.Count@(Model.IsFiltered ? " / " + Model.Total : "") chi nhánh · @byCity.Count thành phố · @Model.Items.Sum(t => t.RoomCount) phòng chiếu</p>
     </div>
     <a asp-action="Create" class="btn btn-primary">Thêm chi nhánh</a>
 </div>
 
-@if (Model.Count == 0)
+<form method="get" class="cb-card admin-filter" role="search">
+    <input name="q" value="@Model.Query" type="search" class="form-control" style="max-width:18rem" maxlength="100"
+           placeholder="Tìm tên, địa chỉ, thành phố…" aria-label="Tìm chi nhánh" />
+    <select name="city" class="form-select" style="max-width:14rem" aria-label="Thành phố">
+        <option value="">Mọi thành phố</option>
+        @foreach (var c in Model.Cities)
+        {
+            <option value="@c" selected="@(c == Model.City)">@c</option>
+        }
+    </select>
+    <select name="status" class="form-select" style="max-width:12rem" aria-label="Trạng thái">
+        <option value="">Mọi trạng thái</option>
+        <option value="active" selected="@(Model.Status == "active")">Đang hoạt động</option>
+        <option value="closed" selected="@(Model.Status == "closed")">Đã đóng</option>
+    </select>
+    <button type="submit" class="btn btn-outline-primary">Lọc</button>
+    @if (Model.IsFiltered) { <a asp-action="Index" class="btn btn-link">Xóa lọc</a> }
+</form>
+
+@if (Model.Items.Count == 0)
 {
     <div class="cb-card empty-state">
-        <p class="empty-title">Chưa có chi nhánh nào</p>
-        <p class="cb-muted">Thêm chi nhánh, rồi thêm phòng chiếu cho chi nhánh đó.</p>
+        @if (Model.IsFiltered)
+        {
+            <p class="empty-title">Không có chi nhánh khớp bộ lọc</p>
+            <p class="cb-muted">Thử từ khóa khác (không cần gõ dấu) hoặc <a asp-action="Index">xóa bộ lọc</a>.</p>
+        }
+        else
+        {
+            <p class="empty-title">Chưa có chi nhánh nào</p>
+            <p class="cb-muted">Thêm chi nhánh, rồi thêm phòng chiếu cho chi nhánh đó.</p>
+        }
     </div>
 }
 else
@@ -28,7 +56,7 @@ else
                 <tr>
                     <th>Chi nhánh</th>
                     <th>Địa chỉ</th>
-                    <th class="text-end">Phòng</th>
+                    <th>Quản lý</th>
                     <th>Trạng thái</th>
                     <th></th>
                 </tr>
@@ -42,9 +70,12 @@ else
                     @foreach (var t in city)
                     {
                         <tr class="@(t.IsActive ? null : "is-inactive")">
-                            <td class="fw-semibold">@t.Name</td>
-                            <td>@(t.Address ?? "—")</td>
-                            <td class="text-end">@t.RoomCount</td>
+                            <td>
+                                <div class="fw-semibold text-nowrap">@t.Name</div>
+                                <div class="small cb-muted text-nowrap">@t.RoomCount phòng@(string.IsNullOrWhiteSpace(t.Phone) ? "" : " · " + t.Phone)</div>
+                            </td>
+                            <td class="cell-wide">@(t.Address ?? "—")</td>
+                            <td class="small cell-ellipsis" title="@t.Manager">@(t.Manager is null ? "Chưa có" : t.Manager.Split("@")[0])</td>
                             <td>
                                 <span class="status-badge @(t.IsActive ? "is-on" : "is-off")">@(t.IsActive ? "Đang hoạt động" : "Đã đóng")</span>
                             </td>
