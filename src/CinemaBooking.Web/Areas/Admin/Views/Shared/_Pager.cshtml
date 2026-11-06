@@ -1,0 +1,34 @@
+@model PagerModel
+@* Thanh phân trang: giữ nguyên mọi bộ lọc trên URL (Model.Route), chỉ đổi "page". *@
+@if (Model.Info.TotalPages > 1)
+{
+    var info = Model.Info;
+    string PageUrl(int p)
+    {
+        var route = new RouteValueDictionary(Model.Route) { ["page"] = p };
+        return Url.Action(Model.Action, route)!;
+    }
+    var start = Math.Max(1, info.Page - 2);
+    var end = Math.Min(info.TotalPages, info.Page + 2);
+    <nav class="pager" aria-label="Phân trang">
+        <span class="pager-info cb-muted">@info.From–@info.To / @info.Total</span>
+        <ul class="pager-list">
+            <li><a class="pager-link @(info.HasPrevious ? null : "disabled")" href="@(info.HasPrevious ? PageUrl(info.Page - 1) : "#")" aria-label="Trang trước">‹</a></li>
+            @if (start > 1)
+            {
+                <li><a class="pager-link" href="@PageUrl(1)">1</a></li>
+                @if (start > 2) { <li><span class="pager-gap">…</span></li> }
+            }
+            @for (var p = start; p <= end; p++)
+            {
+                <li><a class="pager-link @(p == info.Page ? "active" : null)" href="@PageUrl(p)" aria-current="@(p == info.Page ? "page" : null)">@p</a></li>
+            }
+            @if (end < info.TotalPages)
+            {
+                @if (end < info.TotalPages - 1) { <li><span class="pager-gap">…</span></li> }
+                <li><a class="pager-link" href="@PageUrl(info.TotalPages)">@info.TotalPages</a></li>
+            }
+            <li><a class="pager-link @(info.HasNext ? null : "disabled")" href="@(info.HasNext ? PageUrl(info.Page + 1) : "#")" aria-label="Trang sau">›</a></li>
+        </ul>
+    </nav>
+}
