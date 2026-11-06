@@ -57,6 +57,43 @@ public sealed class InMemorySeatLockManager : ISeatLockManager
         return released;
     }
 
+    /// <summary>Chủ "vắng mặt" của một ghế vẫn còn hạn giữ: chưa có connection nào nhận lại.</summary>
+    private static string Away(string userRef) => "away:" + userRef;
+
+    public IReadOnlyCollection<SeatKey> DetachFor(string connectionId)
+    {
+        var released = new List<SeatKey>();
+        foreach (var kv in _locks)
+        {
+            var l = kv.Value;
+            if (l.ConnectionId != connectionId) continue;
+            if (l.UserRef is null)
+            {
+                if (Release(kv.Key, connectionId)) released.Add(kv.Key);
+            }
+            else
+            {
+                _locks.TryUpdate(kv.Key, l with { ConnectionId = Away(l.UserRef) }, l);
+            }
+        }
+        return released;
+    }
+
+    public IReadOnlyCollection<SeatLock> Adopt(int showtimeId, string userRef, string connectionId)
+    {
+        var now = DateTime.UtcNow;
+        var away = Away(userRef);
+        var adopted = new List<SeatLock>();
+        foreach (var kv in _locks)
+        {
+            var l = kv.Value;
+            if (l.Key.ShowtimeId != showtimeId || l.ConnectionId != away || l.ExpiresUtc <= now) continue;
+            var updated = l with { ConnectionId = connectionId };
+            if (_locks.TryUpdate(kv.Key, updated, l)) adopted.Add(updated);
+        }
+        return adopted;
+    }
+
     public bool TransferOwnership(IReadOnlyCollection<SeatKey> keys, string fromOwnerId, string toOwnerId, TimeSpan ttl)
     {
         var now = DateTime.UtcNow;
