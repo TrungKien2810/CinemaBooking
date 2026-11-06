@@ -44,6 +44,32 @@
                 <input asp-for="PosterUrl" class="form-control" placeholder="https://… hoặc /img/…" data-poster-input />
                 <span asp-validation-for="PosterUrl" class="text-danger small"></span>
             </div>
+            <div class="row">
+                <div class="col-sm-5 mb-3">
+                    <label asp-for="AgeRating" class="form-label"></label>
+                    <select asp-for="AgeRating" class="form-select">
+                        @foreach (var r in Enum.GetValues<CinemaBooking.Domain.Enums.AgeRating>())
+                        {
+                            <option value="@r" selected="@(r == Model.AgeRating)">@r.Describe()</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-7 mb-3">
+                    <label asp-for="Director" class="form-label"></label>
+                    <input asp-for="Director" class="form-control" />
+                    <span asp-validation-for="Director" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Cast" class="form-label"></label>
+                <input asp-for="Cast" class="form-control" placeholder="Diễn viên A, Diễn viên B" />
+                <span asp-validation-for="Cast" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="TrailerUrl" class="form-label"></label>
+                <input asp-for="TrailerUrl" class="form-control" placeholder="https://www.youtube.com/watch?v=…" />
+                <span asp-validation-for="TrailerUrl" class="text-danger small"></span>
+            </div>
             <div class="mb-3">
                 <label asp-for="Description" class="form-label"></label>
                 <textarea asp-for="Description" rows="5" class="form-control"></textarea>

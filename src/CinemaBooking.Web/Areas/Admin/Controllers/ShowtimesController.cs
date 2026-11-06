@@ -38,7 +38,14 @@ public class ShowtimesController : AdminControllerBase
         _branches = branches;
     }
 
-    public async Task<IActionResult> Index(int? theaterId, DateOnly? date, CancellationToken ct)
+    /// <summary>Giữ chữ ký cũ (theaterId, date) cho code gọi trực tiếp; MVC chỉ nhận action có đủ bộ lọc bên dưới.</summary>
+    [NonAction]
+    public Task<IActionResult> Index(int? theaterId, DateOnly? date, CancellationToken ct) =>
+        Index(theaterId, date, null, null, ct);
+
+    /// <param name="movieId">Chỉ hiện suất của phim này.</param>
+    /// <param name="status">"active" = đang bán, "hidden" = đang ẩn.</param>
+    public async Task<IActionResult> Index(int? theaterId, DateOnly? date, int? movieId, string? status, CancellationToken ct)
     {
         var day = date ?? _tz.ToLocalDate(_clock.GetUtcNow().UtcDateTime);
         var (fromUtc, toUtc) = _tz.DayRangeUtc(day);
@@ -55,6 +62,9 @@ public class ShowtimesController : AdminControllerBase
             .Where(s => s.StartTimeUtc >= fromUtc && s.StartTimeUtc < toUtc);
         if (theaterId is not null)
             query = query.Where(s => s.Room!.TheaterId == theaterId);
+        if (movieId is not null) query = query.Where(s => s.MovieId == movieId);
+        var statusFilter = status is "active" or "hidden" ? status : null;
+        if (statusFilter is not null) query = query.Where(s => s.IsActive == (statusFilter == "active"));
 
         var rows = await query
             .OrderBy(s => s.Room!.Theater!.Name)
@@ -69,13 +79,15 @@ public class ShowtimesController : AdminControllerBase
                 s.EndTimeUtc,
                 s.BasePrice,
                 s.IsActive,
+                s.Language,
+                s.Room.RoomType,
                 Bookings = _db.Bookings.Count(b => b.ShowtimeId == s.Id),
             })
             .ToListAsync(ct);
 
         var items = rows.Select(r => new ShowtimeAdminItem(
                 r.Id, r.Title, r.TheaterName, r.RoomName,
-                _tz.ToLocalTime(r.StartTimeUtc), _tz.ToLocalTime(r.EndTimeUtc), r.BasePrice, r.Bookings, r.IsActive))
+                _tz.ToLocalTime(r.StartTimeUtc), _tz.ToLocalTime(r.EndTimeUtc), r.BasePrice, r.Bookings, r.IsActive, r.Language, r.RoomType))
             .ToList();
 
         var theatersQuery = _db.Theaters.AsNoTracking().Where(t => t.IsActive);
@@ -86,7 +98,12 @@ public class ShowtimesController : AdminControllerBase
             .Select(t => new SelectListItem(t.City + " · " + t.Name, t.Id.ToString()))
             .ToListAsync(ct);
 
-        return View(new ShowtimesIndexViewModel(day, theaterId, theaters, items));
+        var movieOptions = await _db.Movies.AsNoTracking().Where(m => m.IsActive)
+            .OrderBy(m => m.Title)
+            .Select(m => new SelectListItem(m.Title, m.Id.ToString()))
+            .ToListAsync(ct);
+
+        return View(new ShowtimesIndexViewModel(day, theaterId, theaters, items, movieId, statusFilter, movieOptions));
     }
 
     /// <summary>
@@ -164,6 +181,7 @@ public class ShowtimesController : AdminControllerBase
             RoomId = showtime.RoomId,
             StartTimeLocal = _tz.ToLocalTime(showtime.StartTimeUtc),
             BasePrice = showtime.BasePrice,
+            Language = showtime.Language,
         };
         await FillOptionsAsync(form, ct);
         return View("Form", form);
@@ -261,6 +279,7 @@ public class ShowtimesController : AdminControllerBase
 
             candidate.RoomId = src.RoomId;
             candidate.BasePrice = src.BasePrice;
+            candidate.Language = src.Language;
             _db.Showtimes.Add(candidate);
             await _db.SaveChangesAsync(ct); // lưu từng suất để suất sau thấy suất trước khi kiểm tra trùng
             copied++;
@@ -269,6 +288,181 @@ public class ShowtimesController : AdminControllerBase
         TempData["Message"] = $"Đã sao chép {copied} suất sang {targetDate:dd/MM/yyyy}" +
                               (skipped > 0 ? $"; bỏ qua {skipped} suất (trùng lịch hoặc đã qua giờ)." : ".");
         return back;
+    }
+
+    // ── Gợi ý lịch chiếu cả ngày ───────────────────────────────────────────────
+
+    /// <summary>
+    /// Trang gợi ý lịch cả ngày cho một chi nhánh: chọn ngày + phim + giá, xem trước lịch do
+    /// <see cref="ShowtimeAutoPlanner"/> đề xuất (phim hot → phòng lớn, giờ vàng), rồi mới áp dụng.
+    /// BranchAdmin chỉ làm được cho chi nhánh mình.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> AutoPlan(int? theaterId, DateOnly? date, CancellationToken ct)
+    {
+        var resolved = await ResolveTheaterAsync(theaterId, ct);
+        if (resolved.Result is not null) return resolved.Result;
+
+        var today = _tz.ToLocalDate(_clock.GetUtcNow().UtcDateTime);
+        var form = new AutoPlanForm { TheaterId = resolved.TheaterId, Date = date ?? today.AddDays(1) };
+        form.BasePrice = await SuggestBasePriceAsync(resolved.TheaterId!.Value, form.BasePrice, ct);
+
+        return View(await BuildViewAsync(form, preview: false, ct));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AutoPlan(AutoPlanForm form, string? command, CancellationToken ct)
+    {
+        var resolved = await ResolveTheaterAsync(form.TheaterId, ct);
+        if (resolved.Result is not null) return resolved.Result;
+        form.TheaterId = resolved.TheaterId;
+
+        var today = _tz.ToLocalDate(_clock.GetUtcNow().UtcDateTime);
+        if (form.Date is { } d && d < today)
+            ModelState.AddModelError(nameof(form.Date), "Không xếp lịch cho ngày đã qua.");
+
+        if (!ModelState.IsValid) return View(await BuildViewAsync(form, preview: false, ct));
+
+        if (command != "apply") return View(await BuildViewAsync(form, preview: true, ct));
+
+        // Áp dụng: dựng lại lịch ở server từ chính các tham số (không tin bảng xem trước phía client),
+        // rồi kiểm trùng từng suất lần nữa trước khi ghi — lịch có thể đã đổi giữa lúc xem và lúc bấm.
+        var (_, _, plan) = await BuildPlanAsync(form, ct);
+        int created = 0, skipped = 0;
+        var offset = _tz.Offset;
+
+        foreach (var p in plan)
+        {
+            var showtime = new Showtime
+            {
+                MovieId = p.MovieId,
+                RoomId = p.RoomId,
+                StartTimeUtc = DateTime.SpecifyKind(p.StartLocal - offset, DateTimeKind.Utc),
+                BasePrice = form.BasePrice + (p.Prime ? form.PrimeSurcharge : 0m),
+                Language = form.Language,
+            };
+            await _scheduler.PrepareAsync(showtime, ct);
+
+            if (await FindOverlapAsync(p.RoomId, showtime.StartTimeUtc, showtime.EndTimeUtc, null, ct) is not null)
+            {
+                skipped++;
+                continue;
+            }
+
+            _db.Showtimes.Add(showtime);
+            await _db.SaveChangesAsync(ct);
+            created++;
+        }
+
+        TempData["Message"] = $"Đã tạo {created} suất chiếu cho ngày {form.Date:dd/MM/yyyy}" +
+                              (skipped > 0 ? $"; bỏ qua {skipped} suất vì trùng lịch." : ".");
+        return RedirectToAction(nameof(Index), new { date = form.Date!.Value.ToString("yyyy-MM-dd"), theaterId = form.TheaterId });
+    }
+
+    /// <summary>Chi nhánh cần xếp lịch: BranchAdmin → chi nhánh mình; Admin → chọn và phải có quyền. Result khác null = trả luôn.</summary>
+    private async Task<(int? TheaterId, IActionResult? Result)> ResolveTheaterAsync(int? theaterId, CancellationToken ct)
+    {
+        var scoped = await _branches.TheaterIdAsync(ct);
+        if (scoped is not null)
+        {
+            if (theaterId is not null && theaterId != scoped) return (null, Forbid());
+            theaterId = scoped;
+        }
+        else
+        {
+            theaterId ??= await _db.Theaters.AsNoTracking().Where(t => t.IsActive)
+                .OrderBy(t => t.City).ThenBy(t => t.Name).Select(t => (int?)t.Id).FirstOrDefaultAsync(ct);
+            if (theaterId is null) return (null, RedirectToAction("Index", "Theaters"));
+            if (!await _branches.CanAccessTheaterAsync(theaterId.Value, ct)) return (null, Forbid());
+        }
+
+        var active = await _db.Theaters.AsNoTracking().AnyAsync(t => t.Id == theaterId && t.IsActive, ct);
+        return active ? (theaterId, null) : (null, NotFound());
+    }
+
+    /// <summary>Giá gợi ý ban đầu: giá thấp nhất trong các suất tương lai của chi nhánh (làm tròn 1.000đ); chưa có suất nào thì giữ mặc định.</summary>
+    private async Task<decimal> SuggestBasePriceAsync(int theaterId, decimal fallback, CancellationToken ct)
+    {
+        var nowUtc = _clock.GetUtcNow().UtcDateTime;
+        var prices = await _db.Showtimes.AsNoTracking()
+            .Where(s => s.Room!.TheaterId == theaterId && s.StartTimeUtc > nowUtc)
+            .Select(s => s.BasePrice).ToListAsync(ct);
+        return prices.Count == 0 ? fallback : Math.Round(prices.Min() / 1000m) * 1000m;
+    }
+
+    private async Task<(List<PlanRoom> Rooms, List<PlanMovie> Movies, IReadOnlyList<PlannedShowtime> Plan)> BuildPlanAsync(
+        AutoPlanForm form, CancellationToken ct)
+    {
+        var day = form.Date!.Value;
+        var rooms = await _db.Rooms.AsNoTracking()
+            .Where(r => r.TheaterId == form.TheaterId)
+            .Select(r => new PlanRoom(r.Id, r.RoomName, r.Seats.Count))
+            .ToListAsync(ct);
+
+        var movies = await _db.Movies.AsNoTracking()
+            .Where(m => m.IsActive && form.MovieIds.Contains(m.Id) && m.ReleaseDate <= day)
+            .Select(m => new PlanMovie(m.Id, m.Title, m.DurationMinutes, m.ReleaseDate))
+            .ToListAsync(ct);
+
+        // Suất có sẵn chạm vào ngày này (kể cả suất qua đêm từ hôm trước) — để không xếp đè.
+        var (fromUtc, toUtc) = _tz.DayRangeUtc(day);
+        var roomIds = rooms.Select(r => r.RoomId).ToList();
+        var busy = await _db.Showtimes.AsNoTracking()
+            .Where(s => roomIds.Contains(s.RoomId) && s.EndTimeUtc > fromUtc - CleaningBuffer && s.StartTimeUtc < toUtc + CleaningBuffer)
+            .Select(s => new { s.RoomId, s.StartTimeUtc, s.EndTimeUtc })
+            .ToListAsync(ct);
+        var existing = busy
+            .GroupBy(b => b.RoomId)
+            .ToDictionary(
+                g => g.Key,
+                g => (IReadOnlyList<(DateTime StartLocal, DateTime EndLocal)>)g
+                    .Select(b => (_tz.ToLocalTime(b.StartTimeUtc), _tz.ToLocalTime(b.EndTimeUtc))).ToList());
+
+        var nowLocal = _tz.ToLocalTime(_clock.GetUtcNow().UtcDateTime);
+        var plan = ShowtimeAutoPlanner.Plan(
+            day, rooms, movies, existing, CleaningBuffer,
+            notBeforeLocal: day == DateOnly.FromDateTime(nowLocal) ? nowLocal : null);
+
+        return (rooms, movies, plan);
+    }
+
+    private async Task<AutoPlanViewModel> BuildViewAsync(AutoPlanForm form, bool preview, CancellationToken ct)
+    {
+        var day = form.Date ?? _tz.ToLocalDate(_clock.GetUtcNow().UtcDateTime);
+        var theater = await _db.Theaters.AsNoTracking().FirstAsync(t => t.Id == form.TheaterId, ct);
+
+        var scoped = await _branches.TheaterIdAsync(ct);
+        var theaters = await _db.Theaters.AsNoTracking()
+            .Where(t => t.IsActive && (scoped == null || t.Id == scoped))
+            .OrderBy(t => t.City).ThenBy(t => t.Name)
+            .Select(t => new AutoPlanTheaterOption(t.Id, t.Name + " · " + t.City))
+            .ToListAsync(ct);
+
+        var all = await _db.Movies.AsNoTracking()
+            .Where(m => m.IsActive && m.ReleaseDate <= day)
+            .OrderByDescending(m => m.ReleaseDate).ThenBy(m => m.Title)
+            .ToListAsync(ct);
+
+        // Lần đầu mở trang: chọn sẵn tất cả phim đang chiếu.
+        if (form.MovieIds.Count == 0 && !preview) form.MovieIds = all.Select(m => m.Id).ToList();
+        var chosen = form.MovieIds.ToHashSet();
+        var movies = all
+            .Select(m => new AutoPlanMovieOption(m.Id, m.Title, m.DurationMinutes, m.ReleaseDate, chosen.Contains(m.Id)))
+            .ToList();
+
+        IReadOnlyList<PlannedShowtime>? proposed = null;
+        var summaries = new List<AutoPlanRoomSummary>();
+        if (preview)
+        {
+            var (rooms, _, plan) = await BuildPlanAsync(form, ct);
+            proposed = plan;
+            summaries = rooms.OrderByDescending(r => r.Capacity)
+                .Select(r => new AutoPlanRoomSummary(r.Name, r.Capacity, plan.Count(p => p.RoomId == r.RoomId)))
+                .ToList();
+        }
+
+        return new AutoPlanViewModel(form, theater.Name, theaters, movies, proposed, summaries, form.PrimeSurcharge);
     }
 
     /// <summary>Chỉ xóa được suất chưa có đơn nào — đơn đã đặt phải giữ lại để tra cứu và thống kê.</summary>
@@ -346,6 +540,7 @@ public class ShowtimesController : AdminControllerBase
         showtime.StartTimeUtc = candidate.StartTimeUtc;
         showtime.EndTimeUtc = candidate.EndTimeUtc;
         showtime.BasePrice = form.BasePrice;
+        showtime.Language = form.Language;
         return true;
     }
 

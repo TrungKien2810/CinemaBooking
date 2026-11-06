@@ -12,4 +12,6 @@ public sealed record ShowtimeListItem(
     string City,
     DateTime StartTimeUtc,
     DateTime EndTimeUtc,
-    decimal BasePrice);
+    decimal BasePrice,
+    CinemaBooking.Domain.Enums.RoomType RoomType = CinemaBooking.Domain.Enums.RoomType.Standard,
+    CinemaBooking.Domain.Enums.ShowLanguage Language = CinemaBooking.Domain.Enums.ShowLanguage.Original);

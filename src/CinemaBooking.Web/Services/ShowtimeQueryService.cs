@@ -40,7 +40,9 @@ public sealed class ShowtimeQueryService : IShowtimeQueryService
                 s.Room!.Theater!.City,
                 s.StartTimeUtc,
                 s.EndTimeUtc,
-                s.BasePrice))
+                s.BasePrice,
+                s.Room!.RoomType,
+                s.Language))
             .ToListAsync(ct);
     }
 
