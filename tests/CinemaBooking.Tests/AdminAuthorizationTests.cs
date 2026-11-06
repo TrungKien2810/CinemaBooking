@@ -34,6 +34,7 @@ public class AdminAuthorizationTests
         Assert.Contains(typeof(MoviesController), AdminControllers);
         Assert.Contains(typeof(TheatersController), AdminControllers);
         Assert.Contains(typeof(RoomsController), AdminControllers);
+        Assert.Contains(typeof(UsersController), AdminControllers);
         Assert.Contains(typeof(ShowtimesController), AdminControllers);
         Assert.Contains(typeof(BookingsController), AdminControllers);
         Assert.Contains(typeof(RevenueController), AdminControllers);
@@ -79,9 +80,9 @@ public class AdminAuthorizationTests
     /// </summary>
     [Theory]
     [MemberData(nameof(AdminControllerTypes))]
-    public async Task Branch_admin_is_blocked_only_from_movies_and_theaters(Type controller)
+    public async Task Branch_admin_is_blocked_only_from_movies_theaters_and_users(Type controller)
     {
-        var expected = controller != typeof(MoviesController) && controller != typeof(TheatersController);
+        var expected = controller != typeof(MoviesController) && controller != typeof(TheatersController) && controller != typeof(UsersController);
         Assert.Equal(expected, await IsAuthorizedAsync(controller, SignedIn(AppRoles.BranchAdmin)));
     }
 
