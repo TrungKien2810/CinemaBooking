@@ -1,0 +1,126 @@
+@model VoucherFormModel
+@{
+    var isEdit = Model.Id is not null;
+    ViewData["Title"] = isEdit ? "Sửa mã giảm giá" : "Thêm mã giảm giá";
+}
+
+<div class="admin-page-head">
+    <div>
+        <a asp-action="Index" class="back-link">← Mã giảm giá</a>
+        <h1 class="page-title">@ViewData["Title"]</h1>
+    </div>
+</div>
+
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form admin-form-narrow">
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <div class="row">
+        <div class="col-sm-5 mb-3">
+            <label asp-for="Code" class="form-label"></label>
+            <input asp-for="Code" class="form-control text-uppercase" maxlength="30" autocomplete="off" placeholder="CINE10" />
+            <span asp-validation-for="Code" class="text-danger small"></span>
+            <div class="form-text">Khách gõ mã này (không phân biệt hoa/thường).</div>
+        </div>
+        <div class="col-sm-7 mb-3">
+            <label asp-for="Title" class="form-label"></label>
+            <input asp-for="Title" class="form-control" placeholder="Giảm 10% mọi suất" />
+            <span asp-validation-for="Title" class="text-danger small"></span>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" rows="2" class="form-control"></textarea>
+        <span asp-validation-for="Description" class="text-danger small"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="TheaterId" class="form-label"></label>
+        @if (Model.TheaterLocked)
+        {
+            <input type="hidden" asp-for="TheaterId" />
+            <div class="form-control-plaintext fw-semibold">@(Model.Theaters.FirstOrDefault()?.Text)</div>
+            <div class="form-text">Quản lý chi nhánh chỉ tạo mã cho chi nhánh của mình.</div>
+        }
+        else
+        {
+            <select asp-for="TheaterId" asp-items="Model.Theaters" class="form-select">
+                <option value="">Mọi chi nhánh</option>
+            </select>
+            <span asp-validation-for="TheaterId" class="text-danger small"></span>
+        }
+    </div>
+
+    <fieldset class="promo-rule mb-3">
+        <legend class="form-label fs-6 fw-semibold">Ưu đãi</legend>
+        <div class="mb-2">
+            <select asp-for="DiscountKind" class="form-select" id="voucher-kind">
+                <option value="percent">Giảm theo phần trăm tổng tiền</option>
+                <option value="amount">Giảm số tiền cố định</option>
+            </select>
+        </div>
+        <div class="row">
+            <div class="col-sm-6 mb-3" data-kind="percent">
+                <label asp-for="DiscountPercent" class="form-label"></label>
+                <input asp-for="DiscountPercent" type="number" min="1" max="100" class="form-control" placeholder="10" />
+                <span asp-validation-for="DiscountPercent" class="text-danger small"></span>
+            </div>
+            <div class="col-sm-6 mb-3" data-kind="percent">
+                @await Html.PartialAsync("_PriceInput", new PriceInputModel("MaxDiscountAmount", "Giảm tối đa (để trống = không giới hạn)", Model.MaxDiscountAmount))
+            </div>
+            <div class="col-sm-6 mb-3" data-kind="amount">
+                @await Html.PartialAsync("_PriceInput", new PriceInputModel("DiscountAmount", "Số tiền giảm", Model.DiscountAmount))
+            </div>
+        </div>
+        <div class="mb-1">
+            @await Html.PartialAsync("_PriceInput", new PriceInputModel("MinOrderAmount", "Đơn tối thiểu (để trống = không yêu cầu)", Model.MinOrderAmount))
+        </div>
+    </fieldset>
+
+    <div class="row">
+        <div class="col-sm-6 mb-3">
+            <label asp-for="StartDate" class="form-label"></label>
+            <input asp-for="StartDate" type="date" class="form-control" />
+            <span asp-validation-for="StartDate" class="text-danger small"></span>
+        </div>
+        <div class="col-sm-6 mb-3">
+            <label asp-for="EndDate" class="form-label"></label>
+            <input asp-for="EndDate" type="date" class="form-control" />
+            <span asp-validation-for="EndDate" class="text-danger small"></span>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-6 mb-3">
+            <label asp-for="UsageLimit" class="form-label"></label>
+            <input asp-for="UsageLimit" type="number" min="1" class="form-control" />
+            <span asp-validation-for="UsageLimit" class="text-danger small"></span>
+        </div>
+        <div class="col-sm-6 mb-3">
+            <label asp-for="PerCustomerLimit" class="form-label"></label>
+            <input asp-for="PerCustomerLimit" type="number" min="0" class="form-control" />
+            <span asp-validation-for="PerCustomerLimit" class="text-danger small"></span>
+        </div>
+    </div>
+    <div class="form-check mb-3">
+        <input asp-for="IsActive" class="form-check-input" />
+        <label asp-for="IsActive" class="form-check-label"></label>
+    </div>
+    <p class="form-text">Mã tính trên tổng tiền vé <strong>sau khuyến mãi</strong>; đơn sau giảm luôn còn ít nhất 1.000đ. Lượt dùng chỉ tính đơn đang giữ chỗ hoặc đã thanh toán.</p>
+
+    <div class="admin-form-actions">
+        <button type="submit" class="btn btn-primary">Lưu</button>
+        <a asp-action="Index" class="btn btn-link">Hủy</a>
+    </div>
+</form>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        (function () {
+            var kind = document.getElementById('voucher-kind');
+            function refresh() {
+                document.querySelectorAll('[data-kind]').forEach(function (el) { el.hidden = el.dataset.kind !== kind.value; });
+            }
+            kind.addEventListener('change', refresh);
+            refresh();
+        })();
+    </script>
+}

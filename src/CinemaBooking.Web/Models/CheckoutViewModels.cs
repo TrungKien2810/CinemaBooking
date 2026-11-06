@@ -13,7 +13,16 @@ public sealed record CheckoutViewModel(
     DateTime StartLocal,
     IReadOnlyList<CheckoutSeatItem> Seats,
     decimal TotalAmount,
-    string? FormatLabel = null);
+    string? FormatLabel = null,
+    string? VoucherCode = null,
+    decimal VoucherDiscount = 0m,
+    string? VoucherTitle = null)
+{
+    /// <summary>Tổng tiền ghế trước khi trừ mã giảm giá.</summary>
+    public decimal Subtotal => TotalAmount + VoucherDiscount;
+
+    public bool HasVoucher => VoucherCode is not null && VoucherDiscount > 0;
+}
 
 /// <summary><see cref="Price"/> là giá khách trả (đã trừ khuyến mãi); <see cref="ListPrice"/> là giá niêm yết.</summary>
 public sealed record CheckoutSeatItem(

@@ -18,7 +18,7 @@ public static class BookingTicketMapper
             .Where(bs => bs.Seat is not null)
             .OrderBy(bs => bs.Seat!.RowNumber).ThenBy(bs => bs.Seat!.ColumnNumber)
             .Select(bs => new BookingSeatLine(
-                bs.Seat!.Label, bs.Seat.SeatType, bs.PriceAtBooking, bs.DiscountAmount, bs.PromotionTitle))
+                bs.Seat!.Label, bs.Seat.SeatType, bs.PriceAtBooking, bs.DiscountAmount, bs.PromotionTitle, bs.VoucherShare))
             .ToList();
 
         return new BookingTicketViewModel(
@@ -41,6 +41,8 @@ public static class BookingTicketMapper
             IsMasked: !revealPersonalData,
             CheckedInLocal: booking.CheckedInUtc is { } at ? tz.ToLocalTime(at) : null,
             CheckedInBy: revealPersonalData ? booking.CheckedInBy : null,
-            FormatLabel: showtime.Room is { } room ? room.RoomType.Label() + " · " + showtime.Language.Label() : null);
+            FormatLabel: showtime.Room is { } room ? room.RoomType.Label() + " · " + showtime.Language.Label() : null,
+            VoucherCode: booking.VoucherCode,
+            VoucherDiscount: booking.VoucherDiscount);
     }
 }

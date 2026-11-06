@@ -117,6 +117,8 @@ public class BookingsController : AdminControllerBase
                 x.Showtime.Room.TheaterId,
                 x.Showtime.StartTimeUtc,
                 x.TotalAmount,
+                x.VoucherCode,
+                x.VoucherDiscount,
                 PaymentStatus = (PaymentStatus?)x.Payment!.Status,
                 x.Payment.TransactionId,
                 Seats = x.Seats
@@ -136,6 +138,6 @@ public class BookingsController : AdminControllerBase
             b.Id, b.BookingCode, b.Status, _tz.ToLocalTime(b.BookingTimeUtc),
             b.CustomerName, b.CustomerEmail, b.CustomerPhone,
             b.Title, b.TheaterName, b.RoomName, _tz.ToLocalTime(b.StartTimeUtc),
-            b.TotalAmount, b.PaymentStatus, b.TransactionId, seats));
+            b.TotalAmount, b.PaymentStatus, b.TransactionId, seats, b.VoucherCode, b.VoucherDiscount));
     }
 }
