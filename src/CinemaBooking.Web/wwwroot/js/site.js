@@ -28,14 +28,51 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-// Form có data-confirm: hỏi lại trước khi submit (ẩn phim, đóng chi nhánh, xóa suất…).
-// Thay cho onsubmit="return confirm('…')" viết tay: nội dung câu hỏi chứa tên phim/chi nhánh
-// do admin nhập, nhét vào chuỗi JS inline thì một dấu nháy đơn là vỡ cú pháp. Để trong
-// attribute thường thì Razor encode an toàn, đọc lại bằng dataset là ra đúng chữ.
-document.addEventListener('submit', function (event) {
-    var form = event.target;
-    if (!(form instanceof HTMLFormElement)) return;
+// Form (hoặc nút submit) có data-confirm: hỏi lại bằng cửa sổ xác nhận trước khi gửi.
+// Câu hỏi chứa tên phim/chi nhánh do admin nhập, nên để trong attribute cho Razor encode
+// và gán bằng textContent, không nhét vào HTML hay chuỗi JS inline.
+(function () {
+    var approvedForm = null; // form đang được gửi lại sau khi người dùng đã đồng ý.
 
-    var message = form.dataset.confirm;
-    if (message && !window.confirm(message)) event.preventDefault();
-});
+    function ask(message, danger, onConfirm) {
+        var el = document.getElementById('confirm-modal');
+        var modal = bootstrap.Modal.getOrCreateInstance(el);
+        var ok = el.querySelector('[data-confirm-ok]');
+
+        el.querySelector('[data-confirm-message]').textContent = message;
+        ok.className = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
+        ok.onclick = function () {
+            modal.hide();
+            onConfirm();
+        };
+        modal.show();
+    }
+
+    // Focus vào "Quay lại" để lỡ nhấn Enter thêm lần nữa cũng không xác nhận nhầm.
+    document.addEventListener('shown.bs.modal', function (event) {
+        if (event.target.id === 'confirm-modal') event.target.querySelector('[data-bs-dismiss]').focus();
+    });
+
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (!(form instanceof HTMLFormElement) || form === approvedForm) return;
+
+        // jQuery Validate gắn trên form nên chạy trước: nhập sai thì đã bị chặn, chỉ báo lỗi, không hỏi.
+        if (event.defaultPrevented) return;
+
+        var submitter = event.submitter || undefined;
+        var message = (submitter && submitter.dataset.confirm) || form.dataset.confirm;
+        if (!message) return;
+
+        event.preventDefault();
+        var button = submitter || form.querySelector('[type="submit"]');
+        var danger = !!button && /\bbtn(-outline)?-danger\b/.test(button.className);
+
+        ask(message, danger, function () {
+            // requestSubmit (không dùng form.submit) để giữ giá trị nút đã bấm, ví dụ command=apply.
+            approvedForm = form;
+            form.requestSubmit(submitter);
+            approvedForm = null;
+        });
+    });
+})();

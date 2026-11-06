@@ -104,6 +104,23 @@
         </div>
     </footer>
 
+    @* Cửa sổ xác nhận dùng chung cho mọi form có data-confirm (xem site.js). Không đóng khi bấm ra ngoài để tránh lướt nhầm. *@
+    <div class="modal fade" id="confirm-modal" tabindex="-1" aria-labelledby="confirm-modal-title" aria-hidden="true"
+         data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content confirm-modal">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="confirm-modal-title">Bạn chắc chắn chứ?</h2>
+                </div>
+                <div class="modal-body" data-confirm-message></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Quay lại</button>
+                    <button type="button" class="btn btn-primary" data-confirm-ok>Đồng ý</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

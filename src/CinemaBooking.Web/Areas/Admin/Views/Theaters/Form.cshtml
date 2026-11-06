@@ -11,7 +11,8 @@
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form admin-form-narrow">
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form admin-form-narrow"
+      data-confirm="@(isEdit ? "Lưu thay đổi chi nhánh này? Khách sẽ thấy thông tin mới ngay. Nếu đóng chi nhánh, khách sẽ không thấy suất chiếu của chi nhánh này nữa." : null)">
     <div asp-validation-summary="ModelOnly"></div>
 
     <div class="mb-3">

@@ -57,34 +57,59 @@ p a:hover,
 
 /* Nút chọn nhanh khoảng thời gian (trang doanh thu). */
 .range-chips {
-    display: flex;
+    display: inline-flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 2px;
+    max-width: 100%;
+    padding: 3px;
     margin-bottom: 0.9rem;
+    border: 1px solid var(--cb-border);
+    border-radius: 999px;
+    background: var(--cb-surface);
 }
 
 .range-chip {
     display: inline-flex;
     align-items: center;
-    padding: 0.4rem 0.95rem;
-    border: 1px solid var(--cb-border-strong, var(--cb-border));
+    padding: 0.25rem 0.75rem;
+    border: 0;
     border-radius: 999px;
+    background: transparent;
+    color: var(--cb-text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Hover chỉ làm sáng nhẹ nền, khác hẳn trạng thái đang chọn. */
+.range-chip:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--cb-text);
+}
+
+.range-chip.active,
+.range-chip.active:hover {
+    background: var(--cb-accent);
+    color: #fff;
+}
+
+/* Cửa sổ xác nhận dùng chung (data-confirm). */
+.confirm-modal {
+    border: 1px solid var(--cb-border);
+    border-radius: 14px;
     background: var(--cb-surface);
     color: var(--cb-text);
-    font-size: 0.85rem;
-    font-weight: 600;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.range-chip:hover {
-    border-color: var(--cb-accent);
-    color: #fff;
+.confirm-modal .modal-header,
+.confirm-modal .modal-footer {
+    border-color: var(--cb-border);
 }
 
-.range-chip.active {
-    border-color: var(--cb-accent);
-    background: var(--cb-accent-soft);
-    color: #fff;
+.confirm-modal .modal-body {
+    color: var(--cb-text-muted);
+    overflow-wrap: anywhere;
 }
 
 /* Ô nhập giá theo nghìn đồng. */

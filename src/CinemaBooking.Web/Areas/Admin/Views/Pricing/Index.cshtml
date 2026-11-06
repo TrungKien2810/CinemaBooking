@@ -27,7 +27,8 @@
 
 <div class="row g-4">
     <div class="col-12 col-xxl-5" style="max-width:44rem">
-        <form asp-action="Save" method="post" class="cb-card admin-form">
+        <form asp-action="Save" method="post" class="cb-card admin-form"
+              data-confirm="Lưu bảng giá của @Model.TheaterName? Suất đã có giữ giá cũ cho đến khi bấm “Áp dụng cho suất chưa chiếu”.">
             <div asp-validation-summary="ModelOnly"></div>
             <input type="hidden" asp-for="TheaterId" />
 

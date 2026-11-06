@@ -16,9 +16,12 @@
 }
 @* Nút chọn nhanh khoảng thời gian: bấm là xem luôn, giữ nguyên chi nhánh đang lọc (nếu có). *@
 <nav class="range-chips" aria-label="Chọn nhanh khoảng thời gian">
-    @foreach (var p in presets)
+    @* Nhiều nút có thể trùng khoảng (vd. "7 ngày" = "Tháng này" vào mùng 7) — chỉ nút đầu tiên khớp được sáng. *@
+    @{ var activeIndex = Array.FindIndex(presets, x => x.From == Model.From && x.To == Model.To); }
+    @for (var i = 0; i < presets.Length; i++)
     {
-        var isCurrent = p.From == Model.From && p.To == Model.To;
+        var p = presets[i];
+        var isCurrent = i == activeIndex;
         <a asp-action="@Model.Action" asp-route-from="@p.From.ToString("yyyy-MM-dd")" asp-route-to="@p.To.ToString("yyyy-MM-dd")"
            asp-route-theaterId="@Model.TheaterId" class="range-chip @(isCurrent ? "active" : null)"
            aria-current="@(isCurrent ? "true" : null)">@p.Label</a>

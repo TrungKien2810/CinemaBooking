@@ -12,7 +12,8 @@
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" class="cb-card admin-form">
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" class="cb-card admin-form"
+      data-confirm="@(isEdit ? "Lưu thay đổi phim này? Khách sẽ thấy thông tin mới ngay. Nếu bỏ chọn hiển thị, phim sẽ bị ẩn khỏi trang khách." : null)">
     <div asp-validation-summary="ModelOnly"></div>
 
     <div class="row g-4">
