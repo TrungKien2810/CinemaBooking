@@ -23,6 +23,10 @@ public sealed class AutoPlanForm : IValidatableObject
     [Display(Name = "Phụ thu giờ vàng")]
     public decimal PrimeSurcharge { get => _primeSurcharge; set => _primeSurcharge = MoneyFormat.ExpandThousands(value); }
 
+    /// <summary>Tính giá theo bảng giá chi nhánh (loại phòng + giờ + ngày). Tắt thì dùng giá cơ bản và phụ thu giờ vàng bên dưới.</summary>
+    [Display(Name = "Dùng bảng giá của chi nhánh")]
+    public bool UsePricing { get; set; } = true;
+
     [Display(Name = "Ngôn ngữ các suất")]
     public CinemaBooking.Domain.Enums.ShowLanguage Language { get; set; } = CinemaBooking.Domain.Enums.ShowLanguage.Subtitled;
 
@@ -48,5 +52,6 @@ public sealed record AutoPlanViewModel(
     IReadOnlyList<AutoPlanTheaterOption> Theaters,
     IReadOnlyList<AutoPlanMovieOption> Movies,
     IReadOnlyList<PlannedShowtime>? Proposed,
+    IReadOnlyList<decimal>? Prices,
     IReadOnlyList<AutoPlanRoomSummary> RoomSummaries,
     decimal PrimeSurcharge);

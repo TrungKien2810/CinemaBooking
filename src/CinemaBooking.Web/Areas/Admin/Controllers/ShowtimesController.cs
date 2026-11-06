@@ -1,3 +1,4 @@
+using CinemaBooking.Domain;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Areas.Admin.Models;
@@ -329,6 +330,7 @@ public class ShowtimesController : AdminControllerBase
         // Áp dụng: dựng lại lịch ở server từ chính các tham số (không tin bảng xem trước phía client),
         // rồi kiểm trùng từng suất lần nữa trước khi ghi — lịch có thể đã đổi giữa lúc xem và lúc bấm.
         var (_, _, plan) = await BuildPlanAsync(form, ct);
+        var priceOf = await PriceResolverAsync(form, ct);
         int created = 0, skipped = 0;
         var offset = _tz.Offset;
 
@@ -339,7 +341,7 @@ public class ShowtimesController : AdminControllerBase
                 MovieId = p.MovieId,
                 RoomId = p.RoomId,
                 StartTimeUtc = DateTime.SpecifyKind(p.StartLocal - offset, DateTimeKind.Utc),
-                BasePrice = form.BasePrice + (p.Prime ? form.PrimeSurcharge : 0m),
+                BasePrice = priceOf(p),
                 Language = form.Language,
             };
             await _scheduler.PrepareAsync(showtime, ct);
@@ -452,17 +454,50 @@ public class ShowtimesController : AdminControllerBase
             .ToList();
 
         IReadOnlyList<PlannedShowtime>? proposed = null;
+        IReadOnlyList<decimal>? prices = null;
         var summaries = new List<AutoPlanRoomSummary>();
         if (preview)
         {
             var (rooms, _, plan) = await BuildPlanAsync(form, ct);
             proposed = plan;
+            var resolve = await PriceResolverAsync(form, ct);
+            prices = plan.Select(resolve).ToList();
             summaries = rooms.OrderByDescending(r => r.Capacity)
                 .Select(r => new AutoPlanRoomSummary(r.Name, r.Capacity, plan.Count(p => p.RoomId == r.RoomId)))
                 .ToList();
         }
 
-        return new AutoPlanViewModel(form, theater.Name, theaters, movies, proposed, summaries, form.PrimeSurcharge);
+        return new AutoPlanViewModel(form, theater.Name, theaters, movies, proposed, prices, summaries, form.PrimeSurcharge);
+    }
+
+    /// <summary>
+    /// Giá cơ bản của từng suất đề xuất: theo bảng giá chi nhánh (nếu bật và chi nhánh có bảng giá) — cùng công thức với
+    /// trang bảng giá của khách — hoặc giá nhập tay + phụ thu giờ vàng.
+    /// </summary>
+    private async Task<Func<PlannedShowtime, decimal>> PriceResolverAsync(AutoPlanForm form, CancellationToken ct)
+    {
+        var pricing = form.UsePricing && form.TheaterId is { } id ? await PricingLoader.LoadAsync(_db, id, ct) : null;
+        if (pricing is null)
+            return p => form.BasePrice + (p.Prime ? form.PrimeSurcharge : 0m);
+
+        var roomTypes = await _db.Rooms.AsNoTracking().Where(r => r.TheaterId == form.TheaterId)
+            .ToDictionaryAsync(r => r.Id, r => r.RoomType, ct);
+        return p => PricingRules.BasePrice(pricing, roomTypes.GetValueOrDefault(p.RoomId), p.StartLocal);
+    }
+
+    /// <summary>Giá gợi ý theo bảng giá chi nhánh cho (phòng, giờ bắt đầu) — form thêm suất gọi bằng fetch để điền sẵn giá.</summary>
+    [HttpGet]
+    public async Task<IActionResult> SuggestPrice(int roomId, DateTime start, CancellationToken ct)
+    {
+        var room = await _db.Rooms.AsNoTracking().FirstOrDefaultAsync(r => r.Id == roomId, ct);
+        if (room is null) return NotFound();
+        if (!await _branches.CanAccessTheaterAsync(room.TheaterId, ct)) return Forbid();
+
+        var pricing = await PricingLoader.LoadAsync(_db, room.TheaterId, ct);
+        if (pricing is null) return Json(new { found = false });
+
+        var price = PricingRules.BasePrice(pricing, room.RoomType, start);
+        return Json(new { found = true, price, thousands = price / 1000m, text = price.Vnd(), room = room.RoomType.ToString() });
     }
 
     /// <summary>Chỉ xóa được suất chưa có đơn nào — đơn đã đặt phải giữ lại để tra cứu và thống kê.</summary>

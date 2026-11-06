@@ -248,3 +248,93 @@ form.admin-filter-grid .col-auto {
     width: auto;
     padding: 0;
 }
+
+/* Mã giảm giá ở trang thanh toán. */
+.voucher-box {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--cb-border);
+}
+
+.voucher-form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.voucher-form .form-control {
+    letter-spacing: 0.06em;
+    font-weight: 700;
+}
+
+.voucher-applied {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px dashed var(--cb-success);
+    border-radius: 12px;
+    background: var(--cb-success-soft);
+}
+
+/* Bảng giá vé. */
+.price-tables {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.price-card {
+    padding: 1.1rem 1.25rem;
+}
+
+.price-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0 0 0.9rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.price-table th,
+.price-table td {
+    padding: 0.7rem 0.75rem;
+    border-color: var(--cb-border);
+    font-variant-numeric: tabular-nums;
+}
+
+.price-table thead th {
+    color: var(--cb-text-muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.price-table tbody th {
+    min-width: 14rem;
+}
+
+.price-table td {
+    white-space: nowrap;
+}
+
+.price-notes {
+    margin: 1rem 0 0;
+    padding-left: 1.1rem;
+    color: var(--cb-text-muted);
+    font-size: 0.9rem;
+}
+
+.price-compare td:first-child {
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+/* Cột lưới phải co được (min-width: 0) để bảng giá rộng không đẩy cả trang tràn ngang. */
+.row > [class*="col"] {
+    min-width: 0;
+}
+
+.price-tables {
+    grid-template-columns: minmax(0, 1fr);
+}

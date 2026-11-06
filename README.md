@@ -187,6 +187,16 @@ Gửi lỗi thì worker tự thử lại tối đa `EmailOutbox:MaxAttempts` l�
   nhánh thấy đầy đủ.
 - **Ghế đôi** đặt được ở hàng nào cũng được: ghép hai ghế liền kề cùng hàng ở trang "Sửa ghế".
 - **Gợi ý lịch cả ngày** (`/Admin/Showtimes/AutoPlan`): phim khởi chiếu gần nhất → phòng lớn nhất, giờ vàng.
+- **Bảng giá vé (theo loại phòng/ghế, không theo phim):** mỗi chi nhánh có một bảng giá (`TheaterPricing`): giá ghế thường theo
+  loại phòng (2D/3D/IMAX/4DX) + phụ thu ghế (VIP, mỗi nửa ghế đôi) + phụ thu giờ cao điểm + phụ thu cuối tuần. Công thức nằm ở
+  một chỗ (`PricingRules` trong Domain) và được dùng cho trang công khai `/Prices` (khách xem giá + so sánh chi nhánh), sơ đồ ghế,
+  thanh toán, "Gợi ý lịch cả ngày" và dữ liệu demo. Admin/BranchAdmin chỉnh ở `/Admin/Pricing` (gõ theo nghìn đồng) và có nút
+  áp bảng giá cho các suất chưa chiếu (suất đã có vé giữ nguyên). `Showtime.BasePrice` là giá chụp lại của ghế thường.
+- **Mã giảm giá (voucher):** khách nhập ở bước thanh toán. Mã giảm % (có trần) hoặc số tiền cố định, giới hạn chi nhánh, đơn tối
+  thiểu, ngày hiệu lực, tổng số lượt và số lần mỗi khách (theo tài khoản hoặc email). Tính trên tổng tiền SAU khuyến mãi, không bao
+  giờ để đơn dưới 1.000đ, kiểm lại ở server lúc chốt đơn, và được chia vào giá từng ghế để doanh thu vẫn khớp. Đơn hủy/hết hạn
+  trả lại lượt dùng. Quản lý ở `/Admin/Vouchers` (BranchAdmin chỉ mã của chi nhánh mình). Mã demo: `CINE10`, `WELCOME20`,
+  `COUPLE50`, `LONGBIEN15`, `HETHAN` (đã hết hạn, để thử lỗi).
 - **Tài khoản quản trị không mua vé:** Admin/BranchAdmin chỉ xem sơ đồ ghế (không giữ ghế, không thanh toán, không có "Vé của tôi");
   muốn thử mua vé hãy dùng tài khoản khách.
 - **Quản lý tài khoản** (`/Admin/Users`, chỉ Admin): tìm/lọc tài khoản, tạo tài khoản quản lý chi nhánh và gán chi nhánh,

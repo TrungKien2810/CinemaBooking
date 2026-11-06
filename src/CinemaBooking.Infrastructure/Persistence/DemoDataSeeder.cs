@@ -113,12 +113,15 @@ public static class DemoDataSeeder
 
         var movies = await EnsureMoviesAsync(db, ct);
         var theaters = await EnsureTheatersAsync(db, ct);
+        await CatalogSeeder.EnsurePricingAsync(db, name => NewTheaters.FirstOrDefault(t => t.Name == name)?.BasePrice ?? BasePriceOf(name), ct);
         await EnsurePromotionsAsync(db, theaters, ct);
+        await EnsureVouchersAsync(db, theaters, ct);
         await EnsureBranchAdminsAsync(sp, db, theaters, log);
         var customers = await EnsureCustomersAsync(sp, rng, log);
 
-        var created = await EnsureShowtimesAsync(db, movies, theaters, rng, ct);
-        var bookings = await GenerateBookingsAsync(db, created, movies, theaters, customers, rng, ct);
+        var pricings = await db.TheaterPricings.AsNoTracking().ToDictionaryAsync(p => p.TheaterId, ct);
+        var created = await EnsureShowtimesAsync(db, movies, theaters, pricings, rng, ct);
+        var bookings = await GenerateBookingsAsync(db, created, movies, theaters, pricings, customers, rng, ct);
 
         if (created.Count > 0 || bookings > 0)
             log.LogInformation("Dữ liệu demo: thêm {Showtimes} suất chiếu, {Bookings} đơn đặt vé trong {Seconds:0.0}s.",
@@ -206,6 +209,48 @@ public static class DemoDataSeeder
         await db.SaveChangesAsync(ct);
     }
 
+    // ── Mã giảm giá mẫu ───────────────────────────────────────────────────────
+
+    private static async Task EnsureVouchersAsync(CinemaDbContext db, List<Theater> theaters, CancellationToken ct)
+    {
+        if (await db.Vouchers.AnyAsync(ct)) return;
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow + VietnamOffset);
+        var longBien = theaters.FirstOrDefault(t => t.Name == "CineSmart Long Biên");
+
+        db.Vouchers.AddRange(
+            new Voucher
+            {
+                Code = "CINE10", Title = "Giảm 10% mọi suất", Description = "Giảm 10%, tối đa 30.000đ cho đơn từ 100.000đ.",
+                DiscountPercent = 10, MaxDiscountAmount = 30_000m, MinOrderAmount = 100_000m,
+                StartDate = today.AddDays(-30), EndDate = today.AddDays(120), PerCustomerLimit = 0,
+            },
+            new Voucher
+            {
+                Code = "WELCOME20", Title = "Chào bạn mới", Description = "Giảm 20.000đ cho đơn từ 150.000đ, mỗi khách dùng 1 lần.",
+                DiscountAmount = 20_000m, MinOrderAmount = 150_000m,
+                StartDate = today.AddDays(-30), EndDate = today.AddDays(180), PerCustomerLimit = 1,
+            },
+            new Voucher
+            {
+                Code = "COUPLE50", Title = "Đi đôi giảm sâu", Description = "Giảm 50.000đ cho đơn từ 300.000đ, 200 lượt đầu tiên.",
+                DiscountAmount = 50_000m, MinOrderAmount = 300_000m, UsageLimit = 200,
+                StartDate = today.AddDays(-7), EndDate = today.AddDays(60), PerCustomerLimit = 2,
+            },
+            new Voucher
+            {
+                Code = "LONGBIEN15", Title = "Long Biên khai trương", Description = "Giảm 15% (tối đa 40.000đ) chỉ tại CineSmart Long Biên.",
+                TheaterId = longBien?.Id, DiscountPercent = 15, MaxDiscountAmount = 40_000m,
+                StartDate = today.AddDays(-14), EndDate = today.AddDays(90), PerCustomerLimit = 3,
+            },
+            new Voucher
+            {
+                Code = "HETHAN", Title = "Mã đã hết hạn (để thử)", DiscountPercent = 50,
+                StartDate = today.AddDays(-90), EndDate = today.AddDays(-30), PerCustomerLimit = 0,
+            });
+        await db.SaveChangesAsync(ct);
+    }
+
     // ── Tài khoản ─────────────────────────────────────────────────────────────
 
     private static async Task EnsureBranchAdminsAsync(
@@ -257,7 +302,8 @@ public static class DemoDataSeeder
     // ── Suất chiếu ────────────────────────────────────────────────────────────
 
     private static async Task<List<Showtime>> EnsureShowtimesAsync(
-        CinemaDbContext db, List<Movie> movies, List<Theater> theaters, Random rng, CancellationToken ct)
+        CinemaDbContext db, List<Movie> movies, List<Theater> theaters, Dictionary<int, TheaterPricing> pricings,
+        Random rng, CancellationToken ct)
     {
         var now = DateTime.UtcNow;
         var today = DateOnly.FromDateTime(now + VietnamOffset);
@@ -277,7 +323,7 @@ public static class DemoDataSeeder
 
         foreach (var theater in theaters)
         {
-            var basePrice = NewTheaters.FirstOrDefault(t => t.Name == theater.Name)?.BasePrice ?? BasePriceOf(theater.Name);
+            var policy = pricings.TryGetValue(theater.Id, out var found) ? found : PricingRules.DefaultFor(theater.Id, BasePriceOf(theater.Name));
             var rooms = theater.Rooms.OrderByDescending(r => r.Seats.Count).ToList();
 
             for (var d = -DaysBack; d <= DaysAhead; d++)
@@ -309,11 +355,8 @@ public static class DemoDataSeeder
                         var foreign = spec?.Foreign ?? movie.Title is "Dune: Part Two" or "Inside Out 2";
                         var family = spec?.Family ?? movie.Title == "Inside Out 2";
 
-                        var weekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday || (day.DayOfWeek == DayOfWeek.Friday && prime);
-                        var price = basePrice + (prime ? 25_000m : 0m) + (weekend ? 10_000m : 0m) + room.RoomType switch
-                        {
-                            RoomType.Imax => 45_000m, RoomType.FourDx => 55_000m, RoomType.ThreeD => 20_000m, _ => 0m,
-                        };
+                        // Giá theo BẢNG GIÁ chi nhánh (loại phòng + giờ + ngày) — không phụ thuộc phim.
+                        var price = PricingRules.BasePrice(policy, room.RoomType, cursor);
 
                         var language = foreign
                             ? (family && slot % 2 == 0 ? ShowLanguage.Dubbed : ShowLanguage.Subtitled)
@@ -379,7 +422,7 @@ public static class DemoDataSeeder
 
     private static async Task<int> GenerateBookingsAsync(
         CinemaDbContext db, List<Showtime> showtimes, List<Movie> movies, List<Theater> theaters,
-        List<Customer> customers, Random rng, CancellationToken ct)
+        Dictionary<int, TheaterPricing> pricings, List<Customer> customers, Random rng, CancellationToken ct)
     {
         if (showtimes.Count == 0) return 0;
 
@@ -430,7 +473,8 @@ public static class DemoDataSeeder
                 var code = generator.Next();
                 while (!codes.Add(code)) code = generator.Next();
 
-                var lines = seats.Select(s => (Seat: s, Price: PriceOf(showtime.BasePrice, s.SeatType))).ToList();
+                var surcharges = pricings.TryGetValue(room.TheaterId, out var pol) ? PricingRules.Surcharges(pol) : null;
+                var lines = seats.Select(s => (Seat: s, Price: PriceOf(showtime.BasePrice, s.SeatType, surcharges))).ToList();
                 var amount = lines.Sum(l => l.Price);
                 var checkedIn = past && rng.NextDouble() < 0.9;
 
@@ -517,8 +561,8 @@ public static class DemoDataSeeder
         return [];
     }
 
-    private static decimal PriceOf(decimal basePrice, SeatType type) =>
-        type == SeatType.Vip ? Math.Round(basePrice * 1.2m, 0) : basePrice;
+    private static decimal PriceOf(decimal basePrice, SeatType type, SeatSurcharges? surcharges) =>
+        surcharges is null ? (type == SeatType.Vip ? Math.Round(basePrice * 1.2m, 0) : basePrice) : basePrice + surcharges.For(type);
 
     private static Customer RandomGuest(Random rng)
     {
