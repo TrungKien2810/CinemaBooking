@@ -71,7 +71,7 @@ else
                 </div>
                 <div class="booking-list-side">
                     <span class="badge @badgeClass">@booking.StatusLabel</span>
-                    <div class="booking-list-total">@booking.TotalAmount.ToString("N0") ₫</div>
+                    <div class="booking-list-total">@booking.TotalAmount.Vnd()</div>
                     <div class="booking-list-payment">@booking.PaymentStateLabel</div>
                     <div class="d-flex gap-2 mt-2">
                         <a asp-controller="Booking" asp-action="Confirmation" asp-route-code="@booking.BookingCode"

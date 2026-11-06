@@ -4,7 +4,7 @@
     <div class="row g-4">
         <div class="col-md-7">
             <h2 class="booking-movie">@Model.MovieTitle</h2>
-            <p class="cb-muted mb-1">@Model.TheaterName (@Model.City) · @Model.RoomName</p>
+            <p class="cb-muted mb-1">@Model.TheaterName (@Model.City) · @Model.RoomName@(Model.FormatLabel is null ? "" : " (" + Model.FormatLabel + ")")</p>
             <p class="booking-time">@Model.StartLocal.ToString("HH:mm · dd/MM/yyyy")</p>
 
             <div class="table-responsive">
@@ -18,14 +18,23 @@
                             <tr>
                                 <td>@seat.Label</td>
                                 <td>@seat.Type</td>
-                                <td class="text-end">@seat.Price.ToString("N0") ₫</td>
+                                <td class="text-end">
+                                    @if (seat.HasPromotion)
+                                    {
+                                        <span class="text-decoration-line-through cb-muted small">@((seat.Price + seat.Discount).Vnd())</span>
+                                        <br />
+                                        <span class="small text-success">@seat.PromotionTitle</span>
+                                        <br />
+                                    }
+                                    @seat.Price.Vnd()
+                                </td>
                             </tr>
                         }
                     </tbody>
                     <tfoot>
                         <tr>
                             <th colspan="2">Tổng cộng</th>
-                            <th class="text-end">@Model.TotalAmount.ToString("N0") ₫</th>
+                            <th class="text-end">@Model.TotalAmount.Vnd()</th>
                         </tr>
                     </tfoot>
                 </table>

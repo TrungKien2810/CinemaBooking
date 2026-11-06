@@ -94,7 +94,10 @@ public sealed class BookingService : IBookingService
         if (!_locks.ValidateLocks(keys, request.ConnectionId))
             return BookingResult.Failed(BookingResultKind.LocksExpired, "Thời gian giữ ghế đã hết hoặc ghế không còn do bạn giữ. Vui lòng chọn lại.");
 
-        var booking = BuildBooking(request, showtime, seats);
+        var startLocal = _tz.ToLocalTime(showtime.StartTimeUtc);
+        var promotions = await PromotionRules.LoadForShowtimeAsync(
+            _db, showtime.Room!.TheaterId, DateOnly.FromDateTime(startLocal), ct);
+        var booking = BuildBooking(request, showtime, seats, startLocal, promotions);
 
         // Transaction 1: giữ chỗ. Suất chiếu đã bắt đầu hay chưa được kiểm lại ở trên; đơn Pending
         // + unique index chính là thứ giữ ghế trong lúc khách thanh toán (General.md §7.5) — mất
@@ -311,13 +314,17 @@ public sealed class BookingService : IBookingService
                 || message.Contains("duplicate", StringComparison.OrdinalIgnoreCase));
     }
 
-    private Booking BuildBooking(BookingRequest request, Showtime showtime, IReadOnlyList<Seat> seats)
+    private Booking BuildBooking(
+        BookingRequest request, Showtime showtime, IReadOnlyList<Seat> seats,
+        DateTime startLocal, IReadOnlyList<Promotion> promotions)
     {
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
+        // Giá chốt ở server từ cùng PromotionRules với sơ đồ ghế/thanh toán — không tin giá client.
         var priced = seats
-            .Select(seat => (Seat: seat, Price: _pricing.PriceFor(showtime.BasePrice, seat.SeatType)))
+            .Select(seat => (Seat: seat, Quote: PromotionRules.Quote(
+                _pricing.PriceFor(showtime.BasePrice, seat.SeatType), seat.SeatType, startLocal, promotions)))
             .ToList();
-        var total = priced.Sum(x => x.Price);
+        var total = priced.Sum(x => x.Quote.FinalPrice);
 
         return new Booking
         {
@@ -334,7 +341,9 @@ public sealed class BookingService : IBookingService
             {
                 SeatId = x.Seat.Id,
                 ShowtimeId = showtime.Id,
-                PriceAtBooking = x.Price,
+                PriceAtBooking = x.Quote.FinalPrice,
+                DiscountAmount = x.Quote.Discount,
+                PromotionTitle = x.Quote.PromotionTitle,
             }).ToList(),
             Payment = new Payment
             {

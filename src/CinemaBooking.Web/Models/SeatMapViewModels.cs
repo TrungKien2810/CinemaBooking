@@ -14,7 +14,8 @@ public sealed record SeatMapViewModel(
     DateTime StartLocal,
     int HoldSeconds,
     int TotalColumns,
-    IReadOnlyList<SeatRowViewModel> Rows)
+    IReadOnlyList<SeatRowViewModel> Rows,
+    string? FormatLabel = null)
 {
     /// <summary>
     /// Dựng lưới ghế theo layout phòng: đủ <see cref="Room.TotalRows"/> hàng × <see cref="Room.TotalColumns"/> cột,
@@ -26,7 +27,8 @@ public sealed record SeatMapViewModel(
         IReadOnlySet<int> bookedSeatIds,
         ISeatPricingService pricing,
         DateTime startLocal,
-        int holdSeconds)
+        int holdSeconds,
+        IReadOnlyList<Promotion>? promotions = null)
     {
         var room = showtime.Room ?? throw new ArgumentException("Chưa nạp Room của suất chiếu.", nameof(showtime));
         var theater = room.Theater ?? throw new ArgumentException("Chưa nạp Room.Theater.", nameof(showtime));
@@ -53,32 +55,41 @@ public sealed record SeatMapViewModel(
 
                     // Ghép tại nửa bên trái; nửa bên phải là ô bị che, view bỏ qua khi render
                     // (vẫn giữ phần tử để số cột của hàng không đổi).
+                    var pairQuote = PromotionRules.Quote(
+                        pricing.PriceFor(showtime.BasePrice, SeatType.Couple), SeatType.Couple, startLocal, promotions);
                     cells[col - 1] = partner.ColumnNumber > seat.ColumnNumber
                         ? new SeatCellViewModel(
                             [seat.Id, partner.Id],
                             $"{seat.Label}–{partner.Label}",
                             SeatType.Couple,
-                            pricing.PriceFor(showtime.BasePrice, SeatType.Couple) * 2,
-                            bookedSeatIds.Contains(seat.Id) || bookedSeatIds.Contains(partner.Id))
+                            pairQuote.FinalPrice * 2,
+                            bookedSeatIds.Contains(seat.Id) || bookedSeatIds.Contains(partner.Id),
+                            ListPrice: pairQuote.ListPrice * 2,
+                            PromotionTitle: pairQuote.PromotionTitle)
                         : SeatCellViewModel.CoveredByPair;
                     continue;
                 }
 
                 // Ghế đôi lẻ loi (hàng lẻ ghế / khuyết ghế): không bán được vì không có cặp.
+                var quote = PromotionRules.Quote(
+                    pricing.PriceFor(showtime.BasePrice, seat.SeatType), seat.SeatType, startLocal, promotions);
                 cells[col - 1] = new SeatCellViewModel(
                     [seat.Id],
                     seat.Label,
                     seat.SeatType,
-                    pricing.PriceFor(showtime.BasePrice, seat.SeatType),
+                    quote.FinalPrice,
                     bookedSeatIds.Contains(seat.Id),
-                    IsOrphan: seat.SeatType == SeatType.Couple);
+                    IsOrphan: seat.SeatType == SeatType.Couple,
+                    ListPrice: quote.ListPrice,
+                    PromotionTitle: quote.PromotionTitle);
             }
             rows.Add(new SeatRowViewModel(RowLabel(row), cells));
         }
 
         return new SeatMapViewModel(
             showtime.Id, movie.Title, theater.Name, theater.City, room.RoomName,
-            startLocal, holdSeconds, room.TotalColumns, rows);
+            startLocal, holdSeconds, room.TotalColumns, rows,
+            FormatLabel: room.RoomType.Label() + " · " + showtime.Language.Label());
     }
 
     private static string RowLabel(int row) => ((char)('A' + row - 1)).ToString();
@@ -98,8 +109,13 @@ public sealed record SeatCellViewModel(
     decimal Price,
     bool IsBooked,
     bool IsCoveredByPair = false,
-    bool IsOrphan = false)
+    bool IsOrphan = false,
+    decimal ListPrice = 0m,
+    string? PromotionTitle = null)
 {
+    /// <summary>Đang có khuyến mãi: <see cref="Price"/> là giá đã giảm, <see cref="ListPrice"/> là giá gốc.</summary>
+    public bool HasPromotion => PromotionTitle is not null && ListPrice > Price;
+
     /// <summary>Nửa phải của một cặp ghế đôi: đã được vẽ chung với nửa trái.</summary>
     public static SeatCellViewModel CoveredByPair { get; } =
         new(Array.Empty<int>(), string.Empty, SeatType.Couple, 0m, false, IsCoveredByPair: true);

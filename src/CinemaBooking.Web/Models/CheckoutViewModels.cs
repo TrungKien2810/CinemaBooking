@@ -12,9 +12,15 @@ public sealed record CheckoutViewModel(
     string RoomName,
     DateTime StartLocal,
     IReadOnlyList<CheckoutSeatItem> Seats,
-    decimal TotalAmount);
+    decimal TotalAmount,
+    string? FormatLabel = null);
 
-public sealed record CheckoutSeatItem(string Label, SeatType Type, decimal Price);
+/// <summary><see cref="Price"/> là giá khách trả (đã trừ khuyến mãi); <see cref="ListPrice"/> là giá niêm yết.</summary>
+public sealed record CheckoutSeatItem(
+    string Label, SeatType Type, decimal Price, decimal ListPrice = 0m, string? PromotionTitle = null)
+{
+    public bool HasPromotion => PromotionTitle is not null && ListPrice > Price;
+}
 
 /// <summary>
 /// Trang thanh toán: tóm tắt đơn (đọc từ Session) + form thông tin khách.

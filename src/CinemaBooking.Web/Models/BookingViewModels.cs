@@ -3,7 +3,11 @@ using CinemaBooking.Domain.Enums;
 namespace CinemaBooking.Web.Models;
 
 /// <summary>Một dòng ghế trên vé đã đặt — giá lấy từ <c>BookingSeat.PriceAtBooking</c>.</summary>
-public sealed record BookingSeatLine(string Label, SeatType Type, decimal Price);
+public sealed record BookingSeatLine(
+    string Label, SeatType Type, decimal Price, decimal Discount = 0m, string? PromotionTitle = null)
+{
+    public bool HasPromotion => Discount > 0 && !string.IsNullOrEmpty(PromotionTitle);
+}
 
 /// <summary>Thông tin đầy đủ của một vé, dùng cho trang xác nhận, tra cứu và danh sách vé.</summary>
 public sealed record BookingTicketViewModel(
@@ -22,8 +26,15 @@ public sealed record BookingTicketViewModel(
     string CustomerEmail,
     string? CustomerPhone,
     decimal TotalAmount,
-    IReadOnlyList<BookingSeatLine> Seats)
+    IReadOnlyList<BookingSeatLine> Seats,
+    bool IsMasked = false,
+    DateTime? CheckedInLocal = null,
+    string? CheckedInBy = null,
+    string? FormatLabel = null)
 {
+    /// <summary>Vé đã được nhân viên soát tại rạp.</summary>
+    public bool IsCheckedIn => CheckedInLocal is not null;
+
     public string StatusLabel => Status switch
     {
         BookingStatus.Confirmed => "Đã xác nhận",

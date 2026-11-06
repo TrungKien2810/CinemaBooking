@@ -10,6 +10,24 @@
 <section class="page-head">
     <h1 class="page-title">🏢 @Model.Name</h1>
     <p class="cb-muted page-subtitle">@Model.City · 📍 @(Model.Address ?? "Đang cập nhật địa chỉ")</p>
+    @if (!string.IsNullOrWhiteSpace(Model.Description))
+    {
+        <p class="mb-2" style="max-width:60ch">@Model.Description</p>
+    }
+    <ul class="branch-contact list-unstyled d-flex flex-wrap gap-3 mb-0">
+        @if (!string.IsNullOrWhiteSpace(Model.Phone))
+        {
+            <li>📞 <a href="tel:@Model.Phone.Replace(" ", "")">@Model.Phone</a></li>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Email))
+        {
+            <li>✉️ <a href="mailto:@Model.Email">@Model.Email</a></li>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.OpeningHours))
+        {
+            <li>🕘 @Model.OpeningHours</li>
+        }
+    </ul>
 </section>
 
 <section aria-labelledby="promo-title" class="mb-4">
@@ -32,6 +50,10 @@
                     @if (!string.IsNullOrWhiteSpace(p.Description))
                     {
                         <p class="mb-2">@p.Description</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(p.AutoRule))
+                    {
+                        <p class="small mb-2"><strong>Tự động trừ vào giá vé:</strong> @p.AutoRule</p>
                     }
                     <p class="cb-muted small mb-0">Áp dụng đến @p.EndDate.ToString("dd/MM/yyyy")</p>
                 </li>
@@ -58,7 +80,7 @@
                     <p class="cb-muted mb-1">@(m.Genre ?? "Chưa phân loại") · @m.DurationMinutes phút</p>
                     <p class="mb-0 small">
                         @m.UpcomingShowtimes suất sắp chiếu · gần nhất @tz.ToLocalTime(m.NextShowtimeUtc).ToString("HH:mm dd/MM") ·
-                        từ @m.FromPrice.ToString("N0") đ
+                        từ @m.FromPrice.Vnd()
                     </p>
                 </li>
             }

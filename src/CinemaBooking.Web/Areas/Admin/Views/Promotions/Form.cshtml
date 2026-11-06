@@ -46,7 +46,66 @@
         <input asp-for="IsActive" class="form-check-input" />
         <label asp-for="IsActive" class="form-check-label"></label>
     </div>
-    <p class="form-text">Khuyến mãi hiện là thông tin quảng bá trên trang chi nhánh; giá vé khi thanh toán chưa tự giảm.</p>
+
+    <fieldset class="promo-rule mb-3">
+        <legend class="form-label fs-6 fw-semibold">Giảm giá tự động khi đặt vé</legend>
+        <p class="form-text mt-0">
+            Chọn “Chỉ quảng bá” nếu ưu đãi cần nhân viên kiểm tra tại quầy (ví dụ thẻ sinh viên) — hệ thống sẽ không tự trừ giá.
+            Mỗi ghế chỉ hưởng <strong>một</strong> khuyến mãi (cái cho giá thấp nhất), không cộng dồn.
+        </p>
+        <div class="mb-2">
+            <select asp-for="DiscountKind" class="form-select" id="discount-kind">
+                <option value="none">Chỉ quảng bá (không tự trừ giá)</option>
+                <option value="percent">Giảm theo phần trăm</option>
+                <option value="fixed">Đồng giá mỗi ghế</option>
+            </select>
+        </div>
+        <div id="rule-fields">
+            <div class="row">
+                <div class="col-sm-6 mb-3" data-kind="percent">
+                    <label asp-for="DiscountPercent" class="form-label"></label>
+                    <input asp-for="DiscountPercent" type="number" min="1" max="100" class="form-control" placeholder="25" />
+                    <span asp-validation-for="DiscountPercent" class="text-danger small"></span>
+                </div>
+                <div class="col-sm-6 mb-3" data-kind="fixed">
+                    @await Html.PartialAsync("_PriceInput", new PriceInputModel("FixedPrice", "Giá đồng giá (mỗi ghế)", Model.FixedPrice))
+                </div>
+            </div>
+            <div class="mb-3">
+                <label asp-for="ApplicableSeatType" class="form-label"></label>
+                <select asp-for="ApplicableSeatType" class="form-select">
+                    <option value="">Mọi loại ghế</option>
+                    <option value="Standard">Ghế thường</option>
+                    <option value="Vip">Ghế VIP</option>
+                    <option value="Couple">Ghế đôi</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <span class="form-label d-block">Các thứ áp dụng <span class="cb-muted">(không chọn = mọi ngày)</span></span>
+                @foreach (var (day, name) in new[] { (1, "T2"), (2, "T3"), (3, "T4"), (4, "T5"), (5, "T6"), (6, "T7"), (0, "CN") })
+                {
+                    <label class="form-check form-check-inline">
+                        <input type="checkbox" class="form-check-input" name="Days" value="@day" checked="@Model.Days.Contains(day)" />
+                        <span class="form-check-label">@name</span>
+                    </label>
+                }
+                <span asp-validation-for="Days" class="text-danger small"></span>
+            </div>
+            <div class="row">
+                <div class="col-sm-6 mb-3">
+                    <label asp-for="FromTime" class="form-label"></label>
+                    <input asp-for="FromTime" type="time" class="form-control" />
+                    <span asp-validation-for="FromTime" class="text-danger small"></span>
+                </div>
+                <div class="col-sm-6 mb-3">
+                    <label asp-for="ToTime" class="form-label"></label>
+                    <input asp-for="ToTime" type="time" class="form-control" />
+                    <span asp-validation-for="ToTime" class="text-danger small"></span>
+                </div>
+            </div>
+            <p class="form-text">Giờ tính theo <strong>giờ bắt đầu của suất chiếu</strong> (giờ rạp), không phải giờ khách đặt.</p>
+        </div>
+    </fieldset>
 
     <div class="admin-form-actions">
         <button type="submit" class="btn btn-primary">Lưu</button>
@@ -56,4 +115,18 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        (function () {
+            var kind = document.getElementById('discount-kind');
+            var box = document.getElementById('rule-fields');
+            function refresh() {
+                box.hidden = kind.value === 'none';
+                box.querySelectorAll('[data-kind]').forEach(function (el) {
+                    el.hidden = el.dataset.kind !== kind.value;
+                });
+            }
+            kind.addEventListener('change', refresh);
+            refresh();
+        })();
+    </script>
 }

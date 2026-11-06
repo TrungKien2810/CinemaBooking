@@ -1,6 +1,8 @@
 @model SeatMapViewModel
 @{
     ViewData["Title"] = $"Chọn ghế — {Model.MovieTitle}";
+    // Admin/BranchAdmin chỉ xem: không có thanh tổng tiền, nút thanh toán, SignalR hay thao tác chọn ghế.
+    var staffPreview = ViewData["StaffPreview"] as bool? == true;
     var seatColumns = Model.TotalColumns;
 
     // Ghế VIP / đôi có icon và viền riêng để khách nhận ra loại ghế trên sơ đồ,
@@ -16,11 +18,21 @@
 <div class="page-head">
     <h1 class="page-title">@Model.MovieTitle</h1>
     <p class="page-subtitle cb-muted">
-        @Model.TheaterName (@Model.City) · @Model.RoomName · @Model.StartLocal.ToString("HH:mm dd/MM/yyyy")
+        @Model.TheaterName (@Model.City) · @Model.RoomName@(Model.FormatLabel is null ? "" : " (" + Model.FormatLabel + ")") · @Model.StartLocal.ToString("HH:mm dd/MM/yyyy")
     </p>
 </div>
 
-<partial name="_BookingSteps" model="1" />
+@if (staffPreview)
+{
+    <div class="alert alert-info" role="status">
+        <strong>Chế độ xem sơ đồ ghế.</strong> Tài khoản quản trị không đặt vé — đăng nhập bằng tài khoản khách để mua vé.
+        <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Về trang quản trị</a>
+    </div>
+}
+else
+{
+    <partial name="_BookingSteps" model="1" />
+}
 
 <div class="seat-map-shell cb-card" id="seat-map"
      data-showtime-id="@Model.ShowtimeId"
@@ -70,9 +82,9 @@
                             data-seat-price="@seat.Price.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
                             data-seat-type="@seat.Type"
                             aria-pressed="@(seat.IsBooked ? "true" : "false")"
-                            aria-label="@seatKind @seat.Label, @seat.Type, @seat.Price.ToString("N0") đ@(seat.IsBooked ? ", đã được đặt" : "")"
-                            title="@seatKind @seat.Label · @seat.Type · @seat.Price.ToString("N0") đ"
-                            disabled="@seat.IsBooked">
+                            aria-label="@seatKind @seat.Label, @seat.Type, @seat.Price.Vnd()@(seat.HasPromotion ? $", đang giảm giá ({seat.PromotionTitle}), giá gốc {seat.ListPrice.Vnd()}" : "")@(seat.IsBooked ? ", đã được đặt" : "")"
+                            title="@seatKind @seat.Label · @seat.Type · @seat.Price.Vnd()@(seat.HasPromotion ? $" (gốc {seat.ListPrice.Vnd()} — {seat.PromotionTitle})" : "")"
+                            disabled="@(seat.IsBooked || staffPreview)">
                         <span class="seat-label">@seat.Label</span>
                     </button>
                 }
@@ -92,12 +104,14 @@
 
 <p class="seat-map-hint cb-muted" aria-hidden="true">Kéo ngang để xem toàn bộ sơ đồ.</p>
 
+@if (!staffPreview)
+{
 <div class="seat-summary" id="seat-summary" aria-live="polite">
     <div class="seat-summary-info">
         <span id="seat-selected-list" class="cb-muted">Chưa chọn ghế nào</span>
         <span id="seat-hold-timer" class="seat-timer" hidden></span>
     </div>
-    <div class="seat-total">Tổng: <strong id="seat-total">0 ₫</strong></div>
+    <div class="seat-total">Tổng: <strong id="seat-total">0 đ</strong></div>
 </div>
 
 @if (TempData["Error"] is string error)
@@ -118,8 +132,12 @@
 </form>
 
 <div id="seat-toasts" class="seat-toasts" aria-live="polite" aria-atomic="true"></div>
+}
 
-@section Scripts {
-    <script src="~/lib/signalr/signalr.min.js"></script>
-    <script src="~/js/seat-map.js" asp-append-version="true"></script>
+@if (!staffPreview)
+{
+    @section Scripts {
+        <script src="~/lib/signalr/signalr.min.js"></script>
+        <script src="~/js/seat-map.js" asp-append-version="true"></script>
+    }
 }
