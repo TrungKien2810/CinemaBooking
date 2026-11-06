@@ -50,6 +50,30 @@
         </div>
     }
 
+    @if (Model.IsMasked)
+    {
+        <p class="small cb-muted mb-2">
+            <span aria-hidden="true">🔒</span>
+            Họ tên, email và số điện thoại được che vì bạn chưa đăng nhập bằng tài khoản đã đặt vé này.
+        </p>
+    }
+
+    @if (confirmed && Model.IsCheckedIn)
+    {
+        <div class="alert alert-secondary" role="status">
+            ✔ Vé đã được soát lúc <strong>@Model.CheckedInLocal!.Value.ToString("HH:mm dd/MM/yyyy")</strong> — không dùng lại được.
+        </div>
+    }
+
+    @if (confirmed && (User.IsInRole("Admin") || User.IsInRole("BranchAdmin")))
+    {
+        <div class="alert alert-info d-flex flex-wrap align-items-center gap-2" role="status">
+            <span>Bạn là nhân viên rạp:</span>
+            <a asp-area="Admin" asp-controller="CheckIn" asp-action="Index" asp-route-code="@Model.BookingCode"
+               class="btn btn-sm btn-primary">Soát vé này</a>
+        </div>
+    }
+
     <partial name="_BookingDetails" model="Model" />
 
     @if (confirmed)

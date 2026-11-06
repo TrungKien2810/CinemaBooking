@@ -15,7 +15,11 @@ namespace CinemaBooking.Web.Services;
 /// </summary>
 public interface IBranchScope
 {
-    /// <summary>Id chi nhánh bị giới hạn; null = được xem toàn hệ thống (Admin) hoặc không xác định.</summary>
+    /// <summary>
+    /// Id chi nhánh bị giới hạn; null = Admin toàn hệ thống (không giới hạn). BranchAdmin CHƯA được gán chi nhánh
+    /// (hoặc chi nhánh đã bị gỡ) nhận <see cref="BranchScope.NoBranch"/> — một id không tồn tại — để mọi danh sách
+    /// rỗng và mọi kiểm tra quyền đều từ chối, thay vì bị nhầm thành "không giới hạn".
+    /// </summary>
     Task<int?> TheaterIdAsync(CancellationToken ct = default);
 
     /// <summary>Người dùng hiện tại có được thao tác trên chi nhánh này không.</summary>
@@ -24,6 +28,9 @@ public interface IBranchScope
 
 public sealed class BranchScope : IBranchScope
 {
+    /// <summary>Id giả cho BranchAdmin chưa có chi nhánh: không trùng chi nhánh thật nào (Identity id bắt đầu từ 1).</summary>
+    public const int NoBranch = -1;
+
     private readonly IHttpContextAccessor _http;
     private readonly CinemaDbContext _db;
 
@@ -68,9 +75,12 @@ public sealed class BranchScope : IBranchScope
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId)) return;
 
-        _theaterId = await _db.Users.AsNoTracking()
+        var assigned = await _db.Users.AsNoTracking()
             .Where(u => u.Id == userId)
             .Select(u => u.TheaterId)
             .FirstOrDefaultAsync(ct);
+
+        // Fail-closed: BranchAdmin không có chi nhánh → NoBranch (không phải null = toàn hệ thống).
+        _theaterId = assigned ?? NoBranch;
     }
 }

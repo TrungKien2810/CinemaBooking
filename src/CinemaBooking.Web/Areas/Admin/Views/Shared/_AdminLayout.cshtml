@@ -27,8 +27,12 @@
                    class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">Suất chiếu</a>
                 <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Bookings")" data-icon="🎟️">Đặt vé</a>
+                <a asp-area="Admin" asp-controller="CheckIn" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("CheckIn")" data-icon="✅">Soát vé</a>
                 <a asp-area="Admin" asp-controller="Revenue" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Revenue")" data-icon="📊">Doanh thu</a>
+                <a asp-area="Admin" asp-controller="Users" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Users")" data-icon="👥">Tài khoản</a>
             }
             else
             {
@@ -43,6 +47,8 @@
                    class="admin-nav-link @ActiveIf("Promotions")" data-icon="🎁">Khuyến mãi</a>
                 <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Bookings")" data-icon="🎟️">Đơn đặt vé</a>
+                <a asp-area="Admin" asp-controller="CheckIn" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("CheckIn")" data-icon="✅">Soát vé</a>
                 <a asp-area="Admin" asp-controller="Revenue" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Revenue")" data-icon="📊">Doanh thu</a>
             }

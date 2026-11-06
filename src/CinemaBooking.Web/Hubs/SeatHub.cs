@@ -1,3 +1,4 @@
+using CinemaBooking.Domain;
 using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Infrastructure;
 using CinemaBooking.Web.Services;
@@ -82,6 +83,13 @@ public class SeatHub : Hub<ISeatClient>
 
     public async Task SelectSeat(int showtimeId, int seatId)
     {
+        // Admin/BranchAdmin chỉ xem sơ đồ; không giữ ghế (kể cả khi tự gọi hub bằng tay).
+        if (Context.User?.IsInRole(AppRoles.Admin) == true || Context.User?.IsInRole(AppRoles.BranchAdmin) == true)
+        {
+            await Clients.Caller.SeatRejected(seatId, "Tài khoản quản trị không đặt vé.");
+            return;
+        }
+
         // Chưa join thì client sẽ không nhận SeatUnlocked/SeatLocked của suất này — giữ ghế
         // "mù" như vậy chỉ tạo ra ghế treo trên máy người khác.
         if (!JoinedShowtimes.Contains(showtimeId))

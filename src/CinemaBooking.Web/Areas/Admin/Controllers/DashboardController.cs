@@ -32,6 +32,7 @@ public class DashboardController : AdminControllerBase
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         var scoped = await _branches.TheaterIdAsync(ct);
+        if (scoped == BranchScope.NoBranch) return View("NoBranch");
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
         var today = _tz.ToLocalDate(nowUtc);
         var (dayFrom, dayTo) = _tz.DayRangeUtc(today);
