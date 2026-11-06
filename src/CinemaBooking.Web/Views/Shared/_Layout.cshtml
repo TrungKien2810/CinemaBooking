@@ -27,7 +27,7 @@
     <a class="skip-link" href="#main-content">Bỏ qua điều hướng</a>
 
     <header>
-        <nav class="navbar navbar-expand-md site-navbar" aria-label="Điều hướng chính">
+        <nav class="navbar navbar-expand-lg site-navbar" aria-label="Điều hướng chính">
             <div class="container">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
                     <span class="brand-mark" aria-hidden="true">🎬</span>
@@ -49,6 +49,10 @@
                         <li class="nav-item">
                             <a class="@NavClass("Branches", "Index")" asp-area="" asp-controller="Branches" asp-action="Index"
                                aria-current="@(IsCurrent("Branches", "Index") ? "page" : null)">Hệ thống rạp</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="@NavClass("Prices", "Index")" asp-area="" asp-controller="Prices" asp-action="Index"
+                               aria-current="@(IsCurrent("Prices", "Index") ? "page" : null)">Bảng giá</a>
                         </li>
                         <li class="nav-item">
                             <a class="@NavClass("Booking", "Lookup")" asp-area="" asp-controller="Booking" asp-action="Lookup"
@@ -81,6 +85,7 @@
                     <ul class="footer-links">
                         <li><a asp-area="" asp-controller="Home" asp-action="Index">Phim đang chiếu</a></li>
                         <li><a asp-area="" asp-controller="Branches" asp-action="Index">Hệ thống rạp</a></li>
+                        <li><a asp-area="" asp-controller="Prices" asp-action="Index">Bảng giá vé</a></li>
                         <li><a asp-area="" asp-controller="Booking" asp-action="Lookup">Tra cứu vé</a></li>
                     </ul>
                 </div>

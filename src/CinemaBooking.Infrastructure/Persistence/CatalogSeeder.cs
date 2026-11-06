@@ -1,4 +1,5 @@
-﻿using CinemaBooking.Domain.Entities;
+﻿using CinemaBooking.Domain;
+using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,6 +32,36 @@ public static class CatalogSeeder
         await SeedCatalogAsync(db, ct);
         await UpgradeCatalogDetailsAsync(db, ct);
         await SeedPromotionsAsync(db, ct);
+        await EnsurePricingAsync(db, name => SeedBasePrices.TryGetValue(name, out var p) ? p : null, ct);
+    }
+
+    /// <summary>Giá ghế thường 2D (ngày thường, trước giờ cao điểm) của các chi nhánh mẫu.</summary>
+    private static readonly Dictionary<string, decimal> SeedBasePrices = new()
+    {
+        ["CineSmart Nguyễn Huệ"] = 95_000m,
+        ["CineSmart Thảo Điền"] = 85_000m,
+        ["CineSmart Cầu Giấy"] = 90_000m,
+        ["CineSmart Hoàn Kiếm"] = 80_000m,
+        // Chi nhánh của dữ liệu demo (DemoDataSeeder) — cùng giá để bảng giá nhất quán dù seed theo thứ tự nào.
+        ["CineSmart Bình Thạnh"] = 90_000m,
+        ["CineSmart Long Biên"] = 95_000m,
+        ["CineSmart Đà Nẵng"] = 85_000m,
+        ["CineSmart Cần Thơ"] = 75_000m,
+        ["CineSmart Hải Phòng"] = 80_000m,
+    };
+
+    /// <summary>
+    /// Bảo đảm chi nhánh nào cũng có bảng giá vé (<see cref="TheaterPricing"/>). Chi nhánh đã có thì giữ nguyên — không đè lên
+    /// giá chủ chi nhánh đã chỉnh. <paramref name="basePriceOf"/> trả giá ghế thường 2D theo tên chi nhánh (null = mặc định 85.000đ).
+    /// </summary>
+    public static async Task EnsurePricingAsync(CinemaDbContext db, Func<string, decimal?> basePriceOf, CancellationToken ct = default)
+    {
+        var have = (await db.TheaterPricings.Select(p => p.TheaterId).ToListAsync(ct)).ToHashSet();
+        var missing = await db.Theaters.Where(t => !have.Contains(t.Id)).ToListAsync(ct);
+        foreach (var theater in missing)
+            db.TheaterPricings.Add(PricingRules.DefaultFor(theater.Id, basePriceOf(theater.Name) ?? 85_000m));
+
+        if (missing.Count > 0) await db.SaveChangesAsync(ct);
     }
 
     /// <summary>Thông tin thêm của phim mẫu (độ tuổi, đạo diễn, diễn viên, trailer).</summary>

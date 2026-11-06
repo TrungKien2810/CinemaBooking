@@ -25,6 +25,10 @@
                    class="admin-nav-link @ActiveIf("Theaters", "Rooms")" data-icon="🏢">Chi nhánh &amp; phòng</a>
                 <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">Suất chiếu</a>
+                <a asp-area="Admin" asp-controller="Pricing" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Pricing")" data-icon="💰">Bảng giá vé</a>
+                <a asp-area="Admin" asp-controller="Vouchers" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Vouchers")" data-icon="🏷️">Mã giảm giá</a>
                 <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Bookings")" data-icon="🎟️">Đặt vé</a>
                 <a asp-area="Admin" asp-controller="CheckIn" asp-action="Index"
@@ -43,8 +47,12 @@
                    class="admin-nav-link @ActiveIf("Rooms")" data-icon="🪑">Phòng &amp; ghế</a>
                 <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">Suất chiếu</a>
+                <a asp-area="Admin" asp-controller="Pricing" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Pricing")" data-icon="💰">Bảng giá vé</a>
                 <a asp-area="Admin" asp-controller="Promotions" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Promotions")" data-icon="🎁">Khuyến mãi</a>
+                <a asp-area="Admin" asp-controller="Vouchers" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Vouchers")" data-icon="🏷️">Mã giảm giá</a>
                 <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Bookings")" data-icon="🎟️">Đơn đặt vé</a>
                 <a asp-area="Admin" asp-controller="CheckIn" asp-action="Index"

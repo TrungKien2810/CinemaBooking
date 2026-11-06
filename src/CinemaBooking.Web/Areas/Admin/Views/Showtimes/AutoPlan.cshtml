@@ -52,6 +52,13 @@
         </div>
     </div>
 
+    <div class="form-check mb-3">
+        <input type="checkbox" class="form-check-input" id="UsePricing" name="UsePricing" value="true" checked="@form.UsePricing" />
+        <input type="hidden" name="UsePricing" value="false" />
+        <label for="UsePricing" class="form-check-label fw-semibold">Dùng bảng giá của chi nhánh</label>
+        <div class="form-text">Giá mỗi suất tính theo loại phòng, giờ và ngày (xem <a asp-controller="Pricing" asp-action="Index" asp-route-theaterId="@form.TheaterId">Bảng giá vé</a>). Bỏ chọn để dùng giá cơ bản và phụ thu giờ vàng nhập bên trên.</div>
+    </div>
+
     <div class="mb-3">
         <label asp-for="Form.Language" class="form-label"></label>
         <select asp-for="Form.Language" name="Language" class="form-select" style="max-width:14rem">
@@ -120,13 +127,14 @@
                     <tr><th>Giờ</th><th>Phòng</th><th>Phim</th><th class="text-end">Giá vé</th></tr>
                 </thead>
                 <tbody>
-                    @foreach (var p in Model.Proposed)
+                    @for (var i = 0; i < Model.Proposed.Count; i++)
                     {
+                        var p = Model.Proposed[i];
                         <tr>
                             <td class="text-nowrap">@p.StartLocal.ToString("HH:mm") – @p.EndLocal.ToString("HH:mm")</td>
                             <td>@p.RoomName</td>
                             <td>@p.MovieTitle @if (p.Prime) { <span class="badge text-bg-warning">Giờ vàng</span> }</td>
-                            <td class="text-end">@((form.BasePrice + (p.Prime ? form.PrimeSurcharge : 0m)).Vnd())</td>
+                            <td class="text-end">@Model.Prices![i].Vnd()</td>
                         </tr>
                     }
                 </tbody>

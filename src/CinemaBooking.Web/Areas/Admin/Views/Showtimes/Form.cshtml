@@ -51,7 +51,11 @@
             <span asp-validation-for="StartTimeLocal" class="text-danger small"></span>
         </div>
         <div class="col-sm-5 mb-3">
-            @await Html.PartialAsync("_PriceInput", new PriceInputModel("BasePrice", "Giá vé", Model.BasePrice))
+            @await Html.PartialAsync("_PriceInput", new PriceInputModel("BasePrice", "Giá ghế thường", Model.BasePrice))
+            <div class="form-text" id="price-suggest" data-url="@Url.Action("SuggestPrice")" hidden>
+                Theo bảng giá chi nhánh: <strong id="price-suggest-text"></strong>
+                <button type="button" class="btn btn-link btn-sm p-0 ms-1" id="price-suggest-apply">Dùng giá này</button>
+            </div>
         </div>
     </div>
     <ul class="form-text admin-hints">
@@ -102,6 +106,37 @@
         }
         [movie, room, dateEl].forEach(e => e.addEventListener("change", load));
         load();
+    })();
+
+    // Gợi ý giá theo bảng giá chi nhánh: phòng + giờ bắt đầu → giá ghế thường. Chỉ tự điền khi admin chưa tự sửa ô giá.
+    (() => {
+        const box = document.getElementById("price-suggest");
+        const room = document.getElementById("RoomId"), start = document.getElementById("StartTimeLocal");
+        const price = document.getElementById("BasePrice");
+        if (!box || !room || !start || !price) return;
+        const text = document.getElementById("price-suggest-text"), apply = document.getElementById("price-suggest-apply");
+        let suggested = null, touched = @(Model.Id is null ? "false" : "true");
+        price.addEventListener("input", e => { if (e.isTrusted) touched = true; });
+
+        function fill() {
+            if (suggested === null) return;
+            price.value = String(suggested.thousands);
+            price.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        async function refresh() {
+            if (!+room.value || !start.value) { box.hidden = true; return; }
+            try {
+                const res = await fetch(box.dataset.url + "?" + new URLSearchParams({ roomId: room.value, start: start.value }));
+                const data = res.ok ? await res.json() : { found: false };
+                if (!data.found) { box.hidden = true; suggested = null; return; }
+                suggested = data; text.textContent = data.text; box.hidden = false;
+                if (!touched) fill();
+            } catch { box.hidden = true; }
+        }
+        apply.addEventListener("click", () => { touched = false; fill(); });
+        [room, start].forEach(e => e.addEventListener("change", refresh));
+        start.addEventListener("input", refresh);
+        refresh();
     })();
     </script>
     @await Html.PartialAsync("_ValidationScriptsPartial")

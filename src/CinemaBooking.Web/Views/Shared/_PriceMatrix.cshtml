@@ -1,0 +1,38 @@
+@model PriceMatrixModel
+@* Bảng giá vé theo loại phòng → khung giờ/ngày → loại ghế. Giá/ghế; ghế đôi bán theo cặp (2 ghế). *@
+<div class="price-tables">
+    @foreach (var table in Model.Tables)
+    {
+        <section class="cb-card price-card" aria-labelledby="room-@table.Type">
+            <h3 class="price-card-title" id="room-@table.Type">
+                <span class="badge text-bg-warning">@table.Type.Label()</span>
+                Phòng chiếu @table.Type.Label()
+            </h3>
+            <div class="table-responsive">
+                <table class="table price-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Ngày &amp; giờ chiếu</th>
+                            <th scope="col" class="text-end">Ghế thường</th>
+                            <th scope="col" class="text-end">Ghế VIP</th>
+                            <th scope="col" class="text-end">Ghế đôi <span class="d-block small fw-normal">(1 ghế)</span></th>
+                            <th scope="col" class="text-end">Ghế đôi <span class="d-block small fw-normal">(cả cặp)</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in table.Rows)
+                        {
+                            <tr>
+                                <th scope="row" class="fw-semibold">@row.Label</th>
+                                <td class="text-end">@row.Standard.Vnd()</td>
+                                <td class="text-end">@row.Vip.Vnd()</td>
+                                <td class="text-end">@row.CoupleSeat.Vnd()</td>
+                                <td class="text-end fw-semibold">@row.CouplePair.Vnd()</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</div>
