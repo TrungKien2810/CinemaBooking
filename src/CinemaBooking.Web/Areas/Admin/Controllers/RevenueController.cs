@@ -62,7 +62,8 @@ public class RevenueController : AdminControllerBase
             .OrderByDescending(r => r.Revenue)
             .ToList();
 
-        return View(new RevenueDashboardViewModel(fromDay, toDay, dayRows, theaterRows));
+        return View(new RevenueDashboardViewModel(
+            fromDay, toDay, dayRows, theaterRows, _tz.ToLocalDate(_clock.GetUtcNow().UtcDateTime)));
     }
 
     /// <summary>Doanh thu chia theo phim và theo từng suất chiếu, lọc được theo chi nhánh.</summary>
@@ -134,7 +135,8 @@ public class RevenueController : AdminControllerBase
             .Select(t => new SelectListItem(t.City + " · " + t.Name, t.Id.ToString()))
             .ToListAsync(ct);
 
-        return View(new RevenueBreakdownViewModel(fromDay, toDay, theaterId, theaters, movieRows, showtimeRows));
+        return View(new RevenueBreakdownViewModel(
+            fromDay, toDay, theaterId, theaters, movieRows, showtimeRows, _tz.ToLocalDate(_clock.GetUtcNow().UtcDateTime)));
     }
 
     /// <summary>Vé (BookingSeats) của đơn Confirmed, đặt trong [fromDay, toDay] theo giờ rạp.</summary>

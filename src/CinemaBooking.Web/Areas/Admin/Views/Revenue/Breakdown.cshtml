@@ -12,7 +12,9 @@
        class="btn btn-outline-secondary">Về tổng quan</a>
 </div>
 
-<form method="get" class="row g-2 align-items-end mb-3">
+@await Html.PartialAsync("_RangeChips", new RangeChipsModel("Breakdown", Model.From, Model.To, Model.Today, Model.TheaterId))
+
+<form method="get" class="admin-filter-grid">
     <div class="col-auto">
         <label for="from" class="form-label">Từ ngày</label>
         <input id="from" name="from" type="date" value="@Model.From.ToString("yyyy-MM-dd")" class="form-control" />
@@ -53,7 +55,7 @@
             <tr>
                 <td>@m.MovieTitle</td>
                 <td class="text-end">@m.Tickets</td>
-                <td class="text-end">@m.Revenue.ToString("N0")</td>
+                <td class="text-end">@m.Revenue.Vnd()</td>
             </tr>
         }
         @if (Model.ByMovie.Count == 0)
@@ -86,7 +88,7 @@
                 <td>@s.RoomName</td>
                 <td class="text-end">@s.Tickets / @s.Capacity</td>
                 <td class="text-end">@s.Occupancy.ToString("P0")</td>
-                <td class="text-end">@s.Revenue.ToString("N0")</td>
+                <td class="text-end">@s.Revenue.Vnd()</td>
             </tr>
         }
     </tbody>
