@@ -64,6 +64,17 @@
                         }
                     </tbody>
                     <tfoot>
+                        @if (Model.Summary.HasVoucher)
+                        {
+                            <tr>
+                                <td colspan="2">Tạm tính</td>
+                                <td class="text-end">@Model.Summary.Subtotal.Vnd()</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="text-success">Mã giảm giá @Model.Summary.VoucherCode</td>
+                                <td class="text-end text-success">−@Model.Summary.VoucherDiscount.Vnd()</td>
+                            </tr>
+                        }
                         <tr>
                             <th colspan="2">Tổng cộng</th>
                             <th class="text-end">@Model.Summary.TotalAmount.Vnd()</th>
@@ -71,6 +82,35 @@
                     </tfoot>
                 </table>
             </div>
+
+            @* Mã giảm giá: lưu vào phiên, server kiểm tra lại lúc dựng trang và lúc chốt đơn. *@
+            <section class="voucher-box" aria-label="Mã giảm giá">
+                @if (Model.Summary.HasVoucher)
+                {
+                    <div class="voucher-applied" role="status">
+                        <div>
+                            <strong>@Model.Summary.VoucherCode</strong>
+                            <span class="small cb-muted d-block">@Model.Summary.VoucherTitle · giảm @Model.Summary.VoucherDiscount.Vnd()</span>
+                        </div>
+                        <form asp-action="RemoveVoucher" method="post">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Bỏ mã</button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <form asp-action="ApplyVoucher" method="post" class="voucher-form">
+                        <label for="voucher-code" class="visually-hidden">Mã giảm giá</label>
+                        <input id="voucher-code" name="code" class="form-control text-uppercase" maxlength="30" autocomplete="off"
+                               placeholder="Nhập mã giảm giá" />
+                        <button type="submit" class="btn btn-outline-primary">Áp dụng</button>
+                    </form>
+                }
+                @if (TempData["VoucherError"] is string voucherError)
+                {
+                    <p class="small text-danger mb-0 mt-2" role="alert">@voucherError</p>
+                }
+            </section>
 
             <a asp-controller="Booking" asp-action="SeatMap" asp-route-id="@Model.Summary.ShowtimeId"
                class="btn btn-outline-secondary w-100 mt-2">Chọn lại ghế</a>

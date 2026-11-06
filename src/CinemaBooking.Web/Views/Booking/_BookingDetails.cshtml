@@ -19,12 +19,11 @@
                                 <td>@seat.Label</td>
                                 <td>@seat.Type</td>
                                 <td class="text-end">
-                                    @if (seat.HasPromotion)
+                                    @if (seat.HasAnyDiscount)
                                     {
-                                        <span class="text-decoration-line-through cb-muted small">@((seat.Price + seat.Discount).Vnd())</span>
+                                        <span class="text-decoration-line-through cb-muted small">@seat.ListPrice.Vnd()</span>
                                         <br />
-                                        <span class="small text-success">@seat.PromotionTitle</span>
-                                        <br />
+                                        @if (seat.HasPromotion) { <span class="small text-success">@seat.PromotionTitle</span><br /> }
                                     }
                                     @seat.Price.Vnd()
                                 </td>
@@ -32,6 +31,13 @@
                         }
                     </tbody>
                     <tfoot>
+                        @if (Model.VoucherCode is not null && Model.VoucherDiscount > 0)
+                        {
+                            <tr>
+                                <td colspan="2" class="small">Mã giảm giá <strong>@Model.VoucherCode</strong> (đã trừ vào giá từng ghế)</td>
+                                <td class="text-end small text-success">−@Model.VoucherDiscount.Vnd()</td>
+                            </tr>
+                        }
                         <tr>
                             <th colspan="2">Tổng cộng</th>
                             <th class="text-end">@Model.TotalAmount.Vnd()</th>

@@ -4,9 +4,14 @@ namespace CinemaBooking.Web.Models;
 
 /// <summary>Một dòng ghế trên vé đã đặt — giá lấy từ <c>BookingSeat.PriceAtBooking</c>.</summary>
 public sealed record BookingSeatLine(
-    string Label, SeatType Type, decimal Price, decimal Discount = 0m, string? PromotionTitle = null)
+    string Label, SeatType Type, decimal Price, decimal Discount = 0m, string? PromotionTitle = null, decimal VoucherShare = 0m)
 {
     public bool HasPromotion => Discount > 0 && !string.IsNullOrEmpty(PromotionTitle);
+
+    /// <summary>Giá niêm yết của ghế = giá đã trả + khuyến mãi + phần mã giảm giá.</summary>
+    public decimal ListPrice => Price + Discount + VoucherShare;
+
+    public bool HasAnyDiscount => Discount + VoucherShare > 0;
 }
 
 /// <summary>Thông tin đầy đủ của một vé, dùng cho trang xác nhận, tra cứu và danh sách vé.</summary>
@@ -30,7 +35,9 @@ public sealed record BookingTicketViewModel(
     bool IsMasked = false,
     DateTime? CheckedInLocal = null,
     string? CheckedInBy = null,
-    string? FormatLabel = null)
+    string? FormatLabel = null,
+    string? VoucherCode = null,
+    decimal VoucherDiscount = 0m)
 {
     /// <summary>Vé đã được nhân viên soát tại rạp.</summary>
     public bool IsCheckedIn => CheckedInLocal is not null;

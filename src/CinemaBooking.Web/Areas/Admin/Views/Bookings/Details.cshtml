@@ -57,6 +57,13 @@
         }
     </tbody>
     <tfoot>
+        @if (Model.VoucherCode is not null && Model.VoucherDiscount > 0)
+        {
+            <tr>
+                <td colspan="2">Mã giảm giá <strong>@Model.VoucherCode</strong></td>
+                <td class="text-end text-success">−@Model.VoucherDiscount.Vnd()</td>
+            </tr>
+        }
         <tr>
             <th colspan="2">Tổng tiền</th>
             <th class="text-end">@Model.TotalAmount.Vnd()</th>

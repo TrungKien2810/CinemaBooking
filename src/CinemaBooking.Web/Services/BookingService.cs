@@ -1,3 +1,4 @@
+using CinemaBooking.Domain;
 using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
@@ -30,6 +31,7 @@ public sealed class BookingService : IBookingService
     private readonly IOptions<VnpayOptions> _vnpayOptions;
     private readonly DisplayTimeZone _tz;
     private readonly ILogger<BookingService> _log;
+    private readonly IVoucherService? _vouchers;
 
     public BookingService(
         CinemaDbContext db,
@@ -41,8 +43,10 @@ public sealed class BookingService : IBookingService
         TimeProvider clock,
         IOptions<VnpayOptions> vnpayOptions,
         DisplayTimeZone tz,
-        ILogger<BookingService> log)
+        ILogger<BookingService> log,
+        IVoucherService? vouchers = null)
     {
+        _vouchers = vouchers;
         _db = db;
         _bookedSeats = bookedSeats;
         _locks = locks;
@@ -97,7 +101,21 @@ public sealed class BookingService : IBookingService
         var startLocal = _tz.ToLocalTime(showtime.StartTimeUtc);
         var promotions = await PromotionRules.LoadForShowtimeAsync(
             _db, showtime.Room!.TheaterId, DateOnly.FromDateTime(startLocal), ct);
-        var booking = BuildBooking(request, showtime, seats, startLocal, promotions);
+        var surcharges = await PricingLoader.LoadSurchargesAsync(_db, showtime.Room.TheaterId, ct);
+        var booking = BuildBooking(request, showtime, seats, startLocal, promotions, surcharges);
+
+        // Mã giảm giá kiểm lại Ở SERVER với tổng tiền thật của đơn (khách có thể sửa session/form), rồi chia vào giá từng ghế.
+        if (!string.IsNullOrWhiteSpace(request.VoucherCode))
+        {
+            if (_vouchers is null)
+                return BookingResult.Failed(BookingResultKind.VoucherInvalid, "Hệ thống chưa hỗ trợ mã giảm giá.");
+
+            var check = await _vouchers.CheckAsync(
+                request.VoucherCode, showtime.Room.TheaterId, booking.TotalAmount, request.UserId, request.CustomerEmail, ct);
+            if (!check.IsOk) return BookingResult.Failed(BookingResultKind.VoucherInvalid, check.Message);
+
+            ApplyVoucher(booking, check);
+        }
 
         // Transaction 1: giữ chỗ. Suất chiếu đã bắt đầu hay chưa được kiểm lại ở trên; đơn Pending
         // + unique index chính là thứ giữ ghế trong lúc khách thanh toán (General.md §7.5) — mất
@@ -196,7 +214,7 @@ public sealed class BookingService : IBookingService
     {
         var booking = await _db.Bookings
             .Include(b => b.Payment)
-            .Include(b => b.Showtime)
+            .Include(b => b.Showtime!).ThenInclude(sh => sh.Movie)
             .Include(b => b.Seats).ThenInclude(bs => bs.Seat)
             .FirstOrDefaultAsync(b => b.BookingCode == bookingCode, ct);
 
@@ -314,15 +332,32 @@ public sealed class BookingService : IBookingService
                 || message.Contains("duplicate", StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>Trừ mã giảm giá khỏi đơn: chia theo tỷ lệ giá từng ghế để doanh thu (tính theo ghế) vẫn khớp tổng đơn.</summary>
+    private static void ApplyVoucher(Booking booking, VoucherResult check)
+    {
+        var shares = VoucherRules.Allocate(check.Discount, booking.Seats.Select(s => s.PriceAtBooking).ToList());
+        for (var i = 0; i < booking.Seats.Count; i++)
+        {
+            var seat = booking.Seats.ElementAt(i);
+            seat.PriceAtBooking -= shares[i];
+            seat.VoucherShare = shares[i];
+        }
+
+        booking.VoucherCode = check.Voucher!.Code;
+        booking.VoucherDiscount = check.Discount;
+        booking.TotalAmount -= check.Discount;
+        if (booking.Payment is not null) booking.Payment.Amount = booking.TotalAmount;
+    }
+
     private Booking BuildBooking(
         BookingRequest request, Showtime showtime, IReadOnlyList<Seat> seats,
-        DateTime startLocal, IReadOnlyList<Promotion> promotions)
+        DateTime startLocal, IReadOnlyList<Promotion> promotions, SeatSurcharges? surcharges = null)
     {
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
         // Giá chốt ở server từ cùng PromotionRules với sơ đồ ghế/thanh toán — không tin giá client.
         var priced = seats
             .Select(seat => (Seat: seat, Quote: PromotionRules.Quote(
-                _pricing.PriceFor(showtime.BasePrice, seat.SeatType), seat.SeatType, startLocal, promotions)))
+                _pricing.PriceFor(showtime.BasePrice, seat.SeatType, surcharges), seat.SeatType, startLocal, promotions)))
             .ToList();
         var total = priced.Sum(x => x.Quote.FinalPrice);
 
@@ -375,7 +410,8 @@ public sealed class BookingService : IBookingService
             $"Phim: {showtime.Movie?.Title}\n" +
             $"Suất chiếu: {startLocal:HH:mm dd/MM/yyyy}\n" +
             $"Ghế: {labels}\n" +
-            $"Tổng tiền: {booking.TotalAmount:N0} VND\n\n" +
+            (booking.VoucherCode is null ? "" : $"Mã giảm giá {booking.VoucherCode}: -{booking.VoucherDiscount.Vnd()}\n") +
+            $"Tổng tiền: {booking.TotalAmount.Vnd()}\n\n" +
             "Cảm ơn bạn đã đặt vé tại CinemaBooking.";
 
         return new OutboxEmail

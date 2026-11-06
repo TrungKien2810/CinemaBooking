@@ -35,6 +35,7 @@ public class BookingController : Controller
     private readonly SeatHoldOptions _hold;
     private readonly IOptions<VnpayOptions> _vnpayOptions;
     private readonly IBranchScope _branches;
+    private readonly IVoucherService _vouchers;
 
     public BookingController(
         CinemaDbContext db,
@@ -49,9 +50,11 @@ public class BookingController : Controller
         TimeProvider clock,
         IOptions<SeatHoldOptions> hold,
         IOptions<VnpayOptions> vnpayOptions,
-        IBranchScope branches)
+        IBranchScope branches,
+        IVoucherService vouchers)
     {
         _branches = branches;
+        _vouchers = vouchers;
         _db = db;
         _bookedSeats = bookedSeats;
         _locks = locks;
@@ -101,9 +104,10 @@ public class BookingController : Controller
         var startLocal = _tz.ToLocalTime(showtime.StartTimeUtc);
         var promotions = await PromotionRules.LoadForShowtimeAsync(
             _db, showtime.Room!.TheaterId, DateOnly.FromDateTime(startLocal), ct);
+        var surcharges = await PricingLoader.LoadSurchargesAsync(_db, showtime.Room.TheaterId, ct);
 
         return View(SeatMapViewModel.Build(
-            showtime, booked, _pricing, startLocal, (int)_hold.Duration.TotalSeconds, promotions));
+            showtime, booked, _pricing, startLocal, (int)_hold.Duration.TotalSeconds, promotions, surcharges));
     }
 
     /// <summary>
@@ -199,7 +203,8 @@ public class BookingController : Controller
             form.CustomerName,
             form.CustomerEmail,
             form.CustomerPhone,
-            User.FindFirstValue(ClaimTypes.NameIdentifier)), ct);
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Session.GetVoucherCode()), ct);
 
         if (result.IsRedirectToPayment)
         {
@@ -211,6 +216,8 @@ public class BookingController : Controller
 
         if (!result.IsSuccess)
         {
+            // Mã giảm giá không còn dùng được (hết lượt, hết hạn...): bỏ mã để khách thanh toán tiếp giá thường hoặc nhập mã khác.
+            if (result.Kind == BookingResultKind.VoucherInvalid) HttpContext.Session.ClearVoucherCode();
             TempData["Error"] = result.Message;
             return RedirectToAction(nameof(Checkout));
         }
@@ -222,6 +229,42 @@ public class BookingController : Controller
         // Khách guest vừa đặt: nhớ mã vé trong phiên để trang xác nhận hiện thông tin đầy đủ của chính họ.
         if (result.BookingCode is not null) HttpContext.Session.RememberOwnedBooking(result.BookingCode);
         return RedirectToAction(nameof(Confirmation), new { code = result.BookingCode });
+    }
+
+    /// <summary>
+    /// Khách nhập mã giảm giá ở trang thanh toán. Chỉ LƯU mã vào Session; việc kiểm tra (hạn, chi nhánh, đơn tối thiểu, lượt dùng)
+    /// diễn ra khi dựng lại trang thanh toán và lần nữa ở server lúc chốt đơn.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ApplyVoucher(string? code)
+    {
+        if (IsStaff) return StaffCannotBuy();
+        if (HttpContext.Session.GetSeatSelection() is null) return RedirectToAction("Index", "Home");
+
+        var normalized = VoucherRules.Normalize(code);
+        if (normalized.Length == 0)
+        {
+            TempData["VoucherError"] = "Nhập mã giảm giá.";
+        }
+        else if (normalized.Length > 30)
+        {
+            TempData["VoucherError"] = "Mã giảm giá không hợp lệ.";
+        }
+        else
+        {
+            HttpContext.Session.SetVoucherCode(normalized);
+        }
+
+        return RedirectToAction(nameof(Checkout));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult RemoveVoucher()
+    {
+        HttpContext.Session.ClearVoucherCode();
+        return RedirectToAction(nameof(Checkout));
     }
 
     /// <summary>
@@ -464,7 +507,29 @@ public class BookingController : Controller
         var startLocal = _tz.ToLocalTime(showtime.StartTimeUtc);
         var promotions = await PromotionRules.LoadForShowtimeAsync(
             _db, showtime.Room!.TheaterId, DateOnly.FromDateTime(startLocal), ct);
-        var seats = BuildCheckoutSeats(showtime, selection.SeatIds, startLocal, promotions);
+        var surcharges = await PricingLoader.LoadSurchargesAsync(_db, showtime.Room!.TheaterId, ct);
+        var seats = BuildCheckoutSeats(showtime, selection.SeatIds, startLocal, promotions, surcharges);
+
+        // Mã giảm giá đang áp (lưu ở Session): kiểm lại mỗi lần dựng trang — mã có thể vừa hết lượt/hết hạn.
+        var subtotal = seats.Sum(s => s.Price);
+        string? voucherCode = null, voucherTitle = null;
+        var voucherDiscount = 0m;
+        if (HttpContext.Session.GetVoucherCode() is { Length: > 0 } stored)
+        {
+            var check = await _vouchers.CheckAsync(
+                stored, showtime.Room.TheaterId, subtotal, User.FindFirstValue(ClaimTypes.NameIdentifier), User.Identity?.Name, ct);
+            if (check.IsOk)
+            {
+                voucherCode = check.Voucher!.Code;
+                voucherTitle = check.Voucher.Title;
+                voucherDiscount = check.Discount;
+            }
+            else
+            {
+                HttpContext.Session.ClearVoucherCode();
+                TempData["VoucherError"] = check.Message;
+            }
+        }
 
         var summary = new CheckoutViewModel(
             showtime.Id,
@@ -474,8 +539,9 @@ public class BookingController : Controller
             showtime.Room.RoomName,
             _tz.ToLocalTime(showtime.StartTimeUtc),
             seats,
-            seats.Sum(s => s.Price),
-            showtime.Room.RoomType.Label() + " · " + showtime.Language.Label());
+            subtotal - voucherDiscount,
+            showtime.Room.RoomType.Label() + " · " + showtime.Language.Label(),
+            voucherCode, voucherDiscount, voucherTitle);
 
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
         var remaining = selection.ExpiresUtc is { } expiresUtc
@@ -490,7 +556,8 @@ public class BookingController : Controller
     /// khớp với khối ghế trên sơ đồ, không để khách thấy hai dòng nửa ghế.
     /// </summary>
     private List<CheckoutSeatItem> BuildCheckoutSeats(
-        Showtime showtime, IReadOnlyCollection<int> selectedIds, DateTime startLocal, IReadOnlyList<Promotion> promotions)
+        Showtime showtime, IReadOnlyCollection<int> selectedIds, DateTime startLocal, IReadOnlyList<Promotion> promotions,
+        SeatSurcharges? surcharges)
     {
         var allSeats = showtime.Room!.Seats.ToList();
         var byId = allSeats.ToDictionary(s => s.Id);
@@ -507,7 +574,7 @@ public class BookingController : Controller
             if (!consumed.Add(seat.Id)) continue;
 
             var unit = PromotionRules.Quote(
-                _pricing.PriceFor(showtime.BasePrice, seat.SeatType), seat.SeatType, startLocal, promotions);
+                _pricing.PriceFor(showtime.BasePrice, seat.SeatType, surcharges), seat.SeatType, startLocal, promotions);
 
             if (seat.SeatType == SeatType.Couple
                 && partners.TryGetValue(seat.Id, out var partnerId)

@@ -22,4 +22,4 @@ public sealed record BookingDetailsViewModel(
     string CustomerName, string CustomerEmail, string? CustomerPhone,
     string MovieTitle, string TheaterName, string RoomName, DateTime ShowtimeStartLocal,
     decimal TotalAmount, PaymentStatus? PaymentStatus, string? TransactionId,
-    List<BookingSeatLine> Seats);
+    List<BookingSeatLine> Seats, string? VoucherCode = null, decimal VoucherDiscount = 0m);

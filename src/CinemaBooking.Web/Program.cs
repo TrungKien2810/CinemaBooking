@@ -54,6 +54,7 @@ builder.Services.AddHostedService<ExpiredBookingCleaner>(); // đơn Pending qu�
 
 // ── Dev B: luồng đặt vé (kiểm ghế + lock → ghi Booking trong một transaction → thu tiền → outbox) ──
 builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IVoucherService, VoucherService>();
 
 // ── Vé điện tử: mã QR in trên vé ──
 builder.Services.AddSingleton<IQrCodeService, QrCodeService>();

@@ -1,0 +1,85 @@
+@model VouchersIndexViewModel
+@{
+    ViewData["Title"] = "Mã giảm giá";
+}
+
+<div class="admin-page-head">
+    <div>
+        <h1 class="page-title">Mã giảm giá</h1>
+        <p class="cb-muted page-subtitle">
+            Khách nhập mã ở bước thanh toán. Khác khuyến mãi (tự áp theo suất/ghế), mã tính trên <strong>tổng tiền vé</strong>.
+            · @Model.Total mã
+        </p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">Thêm mã giảm giá</a>
+</div>
+
+@if (TempData["Message"] is string message) { <div class="alert alert-success" role="status">@message</div> }
+
+<form method="get" class="cb-card admin-filter" role="search">
+    <input name="q" value="@Model.Query" type="search" class="form-control" style="max-width:18rem" maxlength="60"
+           placeholder="Tìm mã hoặc tên chương trình…" aria-label="Tìm mã giảm giá" />
+    <select name="status" class="form-select" style="max-width:13rem" aria-label="Trạng thái">
+        <option value="">Mọi trạng thái</option>
+        <option value="running" selected="@(Model.Status == "running")">Đang chạy</option>
+        <option value="ended" selected="@(Model.Status == "ended")">Đã hết hạn</option>
+        <option value="off" selected="@(Model.Status == "off")">Tạm ngưng</option>
+    </select>
+    <button type="submit" class="btn btn-outline-primary">Lọc</button>
+    @if (Model.Query is not null || Model.Status is not null) { <a asp-action="Index" class="btn btn-link">Xóa lọc</a> }
+</form>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="cb-card empty-state">
+        <p class="empty-title">Chưa có mã giảm giá nào</p>
+        <p class="cb-muted">Tạo mã để khách nhập khi thanh toán và được giảm giá.</p>
+    </div>
+}
+else
+{
+    <div class="cb-card admin-table-wrap">
+        <table class="table admin-table align-middle mb-0">
+            <thead>
+                <tr><th>Mã</th><th>Ưu đãi</th><th>Phạm vi</th><th>Hiệu lực</th><th class="text-end">Đã dùng</th><th>Trạng thái</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var v in Model.Items)
+                {
+                    <tr class="@(v.IsActive ? null : "is-inactive")">
+                        <td>
+                            <div class="code-link">@v.Code</div>
+                            <div class="small cb-muted">@v.Title</div>
+                        </td>
+                        <td class="small cell-wide">@v.Rule</td>
+                        <td class="text-nowrap">@v.Scope</td>
+                        <td class="text-nowrap small">@v.StartDate.ToString("dd/MM/yyyy") – @v.EndDate.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end text-nowrap">@v.Used@(v.UsageLimit is { } l ? " / " + l : "")</td>
+                        <td>
+                            @if (v.IsRunning) { <span class="status-badge is-on">Đang chạy</span> }
+                            else if (!v.IsActive) { <span class="status-badge is-off">Tạm ngưng</span> }
+                            else { <span class="status-badge is-off">Ngoài hạn</span> }
+                        </td>
+                        <td class="admin-actions">
+                            @if (v.CanEdit)
+                            {
+                                <a asp-action="Edit" asp-route-id="@v.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
+                                <form asp-action="Delete" asp-route-id="@v.Id" method="post" class="d-inline"
+                                      data-confirm="Xóa / tạm ngưng mã @v.Code?">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="small cb-muted">Chỉ Admin sửa</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @await Html.PartialAsync("_Pager", new PagerModel("Index", Model.Paging,
+        new Dictionary<string, object?> { ["q"] = Model.Query, ["status"] = Model.Status }))
+}
