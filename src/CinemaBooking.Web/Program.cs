@@ -19,6 +19,12 @@ builder.Services.AddSignalR();
 // ── Dev B: log có cấu trúc, dùng chung cấu hình với Worker ──
 builder.Logging.AddCinemaLogging(builder.Environment.IsDevelopment());
 
+// Mô phỏng thanh toán khi chưa có VNPAY HashSecret CHỈ bật ở môi trường Development và chỉ khi chưa ai
+// đặt giá trị rõ ràng (appsettings.Development.json / biến môi trường vẫn ghi đè được). Không để cờ này
+// trong appsettings.json dùng chung: chạy thật mà quên cấu hình VNPAY thì sẽ bán vé miễn phí.
+if (builder.Environment.IsDevelopment() && builder.Configuration["Vnpay:SimulateWhenUnconfigured"] is null)
+    builder.Configuration["Vnpay:SimulateWhenUnconfigured"] = "true";
+
 // DbContext + SeatLockManager + PaymentService + EmailSender
 builder.Services.AddCinemaInfrastructure(builder.Configuration);
 
@@ -86,6 +92,7 @@ builder.Services.AddScoped<IBranchDirectory, BranchDirectory>();
 // ── Phạm vi dữ liệu của tài khoản quản lý chi nhánh (BranchAdmin) ──
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IBranchScope, BranchScope>();
+builder.Services.AddScoped<ITicketCheckInService, TicketCheckInService>();
 // ── Dev C: thông báo lỗi model binding bằng tiếng Việt (cả server lẫn data-val-number) ──
 builder.Services.Configure<MvcOptions>(VietnameseModelBindingMessages.Apply);
 
@@ -112,6 +119,11 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
     await CatalogSeeder.SeedAsync(db);
     await IdentitySeeder.SeedAsync(scope.ServiceProvider);
+
+    // Dữ liệu demo phong phú (chi nhánh, phim, khách, lịch chiếu ~4 tuần, vài nghìn đơn đặt vé). Mặc định chỉ bật ở
+    // Development; đặt Seed:DemoData=false để tắt, hoặc =true để bật ở môi trường khác.
+    if (builder.Configuration.GetValue<bool?>("Seed:DemoData") ?? app.Environment.IsDevelopment())
+        await DemoDataSeeder.SeedAsync(scope.ServiceProvider);
 }
 
 if (!app.Environment.IsDevelopment())

@@ -140,6 +140,67 @@ Khi còn dùng mật khẩu mặc định, log khởi động sẽ in một dòn
 Dùng hằng số `AppRoles.Admin` / `AppRoles.Customer` trong `[Authorize(Roles = ...)]`, đừng gõ
 chuỗi tay: gõ sai thì build vẫn xanh, lỗi chỉ lộ lúc chạy dưới dạng "bị chặn truy cập".
 
+### Tài khoản quản lý chi nhánh (`BranchAdmin`)
+
+Seed sẵn `branch@cinemabooking.local` / `Branch@12345` cho chi nhánh **CineSmart Cầu Giấy**. Chi nhánh gắn
+trong `ApplicationUser.TheaterId`. Tài khoản `BranchAdmin` **chưa được gán chi nhánh** (hoặc chi nhánh đã bị gỡ)
+KHÔNG phải admin toàn hệ thống: `IBranchScope.TheaterIdAsync` trả `BranchScope.NoBranch` (-1), mọi danh sách rỗng
+và mọi thao tác bị từ chối.
+
+---
+
+## Gửi email thật (SMTP)
+
+Email xác nhận vé đi qua bảng outbox rồi **`CinemaBooking.Worker`** gửi đi — nên cấu hình SMTP phải đặt cho
+**Worker** (và Worker phải đang chạy: `dotnet run --project src/CinemaBooking.Worker`). Chưa có `Email:Smtp:Host`
+thì email chỉ được ghi ra log.
+
+Ví dụ Gmail (bật xác minh 2 bước rồi tạo **App password**, không dùng mật khẩu đăng nhập):
+
+```bash
+dotnet user-secrets init --project src/CinemaBooking.Worker
+dotnet user-secrets set "Email:Smtp:Host" "smtp.gmail.com" --project src/CinemaBooking.Worker
+dotnet user-secrets set "Email:Smtp:Port" "587" --project src/CinemaBooking.Worker
+dotnet user-secrets set "Email:Smtp:UserName" "ban@gmail.com" --project src/CinemaBooking.Worker
+dotnet user-secrets set "Email:Smtp:Password" "app-password-16-ky-tu" --project src/CinemaBooking.Worker
+dotnet user-secrets set "Email:Smtp:From" "ban@gmail.com" --project src/CinemaBooking.Worker
+```
+
+Chạy bằng `dotnet run --project src/CinemaBooking.Worker` (profile trong `launchSettings.json` đặt sẵn
+`DOTNET_ENVIRONMENT=Development`, nhờ vậy user-secrets mới được nạp; chạy kiểu khác thì tự đặt biến này hoặc dùng biến môi trường
+`Email__Smtp__Host`…). Quên mật khẩu trên web cũng chỉ ghi vào outbox nên không cần cấu hình SMTP cho Web.
+
+Dùng Mailtrap/SES thì đổi Host/Port/UserName/Password tương ứng. **Không commit** mật khẩu vào `appsettings.json`.
+Gửi lỗi thì worker tự thử lại tối đa `EmailOutbox:MaxAttempts` lần.
+
+---
+
+## Khuyến mãi, soát vé và xếp lịch tự động
+
+- **Khuyến mãi tự trừ giá:** mỗi khuyến mãi có thể giảm % hoặc đồng giá, giới hạn theo loại ghế, thứ trong tuần và
+  giờ bắt đầu suất. Mỗi ghế chỉ hưởng MỘT khuyến mãi (giá thấp nhất), không cộng dồn. Logic nằm ở một chỗ:
+  `PromotionRules` (sơ đồ ghế, thanh toán và ghi đơn đều gọi vào đây). Giá đã chốt trong `BookingSeat` nên sửa/xóa
+  khuyến mãi sau này **không** đổi vé đã bán.
+- **Soát vé:** `/Admin/CheckIn` (Admin, BranchAdmin đúng chi nhánh). Vé phải đã thanh toán, chỉ vào một lần,
+  cổng mở trước giờ chiếu 60 phút và đóng khi hết suất.
+- **Trang vé công khai** che họ tên/email/SĐT; chủ vé, khách vừa đặt trong phiên, Admin và BranchAdmin đúng chi
+  nhánh thấy đầy đủ.
+- **Ghế đôi** đặt được ở hàng nào cũng được: ghép hai ghế liền kề cùng hàng ở trang "Sửa ghế".
+- **Gợi ý lịch cả ngày** (`/Admin/Showtimes/AutoPlan`): phim khởi chiếu gần nhất → phòng lớn nhất, giờ vàng.
+- **Tài khoản quản trị không mua vé:** Admin/BranchAdmin chỉ xem sơ đồ ghế (không giữ ghế, không thanh toán, không có "Vé của tôi");
+  muốn thử mua vé hãy dùng tài khoản khách.
+- **Quản lý tài khoản** (`/Admin/Users`, chỉ Admin): tìm/lọc tài khoản, tạo tài khoản quản lý chi nhánh và gán chi nhánh,
+  khóa/mở khóa, đặt lại mật khẩu. Chi nhánh có thêm điện thoại, email, giờ mở cửa, giới thiệu.
+- **Tìm kiếm và lọc:** Hệ thống rạp (tên/địa chỉ/thành phố, không cần gõ dấu), trang chủ có gợi ý khi gõ, admin có tìm/lọc ở
+  Phim, Chi nhánh, Đơn đặt vé (mã/tên/email/SĐT + khoảng ngày + phân trang), Suất chiếu (theo phim/trạng thái), Tài khoản.
+- **Giá tiền:** hiển thị `90.000 đ`; ô nhập giá gõ theo nghìn đồng (gõ `95` = 95.000đ).
+- **Lối đi dọc** khi tạo phòng chỉ hợp lệ trong khoảng [2, số cột − 3] (mỗi bên ít nhất 2 ghế), phòng cần ≥ 5 cột.
+- **Dữ liệu demo phong phú:** chạy tự động khi `dotnet run` ở Development (9 chi nhánh, 17 phim, ~3.000 suất, hàng chục nghìn đơn).
+  Tắt bằng `Seed:DemoData=false`. Tài khoản mẫu: `khach01@example.com`…`khach20@example.com` / `Khach@12345`;
+  `branch.<tên>@cinemabooking.local` / `Branch@12345`.
+- **Phòng và phim:** phòng có loại (2D/3D/IMAX/4DX), suất có ngôn ngữ (bản gốc/phụ đề/lồng tiếng), phim có độ tuổi,
+  đạo diễn, diễn viên, trailer.
+
 ---
 
 ## Thanh toán và hoàn tiền VNPAY (Sandbox)
