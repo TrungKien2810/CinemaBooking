@@ -3,6 +3,7 @@ using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Areas.Admin.Models;
 using CinemaBooking.Web.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -37,7 +38,12 @@ public class PromotionsController : AdminControllerBase
         }
         else if (theaterId is null)
         {
-            return RedirectToAction("Index", "Theaters");
+            // Admin toàn hệ thống mở từ sidebar: vào chi nhánh đầu tiên, đổi chi nhánh bằng ô chọn trên trang.
+            theaterId = await _db.Theaters.AsNoTracking().Where(t => t.IsActive)
+                .OrderBy(t => t.City).ThenBy(t => t.Name)
+                .Select(t => (int?)t.Id)
+                .FirstOrDefaultAsync(ct);
+            if (theaterId is null) return RedirectToAction("Index", "Theaters");
         }
 
         var theater = await _db.Theaters.AsNoTracking().FirstOrDefaultAsync(t => t.Id == theaterId, ct);
@@ -54,7 +60,14 @@ public class PromotionsController : AdminControllerBase
                 p.AppliesAutomatically ? PromotionRules.Describe(p) : "Chỉ quảng bá (không tự trừ giá)"))
             .ToList();
 
-        return View(new PromotionsIndexViewModel(theater.Id, theater.Name, items));
+        var branches = scoped is not null
+            ? []
+            : await _db.Theaters.AsNoTracking()
+                .OrderBy(t => t.City).ThenBy(t => t.Name)
+                .Select(t => new SelectListItem(t.City + " · " + t.Name, t.Id.ToString()))
+                .ToListAsync(ct);
+
+        return View(new PromotionsIndexViewModel(theater.Id, theater.Name, items, branches));
     }
 
     [HttpGet]
@@ -90,6 +103,7 @@ public class PromotionsController : AdminControllerBase
         _db.Promotions.Add(promotion);
         await _db.SaveChangesAsync(ct);
 
+        Notify("Đã thêm khuyến mãi.");
         return RedirectToAction(nameof(Index), new { theaterId = theater.Id });
     }
 
@@ -120,6 +134,7 @@ public class PromotionsController : AdminControllerBase
         Apply(form, promotion);
         await _db.SaveChangesAsync(ct);
 
+        Notify("Đã lưu khuyến mãi.");
         return RedirectToAction(nameof(Index), new { theaterId = promotion.TheaterId });
     }
 

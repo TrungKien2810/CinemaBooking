@@ -58,7 +58,7 @@ public sealed class CheckoutFormModel
     [Display(Name = "Email")]
     public string CustomerEmail { get; set; } = string.Empty;
 
-    [Phone(ErrorMessage = "Số điện thoại không hợp lệ.")]
+    [RegularExpression(PhoneRules.Pattern, ErrorMessage = PhoneRules.Message)]
     [StringLength(20)]
     [Display(Name = "Số điện thoại")]
     public string? CustomerPhone { get; set; }

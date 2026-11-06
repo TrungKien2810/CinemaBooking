@@ -46,7 +46,7 @@
             <option value="">Mọi trạng thái</option>
             @foreach (var s in Enum.GetValues<BookingStatus>())
             {
-                <option value="@s" selected="@(s == Model.Status)">@s</option>
+                <option value="@s" selected="@(s == Model.Status)">@s.Label()</option>
             }
         </select>
     </div>
@@ -82,7 +82,7 @@
                 <td>@b.BookedLocal.ToString("dd/MM HH:mm")</td>
                 <td class="text-end">@b.SeatCount</td>
                 <td class="text-end">@b.TotalAmount.Vnd()</td>
-                <td>@b.Status</td>
+                <td>@b.Status.Label()</td>
             </tr>
         }
         @if (Model.Items.Count == 0)

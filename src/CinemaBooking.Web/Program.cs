@@ -8,8 +8,10 @@ using CinemaBooking.Web.Services;
 using CinemaBooking.Web.Validation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +56,16 @@ builder.Services.AddHostedService<ExpiredBookingCleaner>(); // đơn Pending qu�
 
 // ── Dev B: luồng đặt vé (kiểm ghế + lock → ghi Booking trong một transaction → thu tiền → outbox) ──
 builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<BookingCancellationService>();
+
+// Tra mã vé và gửi lại email là hai lối công khai: giới hạn theo IP để chặn dò mã và spam thư.
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.AddPolicy(TicketRateLimit.Policy, ctx => RateLimitPartition.GetFixedWindowLimiter(
+        ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = TicketRateLimit.PerMinute, Window = TimeSpan.FromMinutes(1) }));
+});
 builder.Services.AddScoped<IVoucherService, VoucherService>();
 
 // ── Vé điện tử: mã QR in trên vé ──
@@ -75,6 +87,9 @@ builder.Services
     .AddDefaultTokenProviders();
 
 // ── Dev C: cookie đăng nhập trỏ về AccountController (MVC), không dùng Razor Pages Identity UI ──
+// Khóa tài khoản đổi security stamp: mặc định 30 phút cookie mới kiểm tra lại, quá lâu với tài khoản quản trị.
+builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
+
 builder.Services.ConfigureApplicationCookie(o =>
 {
     o.LoginPath = "/Account/Login";
@@ -111,6 +126,9 @@ var app = builder.Build();
 // Đặt đầu pipeline: middleware chỉ bắt được exception của những middleware nằm sau nó.
 app.UseCinemaExceptionHandling();
 
+// 404/403/429 không có nội dung thì chạy lại vào trang lỗi của web, không để lộ trang lỗi trình duyệt.
+app.UseStatusCodePagesWithReExecute("/Home/Status/{0}");
+
 // --- Dev A + Dev C: khởi tạo dữ liệu (thứ tự bắt buộc: migration → catalog → identity) ---
 // Áp migration rồi seed catalog ngay lúc khởi động: cả nhóm chỉ cần `git pull` + `dotnet run`
 // là có schema và dữ liệu mẫu giống nhau, không phải nhớ chạy `dotnet ef database update`.
@@ -133,7 +151,12 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Poster admin tải lên lúc chạy: MapStaticAssets chỉ phục vụ file có sẵn từ lúc build.
+app.UseStaticFiles();
+
 app.UseRouting();
+app.UseRateLimiter();
 
 app.UseSession();
 app.UseAuthentication();
@@ -145,7 +168,7 @@ app.MapStaticAssets();
 // --- Dev A: khu quản trị (/Admin/...) — phải map trước route default ---
 app.MapControllerRoute(
     name: "admin",
-    pattern: "{area:exists}/{controller=Movies}/{action=Index}/{id?}")
+    pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 app.MapControllerRoute(

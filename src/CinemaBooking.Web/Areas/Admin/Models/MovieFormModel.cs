@@ -35,7 +35,12 @@ public sealed class MovieFormModel
 
     [Display(Name = "Ảnh poster (URL)")]
     [StringLength(500, ErrorMessage = "URL poster tối đa 500 ký tự.")]
+    [RegularExpression(@"^(https?://|/)\S+$", ErrorMessage = "Poster phải là URL http(s) hoặc đường dẫn bắt đầu bằng /.")]
     public string? PosterUrl { get; set; }
+
+    /// <summary>Ảnh tải lên từ máy; có file thì ghi đè <see cref="PosterUrl"/>.</summary>
+    [Display(Name = "Hoặc tải ảnh lên")]
+    public IFormFile? PosterFile { get; set; }
 
     [Display(Name = "Đang chiếu")]
     public bool IsActive { get; set; } = true;
@@ -92,5 +97,8 @@ public sealed class MovieFormModel
 public sealed record MoviesIndexViewModel(
     List<Movie> Items, string? Query, string? Status, string? Genre, IReadOnlyList<string> Genres, int Total, int ActiveTotal)
 {
+    /// <summary>Ngày hiện tại theo giờ rạp, để phân biệt phim đang chiếu với phim sắp chiếu.</summary>
+    public DateOnly Today { get; init; }
+
     public bool IsFiltered => Query is not null || Status is not null || Genre is not null;
 }

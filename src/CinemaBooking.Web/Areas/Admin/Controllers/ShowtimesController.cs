@@ -24,14 +24,17 @@ public class ShowtimesController : AdminControllerBase
     private readonly DisplayTimeZone _tz;
     private readonly TimeProvider _clock;
     private readonly IBranchScope _branches;
+    private readonly BookingCancellationService? _cancellation;
 
     public ShowtimesController(
         CinemaDbContext db,
         IShowtimeScheduler scheduler,
         IOptions<DisplayTimeZone> tz,
         TimeProvider clock,
-        IBranchScope branches)
+        IBranchScope branches,
+        BookingCancellationService? cancellation = null)
     {
+        _cancellation = cancellation;
         _db = db;
         _scheduler = scheduler;
         _tz = tz.Value;
@@ -164,7 +167,17 @@ public class ShowtimesController : AdminControllerBase
         _db.Showtimes.Add(showtime);
         await _db.SaveChangesAsync(ct);
 
+        Notify("Đã thêm suất chiếu." + await EarlyScreeningNoteAsync(showtime, ct));
         return RedirectToIndexOf(showtime);
+    }
+
+    /// <summary>Suất chiếu sớm vẫn hợp lệ (suất chiếu đặc biệt) nhưng nên nhắc để tránh gõ nhầm ngày.</summary>
+    private async Task<string> EarlyScreeningNoteAsync(Showtime showtime, CancellationToken ct)
+    {
+        var release = await _db.Movies.Where(m => m.Id == showtime.MovieId).Select(m => m.ReleaseDate).FirstAsync(ct);
+        return _tz.ToLocalDate(showtime.StartTimeUtc) < release
+            ? $" Lưu ý: suất này trước ngày khởi chiếu {release:dd/MM/yyyy}."
+            : string.Empty;
     }
 
     [HttpGet]
@@ -183,6 +196,7 @@ public class ShowtimesController : AdminControllerBase
             StartTimeLocal = _tz.ToLocalTime(showtime.StartTimeUtc),
             BasePrice = showtime.BasePrice,
             Language = showtime.Language,
+            SoldTickets = await SoldTickets.ForShowtimeAsync(_db, id, ct),
         };
         await FillOptionsAsync(form, ct);
         return View("Form", form);
@@ -198,10 +212,20 @@ public class ShowtimesController : AdminControllerBase
             return Forbid();
 
         form.Id = id;
+        form.SoldTickets = await SoldTickets.ForShowtimeAsync(_db, id, ct);
 
-        // Vé đã đặt giữ SeatId của phòng hiện tại — đổi phòng thì các vé đó trỏ vào ghế của phòng khác.
-        if (form.RoomId != showtime.RoomId && await _db.Bookings.AnyAsync(b => b.ShowtimeId == id, ct))
-            ModelState.AddModelError(nameof(form.RoomId), "Suất đã có vé được đặt, không đổi phòng được.");
+        // Khách đã mua vé cho đúng phim, giờ và ghế này: muốn đổi thì rạp phải hủy vé (hoàn tiền) trước.
+        // Riêng đổi phòng còn làm vé trỏ vào ghế của phòng khác.
+        if (form.SoldTickets > 0)
+        {
+            var startUtc = form.StartTimeLocal is { } local ? DateTime.SpecifyKind(local - _tz.Offset, DateTimeKind.Utc) : showtime.StartTimeUtc;
+            if (form.RoomId != showtime.RoomId)
+                ModelState.AddModelError(nameof(form.RoomId), "Suất đã có vé được đặt, không đổi phòng được.");
+            if (form.MovieId != showtime.MovieId)
+                ModelState.AddModelError(nameof(form.MovieId), "Suất đã có vé được đặt, không đổi phim được.");
+            if (startUtc != showtime.StartTimeUtc)
+                ModelState.AddModelError(nameof(form.StartTimeLocal), "Suất đã có vé được đặt, không đổi giờ được.");
+        }
 
         if (!await TryApplyAsync(form, showtime, ct))
         {
@@ -210,7 +234,29 @@ public class ShowtimesController : AdminControllerBase
         }
 
         await _db.SaveChangesAsync(ct);
+        Notify("Đã lưu suất chiếu.");
         return RedirectToIndexOf(showtime);
+    }
+
+    /// <summary>Không chiếu được suất này: hủy mọi vé (khách nhận email, chờ rạp hoàn tiền) rồi ẩn suất.</summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CancelTickets(int id, string? reason, CancellationToken ct)
+    {
+        var showtime = await _db.Showtimes.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id, ct);
+        if (showtime is null) return NotFound();
+        if (!await _branches.CanAccessTheaterAsync(await TheaterIdOfRoomAsync(showtime.RoomId, ct), ct))
+            return Forbid();
+
+        var outcome = await _cancellation!.CancelShowtimeAsync(id, reason, User.Identity?.Name ?? "?", ct);
+        if (outcome.Succeeded)
+        {
+            Notify(outcome.Message);
+            return RedirectToIndexOf(showtime);
+        }
+
+        NotifyError(outcome.Message);
+        return RedirectToAction(nameof(Edit), new { id });
     }
 
     /// <summary>Tạm ẩn / hiện lại suất: suất ẩn không bán cho khách, đơn đã đặt vẫn giữ nguyên.</summary>
@@ -226,7 +272,9 @@ public class ShowtimesController : AdminControllerBase
         showtime.IsActive = !showtime.IsActive;
         await _db.SaveChangesAsync(ct);
 
-        TempData["Message"] = showtime.IsActive ? "Đã hiện lại suất chiếu." : "Đã tạm ẩn suất chiếu — khách không đặt được nữa.";
+        var sold = await SoldTickets.ForShowtimeAsync(_db, id, ct);
+        var note = sold > 0 && !showtime.IsActive ? $" {sold} đơn đã bán vẫn có hiệu lực, khách vẫn vào xem bình thường." : string.Empty;
+        Notify(showtime.IsActive ? "Đã hiện lại suất chiếu." : "Đã tạm ẩn suất chiếu — khách không đặt được nữa." + note);
         return RedirectToIndexOf(showtime);
     }
 
@@ -530,6 +578,7 @@ public class ShowtimesController : AdminControllerBase
         _db.Showtimes.Remove(showtime);
         await _db.SaveChangesAsync(ct);
 
+        Notify("Đã xóa suất chiếu.");
         return RedirectToIndexOf(showtime);
     }
 

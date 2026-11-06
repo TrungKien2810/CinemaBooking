@@ -42,25 +42,13 @@ public sealed record BookingTicketViewModel(
     /// <summary>Vé đã được nhân viên soát tại rạp.</summary>
     public bool IsCheckedIn => CheckedInLocal is not null;
 
-    public string StatusLabel => Status switch
-    {
-        BookingStatus.Confirmed => "Đã xác nhận",
-        BookingStatus.Pending => "Đang chờ thanh toán",
-        BookingStatus.Cancelled => "Đã hủy",
-        BookingStatus.Expired => "Đã hết hạn",
-        _ => Status.ToString(),
-    };
+    public string StatusLabel => Status.Label();
 
-    public string PaymentStateLabel => PaymentState switch
-    {
-        PaymentStatus.Succeeded => "Đã thanh toán",
-        PaymentStatus.Pending => "Đang chờ",
-        PaymentStatus.Failed => "Thất bại",
-        PaymentStatus.Refunded => "Đã hoàn tiền",
-        PaymentStatus.RefundPending => "Đang hoàn tiền",
-        PaymentStatus.RefundFailed => "Hoàn tiền thất bại",
-        _ => PaymentState.ToString(),
-    };
+    public string PaymentStateLabel => PaymentState.Label();
+
+    /// <summary>Rạp chủ động hủy vé đã thanh toán (khách không tự hủy được), tiền đang/đã được hoàn.</summary>
+    public bool CancelledByCinema =>
+        Status == BookingStatus.Cancelled && PaymentState is PaymentStatus.RefundPending or PaymentStatus.Refunded;
 }
 
 /// <summary>Trang tra cứu vé theo mã: <see cref="Code"/> là mã khách vừa nhập, <see cref="Booking"/> null nếu không thấy.</summary>
@@ -71,4 +59,6 @@ public sealed record MyBookingsViewModel(
     IReadOnlyList<BookingTicketViewModel> Bookings,
     string Tab = "all",
     int UpcomingCount = 0,
-    int HistoryCount = 0);
+    int HistoryCount = 0,
+    int AllCount = 0,
+    PageInfo? Page = null);

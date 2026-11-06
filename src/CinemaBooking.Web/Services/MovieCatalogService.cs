@@ -15,7 +15,22 @@ public sealed class MovieCatalogService : IMovieCatalogService
     {
         // Lọc, sắp xếp và chiếu cột đều nằm trong IQueryable ⇒ EF dịch trọn thành một câu SQL.
         // Đừng chèn ToList()/AsEnumerable()/AsParallel() vào giữa chuỗi này: xem ADR 0001.
-        return await Filter(_db.Movies.AsNoTracking(), query.Normalized())
+        var normalized = query.Normalized();
+        var source = _db.Movies.AsNoTracking();
+
+        // Bỏ dấu tiếng Việt không dịch được sang SQL: danh mục phim nhỏ nên so khớp từ khóa trên RAM để lấy id,
+        // phần lọc còn lại vẫn trong một câu SQL.
+        if (normalized.Keyword is { } keyword)
+        {
+            var candidates = await source.Where(m => m.IsActive)
+                .Select(m => new { m.Id, m.Title, m.Genre })
+                .ToListAsync(ct);
+            var ids = candidates.Where(m => TextSearch.Matches(keyword, m.Title, m.Genre)).Select(m => m.Id).ToList();
+            source = source.Where(m => ids.Contains(m.Id));
+            normalized = normalized with { Keyword = null };
+        }
+
+        return await Filter(source, normalized)
             .OrderByDescending(m => m.ReleaseDate)
             .ThenBy(m => m.Title)
             .Select(m => new MovieListItem(
@@ -42,16 +57,6 @@ public sealed class MovieCatalogService : IMovieCatalogService
     private static IQueryable<Movie> Filter(IQueryable<Movie> source, MovieSearchQuery q)
     {
         source = source.Where(m => m.IsActive);
-
-        if (q.Keyword is not null)
-        {
-            // ToLower() thay cho StringComparison: EF không dịch được overload có StringComparison,
-            // và ToLower() cho kết quả giống nhau trên SQL Server lẫn provider InMemory của test.
-            var kw = q.Keyword.ToLower();
-            source = source.Where(m =>
-                m.Title.ToLower().Contains(kw) ||
-                (m.Genre != null && m.Genre.ToLower().Contains(kw)));
-        }
 
         if (q.Genre is not null)
         {

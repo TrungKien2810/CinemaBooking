@@ -53,7 +53,8 @@ public sealed record ShowtimeSlotViewModel(
     DateTime StartLocal,
     DateTime EndLocal,
     decimal BasePrice,
-    string FormatLabel = "");
+    string FormatLabel = "",
+    CinemaBooking.Web.Services.PriceQuote? Quote = null);
 
 /// <summary>Thông tin thêm của phim: độ tuổi, đạo diễn, diễn viên, trailer.</summary>
 public sealed record MovieExtraInfo(

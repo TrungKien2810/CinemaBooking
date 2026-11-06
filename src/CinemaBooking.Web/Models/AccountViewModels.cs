@@ -30,6 +30,9 @@ public sealed class RegisterViewModel
     [Compare(nameof(Password), ErrorMessage = "Mật khẩu nhập lại không khớp.")]
     [Display(Name = "Nhập lại mật khẩu")]
     public string ConfirmPassword { get; set; } = string.Empty;
+
+    /// <summary>Kiểm tra ở controller: phải có ở server, ô tick trên trình duyệt có thể bị bỏ qua.</summary>
+    public bool AcceptTerms { get; set; }
 }
 
 public sealed class LoginViewModel
@@ -87,10 +90,17 @@ public sealed class ProfileViewModel
     [Display(Name = "Email")]
     public string Email { get; set; } = string.Empty;
 
-    [Phone(ErrorMessage = "Số điện thoại không hợp lệ.")]
+    [RegularExpression(PhoneRules.Pattern, ErrorMessage = PhoneRules.Message)]
     [StringLength(30, ErrorMessage = "Số điện thoại tối đa {1} ký tự.")]
     [Display(Name = "Số điện thoại")]
     public string? PhoneNumber { get; set; }
+}
+
+/// <summary>Một quy tắc số điện thoại cho hồ sơ và thanh toán: [Phone] có sẵn nhận cả chuỗi như "12".</summary>
+public static class PhoneRules
+{
+    public const string Pattern = @"^\+?[0-9][0-9 .\-]{8,14}$";
+    public const string Message = "Số điện thoại không hợp lệ.";
 }
 
 public sealed class ChangePasswordViewModel

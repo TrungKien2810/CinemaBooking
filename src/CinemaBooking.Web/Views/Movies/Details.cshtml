@@ -126,7 +126,17 @@
                                     <a class="showtime-slot" href="@Url.Content($"~/Booking/SeatMap/{s.Id}")"
                                        title="@s.RoomName · kết thúc @s.EndLocal.ToString("HH:mm")">
                                         <span class="showtime-time">@s.StartLocal.ToString("HH:mm")</span>
-                                        <span class="showtime-meta">@s.RoomName · @s.BasePrice.Vnd()</span>
+                                        <span class="showtime-meta">
+                                            @s.RoomName ·
+                                            @if (s.Quote is { HasDiscount: true } quote)
+                                            {
+                                                <s>@quote.ListPrice.Vnd()</s> <strong title="@quote.PromotionTitle">@quote.FinalPrice.Vnd()</strong>
+                                            }
+                                            else
+                                            {
+                                                @s.BasePrice.Vnd()
+                                            }
+                                        </span>
                                         @if (!string.IsNullOrEmpty(s.FormatLabel))
                                         {
                                             <span class="showtime-meta">@s.FormatLabel</span>

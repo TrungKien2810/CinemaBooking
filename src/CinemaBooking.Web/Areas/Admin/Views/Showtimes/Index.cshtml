@@ -113,7 +113,8 @@ else
                             <td class="text-end">@s.BookingCount</td>
                             <td class="admin-actions">
                                 <a asp-action="Edit" asp-route-id="@s.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
-                                <form asp-action="ToggleActive" asp-route-id="@s.Id" method="post" class="d-inline">
+                                <form asp-action="ToggleActive" asp-route-id="@s.Id" method="post" class="d-inline"
+                                      data-confirm="@(s.IsActive && s.BookingCount > 0 ? $"Ẩn suất này? {s.BookingCount} đơn đã đặt vẫn có hiệu lực, chỉ ngừng bán thêm vé." : null)">
                                     <button type="submit" class="btn btn-sm btn-outline-secondary">@(s.IsActive ? "Ẩn" : "Hiện")</button>
                                 </form>
                                 @if (s.BookingCount == 0)

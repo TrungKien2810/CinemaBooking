@@ -19,6 +19,8 @@
         <nav class="admin-nav">
             @if (User.IsInRole(AppRoles.Admin))
             {
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Dashboard")" data-icon="🏠">Tổng quan</a>
                 <a asp-area="Admin" asp-controller="Movies" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Movies")" data-icon="🎬">Phim</a>
                 <a asp-area="Admin" asp-controller="Theaters" asp-action="Index"
@@ -27,6 +29,8 @@
                    class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">Suất chiếu</a>
                 <a asp-area="Admin" asp-controller="Pricing" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Pricing")" data-icon="💰">Bảng giá vé</a>
+                <a asp-area="Admin" asp-controller="Promotions" asp-action="Index"
+                   class="admin-nav-link @ActiveIf("Promotions")" data-icon="🎁">Khuyến mãi</a>
                 <a asp-area="Admin" asp-controller="Vouchers" asp-action="Index"
                    class="admin-nav-link @ActiveIf("Vouchers")" data-icon="🏷️">Mã giảm giá</a>
                 <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"

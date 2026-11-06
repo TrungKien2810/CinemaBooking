@@ -6,11 +6,15 @@
 }
 
 <section class="page-head">
-    <h1 class="page-title">@(confirmed ? "Đặt vé thành công 🎉" : "Thanh toán chưa hoàn tất")</h1>
+    <h1 class="page-title">@(confirmed ? "Đặt vé thành công 🎉" : Model.CancelledByCinema ? "Vé đã bị rạp hủy" : "Thanh toán chưa hoàn tất")</h1>
     <p class="cb-muted page-subtitle">
         @if (confirmed)
         {
             <text>Cảm ơn @Model.CustomerName! Vé đã được xác nhận và email sẽ được gửi tới @Model.CustomerEmail.</text>
+        }
+        else if (Model.CancelledByCinema)
+        {
+            <text>Rạp không thể chiếu suất này nên đã hủy vé @Model.BookingCode. Rạp sẽ hoàn tiền cho bạn, chi tiết nằm trong email đã gửi tới @Model.CustomerEmail.</text>
         }
         else
         {

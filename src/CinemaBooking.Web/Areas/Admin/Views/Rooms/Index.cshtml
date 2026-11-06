@@ -22,6 +22,10 @@
 {
     <div class="alert alert-danger">@error</div>
 }
+@if (TempData["Message"] is string message)
+{
+    <div class="alert alert-success" role="status">@message</div>
+}
 
 @if (Model.Rooms.Count == 0)
 {

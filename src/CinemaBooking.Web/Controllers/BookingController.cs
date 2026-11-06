@@ -10,6 +10,7 @@ using CinemaBooking.Web.Models;
 using CinemaBooking.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -68,6 +69,8 @@ public class BookingController : Controller
         _hold = hold.Value;
         _vnpayOptions = vnpayOptions;
     }
+
+    private const int MyBookingsPageSize = 10;
 
     /// <summary>Tài khoản quản trị (Admin/BranchAdmin) chỉ XEM sơ đồ ghế, không đặt vé — mua vé là việc của khách.</summary>
     private bool IsStaff => User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.BranchAdmin);
@@ -140,6 +143,17 @@ public class BookingController : Controller
         {
             TempData["Error"] = "Thời gian giữ ghế đã hết hoặc ghế không còn do bạn giữ. Vui lòng chọn lại.";
             return RedirectToAction(nameof(SeatMap), new { id = showtimeId });
+        }
+
+        // Đổi sang suất khác khi đang có ghế chờ thanh toán: giỏ chỉ giữ một suất, nên trả ghế cũ
+        // ngay thay vì để chúng khóa người khác cho tới khi hết hạn.
+        if (HttpContext.Session.GetSeatSelection() is { } previous && previous.ShowtimeId != showtimeId)
+        {
+            var released = previous.SeatIds
+                .Where(seatId => _locks.Release(new SeatKey(previous.ShowtimeId, seatId), previous.ConnectionId))
+                .ToList();
+            if (released.Count > 0)
+                await _seats.Clients.Group(SeatHub.GroupName(previous.ShowtimeId)).SeatUnlocked(released);
         }
 
         // Mốc hết hạn để trang thanh toán chạy đồng hồ đếm ngược — cùng một con số với lock.
@@ -282,7 +296,7 @@ public class BookingController : Controller
         }
 
         var vnpayRequest = new VnpayPaymentRequest(
-            TxnRef: response["vnp_TxnRef"] ?? string.Empty,
+            TxnRef: response.GetValueOrDefault("vnp_TxnRef") ?? string.Empty,
             Amount: 0,
             OrderInfo: string.Empty,
             ReturnUrl: _vnpayOptions.Value.ReturnUrl,
@@ -344,7 +358,7 @@ public class BookingController : Controller
         }
 
         var vnpayRequest = new VnpayPaymentRequest(
-            TxnRef: response["vnp_TxnRef"] ?? string.Empty,
+            TxnRef: response.GetValueOrDefault("vnp_TxnRef") ?? string.Empty,
             Amount: 0,
             OrderInfo: string.Empty,
             ReturnUrl: _vnpayOptions.Value.ReturnUrl,
@@ -400,6 +414,7 @@ public class BookingController : Controller
 
     /// <summary>Tra cứu vé theo mã, dùng được cho cả khách không đăng nhập.</summary>
     [HttpGet]
+    [EnableRateLimiting(TicketRateLimit.Policy)]
     public async Task<IActionResult> Lookup(string? code, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(code))
@@ -421,10 +436,11 @@ public class BookingController : Controller
     /// <summary>Vé của tài khoản đang đăng nhập, mới nhất trước.</summary>
     [Authorize]
     [HttpGet]
-    public async Task<IActionResult> MyBookings(string? tab, CancellationToken ct)
+    public async Task<IActionResult> MyBookings(string? tab, int? page, CancellationToken ct)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId is null) return Challenge();
+        if (IsStaff) return StaffCannotBuy();
 
         var bookings = await _db.Bookings.AsNoTracking()
             .Where(b => b.UserId == userId)
@@ -437,31 +453,41 @@ public class BookingController : Controller
             .ToListAsync(ct);
 
         var now = _clock.GetUtcNow().UtcDateTime;
+        // Suất đang chiếu vẫn là "sắp chiếu" với khách: chỉ khi hết phim mới sang "đã xem".
         var upcomingCount = bookings.Count(b =>
-            (b.Status is BookingStatus.Confirmed or BookingStatus.Pending) && b.Showtime!.StartTimeUtc > now);
+            (b.Status is BookingStatus.Confirmed or BookingStatus.Pending) && b.Showtime!.EndTimeUtc > now);
         var historyCount = bookings.Count(b =>
-            b.Status == BookingStatus.Confirmed && b.Showtime!.StartTimeUtc <= now);
+            b.Status == BookingStatus.Confirmed && b.Showtime!.EndTimeUtc <= now);
 
         var selected = string.IsNullOrWhiteSpace(tab) ? "all" : tab.Trim().ToLowerInvariant();
         var filtered = selected switch
         {
             "upcoming" => bookings.Where(b =>
-                (b.Status is BookingStatus.Confirmed or BookingStatus.Pending) && b.Showtime!.StartTimeUtc > now),
+                (b.Status is BookingStatus.Confirmed or BookingStatus.Pending) && b.Showtime!.EndTimeUtc > now),
             "history" => bookings.Where(b =>
-                b.Status == BookingStatus.Confirmed && b.Showtime!.StartTimeUtc <= now),
+                b.Status == BookingStatus.Confirmed && b.Showtime!.EndTimeUtc <= now),
             _ => bookings,
         };
 
+        var matching = filtered.ToList();
+        var current = PageInfo.Clamp(page, matching.Count, MyBookingsPageSize);
+
         // Vé của chính tài khoản đang đăng nhập (đã lọc theo UserId ở trên) — hiện đầy đủ.
-        var items = filtered.Select(b => ToDetails(b, revealPersonalData: true)).ToList();
+        var items = matching
+            .Skip((current - 1) * MyBookingsPageSize)
+            .Take(MyBookingsPageSize)
+            .Select(b => ToDetails(b, revealPersonalData: true))
+            .ToList();
 
         return View(new MyBookingsViewModel(
-            items, selected, upcomingCount, historyCount));
+            items, selected, upcomingCount, historyCount, bookings.Count,
+            new PageInfo(current, MyBookingsPageSize, matching.Count)));
     }
 
     /// <summary>Gửi lại email xác nhận; khách guest phải nhập đúng email trên vé.</summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting(TicketRateLimit.Policy)]
     public async Task<IActionResult> ResendEmail(string code, string? email, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(code))
@@ -601,13 +627,14 @@ public class BookingController : Controller
 
         var user = await _db.Users.AsNoTracking()
             .Where(u => u.Id == userId)
-            .Select(u => new { u.FullName, u.Email })
+            .Select(u => new { u.FullName, u.Email, u.PhoneNumber })
             .FirstOrDefaultAsync(ct);
 
         if (user is null) return form;
 
         form.CustomerName = user.FullName ?? user.Email ?? string.Empty;
         form.CustomerEmail = user.Email ?? string.Empty;
+        form.CustomerPhone = user.PhoneNumber;
         return form;
     }
 

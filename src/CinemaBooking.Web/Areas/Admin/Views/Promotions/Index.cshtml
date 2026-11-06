@@ -15,6 +15,28 @@
     <a asp-action="Create" asp-route-theaterId="@Model.TheaterId" class="btn btn-primary">Thêm khuyến mãi</a>
 </div>
 
+@if (TempData["Message"] is string message)
+{
+    <div class="alert alert-success" role="status">@message</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger" role="alert">@error</div>
+}
+
+@if (Model.Branches is { Count: > 0 } branches)
+{
+    <form method="get" class="cb-card admin-filter">
+        <label for="theaterId" class="mb-0 fw-semibold">Chi nhánh</label>
+        <select id="theaterId" name="theaterId" class="form-select" style="max-width:22rem" onchange="this.form.submit()">
+            @foreach (var b in branches)
+            {
+                <option value="@b.Value" selected="@(b.Value == Model.TheaterId.ToString())">@b.Text</option>
+            }
+        </select>
+    </form>
+}
+
 @if (Model.Items.Count == 0)
 {
     <div class="cb-card empty-state">

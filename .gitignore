@@ -50,3 +50,6 @@ config/
 .opencode/
 AGENTS.md
 CLAUDE.md
+
+# Poster admin tải lên lúc chạy
+src/CinemaBooking.Web/wwwroot/img/posters/uploads/

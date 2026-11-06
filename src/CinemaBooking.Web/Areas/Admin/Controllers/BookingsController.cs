@@ -21,12 +21,18 @@ public class BookingsController : AdminControllerBase
     private readonly CinemaDbContext _db;
     private readonly DisplayTimeZone _tz;
     private readonly IBranchScope _branches;
+    private readonly BookingCancellationService? _cancellation;
+    private readonly TimeProvider _clock;
 
-    public BookingsController(CinemaDbContext db, IOptions<DisplayTimeZone> tz, IBranchScope branches)
+    public BookingsController(
+        CinemaDbContext db, IOptions<DisplayTimeZone> tz, IBranchScope branches,
+        BookingCancellationService? cancellation = null, TimeProvider? clock = null)
     {
         _db = db;
         _tz = tz.Value;
         _branches = branches;
+        _cancellation = cancellation;
+        _clock = clock ?? TimeProvider.System;
     }
 
     /// <param name="q">Tìm theo mã đơn, tên, email hoặc số điện thoại khách.</param>
@@ -49,7 +55,11 @@ public class BookingsController : AdminControllerBase
         {
             var term = q.Trim();
             var upper = term.ToUpperInvariant();
-            query = query.Where(b => b.BookingCode.Contains(upper) || b.CustomerName.Contains(term)
+            // Tên khách tìm không dấu: so khớp trên danh sách tên riêng (ít hơn nhiều so với số đơn) rồi lọc lại ở SQL.
+            var names = (await query.Select(b => b.CustomerName).Distinct().ToListAsync(ct))
+                .Where(n => TextSearch.Matches(term, n))
+                .ToList();
+            query = query.Where(b => b.BookingCode.Contains(upper) || names.Contains(b.CustomerName)
                                      || b.CustomerEmail.Contains(term) || (b.CustomerPhone != null && b.CustomerPhone.Contains(term)));
         }
         if (from is not null && to is not null && from > to) (from, to) = (to, from);
@@ -119,6 +129,7 @@ public class BookingsController : AdminControllerBase
                 x.TotalAmount,
                 x.VoucherCode,
                 x.VoucherDiscount,
+                x.CheckedInUtc,
                 PaymentStatus = (PaymentStatus?)x.Payment!.Status,
                 x.Payment.TransactionId,
                 Seats = x.Seats
@@ -138,6 +149,45 @@ public class BookingsController : AdminControllerBase
             b.Id, b.BookingCode, b.Status, _tz.ToLocalTime(b.BookingTimeUtc),
             b.CustomerName, b.CustomerEmail, b.CustomerPhone,
             b.Title, b.TheaterName, b.RoomName, _tz.ToLocalTime(b.StartTimeUtc),
-            b.TotalAmount, b.PaymentStatus, b.TransactionId, seats, b.VoucherCode, b.VoucherDiscount));
+            b.TotalAmount, b.PaymentStatus, b.TransactionId, seats, b.VoucherCode, b.VoucherDiscount,
+            CheckedInLocal: b.CheckedInUtc is { } at ? _tz.ToLocalTime(at) : null,
+            CancelBlockedReason: BookingCancellationService.WhyNotCancellable(
+                b.Status, b.CheckedInUtc, b.StartTimeUtc, _clock.GetUtcNow().UtcDateTime)));
+    }
+
+    /// <summary>Rạp hủy vé vì không chiếu được: Admin hoặc quản lý đúng chi nhánh. Khách không có lối vào này.</summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Cancel(int id, string? reason, CancellationToken ct)
+    {
+        if (await TheaterOfAsync(id, ct) is not { } theaterId) return NotFound();
+        if (!await _branches.CanAccessTheaterAsync(theaterId, ct)) return Forbid();
+
+        var outcome = await _cancellation!.CancelAsync(id, reason, User.Identity?.Name ?? "?", ct);
+        Report(outcome);
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    /// <summary>Đánh dấu rạp đã chuyển trả tiền cho khách.</summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkRefunded(int id, CancellationToken ct)
+    {
+        if (await TheaterOfAsync(id, ct) is not { } theaterId) return NotFound();
+        if (!await _branches.CanAccessTheaterAsync(theaterId, ct)) return Forbid();
+
+        Report(await _cancellation!.MarkRefundedAsync(id, ct));
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    private Task<int?> TheaterOfAsync(int bookingId, CancellationToken ct) =>
+        _db.Bookings.AsNoTracking().Where(b => b.Id == bookingId)
+            .Select(b => (int?)b.Showtime!.Room!.TheaterId)
+            .FirstOrDefaultAsync(ct);
+
+    private void Report(CancellationOutcome outcome)
+    {
+        if (outcome.Succeeded) Notify(outcome.Message);
+        else NotifyError(outcome.Message);
     }
 }

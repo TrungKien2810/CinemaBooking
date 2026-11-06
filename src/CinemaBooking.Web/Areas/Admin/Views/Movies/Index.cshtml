@@ -11,6 +11,15 @@
     <a asp-action="Create" class="btn btn-primary">Thêm phim</a>
 </div>
 
+@if (TempData["Message"] is string message)
+{
+    <div class="alert alert-success" role="status">@message</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger" role="alert">@error</div>
+}
+
 <form method="get" class="cb-card admin-filter" role="search">
     <input name="q" value="@Model.Query" type="search" class="form-control" style="max-width:18rem" maxlength="100"
            placeholder="Tìm tên phim, đạo diễn, diễn viên…" aria-label="Tìm phim" />
@@ -76,7 +85,7 @@ else
                         <td class="text-end text-nowrap">@m.DurationMinutes phút</td>
                         <td class="text-nowrap">@m.ReleaseDate.ToString("dd/MM/yyyy")</td>
                         <td>
-                            <span class="status-badge @(m.IsActive ? "is-on" : "is-off")">@(m.IsActive ? "Đang chiếu" : "Đã ẩn")</span>
+                            <span class="status-badge @(m.IsActive ? "is-on" : "is-off")">@(!m.IsActive ? "Đã ẩn" : m.ReleaseDate > Model.Today ? "Sắp chiếu" : "Đang chiếu")</span>
                         </td>
                         <td class="admin-actions">
                             <a asp-action="Edit" asp-route-id="@m.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
