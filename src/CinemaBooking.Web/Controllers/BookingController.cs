@@ -333,7 +333,7 @@ public class BookingController : Controller
             if (result.IsSuccess)
                 await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatBooked(seatIds);
             else
-                await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatUnlocked(seatIds);
+                await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatFreed(seatIds);
         }
 
         if (!result.IsSuccess)

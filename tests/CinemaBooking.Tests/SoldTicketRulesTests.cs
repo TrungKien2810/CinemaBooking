@@ -269,6 +269,18 @@ public class SoldTicketRulesTests
     }
 
     [Fact]
+    public async Task Showtime_cannot_be_cancelled_while_a_customer_is_paying()
+    {
+        var (db, _, room, showtime) = await SeedAsync();
+        await SellAsync(db, showtime, room, BookingStatus.Pending);
+
+        var outcome = await Cancellation(db).CancelShowtimeAsync(showtime.Id, "Hỏng máy", "admin", CancellationToken.None);
+
+        Assert.False(outcome.Succeeded);
+        Assert.True((await db.Showtimes.AsNoTracking().SingleAsync()).IsActive);
+    }
+
+    [Fact]
     public async Task Refund_can_only_be_marked_on_a_pending_refund()
     {
         var (db, _, room, showtime) = await SeedAsync();

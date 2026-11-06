@@ -77,6 +77,11 @@ public sealed class BookingCancellationService
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
         if (showtime.StartTimeUtc <= nowUtc) return new(false, "Suất đã bắt đầu, không hủy được.");
 
+        // Khách đang ở cổng thanh toán vẫn có thể được xác nhận sau khi suất đã hủy: đợi đơn đó ngã ngũ.
+        var paying = await _db.Bookings.CountAsync(b => b.ShowtimeId == showtimeId && b.Status == BookingStatus.Pending, ct);
+        if (paying > 0)
+            return new(false, $"Còn {paying} đơn đang thanh toán, vui lòng thử lại sau vài phút.");
+
         var tickets = await LoadAsync(_db.Bookings.Where(b => b.ShowtimeId == showtimeId && b.Status == BookingStatus.Confirmed), ct);
         var cancellable = tickets
             .Where(b => WhyNotCancellable(b.Status, b.CheckedInUtc, b.Showtime!.StartTimeUtc, nowUtc) is null)
