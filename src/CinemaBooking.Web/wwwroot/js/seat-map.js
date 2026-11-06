@@ -42,8 +42,7 @@
     }
 
     var money = new Intl.NumberFormat('vi-VN', {
-        style: 'currency',
-        currency: 'VND',
+        style: 'decimal',
         maximumFractionDigits: 0
     });
 
@@ -91,7 +90,7 @@
 
         if (selected.size === 0) {
             selectedList.textContent = 'Chưa chọn ghế nào';
-            totalEl.textContent = money.format(0);
+            totalEl.textContent = money.format(0) + ' đ';
             timerEl.hidden = true;
             continueBtn.disabled = true;
             return;
@@ -104,7 +103,7 @@
             total += item.price;
         });
         selectedList.textContent = 'Đã chọn: ' + labels.join(', ');
-        totalEl.textContent = money.format(total);
+        totalEl.textContent = money.format(total) + ' đ';
         continueBtn.disabled = false;
     }
 

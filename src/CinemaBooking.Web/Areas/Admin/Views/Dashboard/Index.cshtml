@@ -10,12 +10,29 @@
     </div>
 </div>
 
-<div class="admin-stats">
-    <div class="cb-card admin-stat"><span class="cb-muted">Suất chiếu hôm nay</span><strong class="admin-stat-value">@Model.ShowtimesToday</strong></div>
-    <div class="cb-card admin-stat"><span class="cb-muted">Vé bán hôm nay</span><strong class="admin-stat-value">@Model.TicketsToday</strong></div>
-    <div class="cb-card admin-stat"><span class="cb-muted">Doanh thu hôm nay</span><strong class="admin-stat-value is-accent">@Model.RevenueToday.ToString("N0") ₫</strong></div>
-    <div class="cb-card admin-stat"><span class="cb-muted">Lấp đầy các suất hôm nay</span><strong class="admin-stat-value">@Model.OccupancyToday.ToString("P0")</strong></div>
-    <div class="cb-card admin-stat"><span class="cb-muted">7 ngày: vé / doanh thu</span><strong class="admin-stat-value">@Model.Tickets7Days · @Model.Revenue7Days.ToString("N0") ₫</strong></div>
+<div class="admin-stat-grid">
+    <div class="admin-stat">
+        <span class="admin-stat-label">Suất chiếu hôm nay</span>
+        <strong class="admin-stat-value">@Model.ShowtimesToday</strong>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat-label">Vé bán hôm nay</span>
+        <strong class="admin-stat-value">@Model.TicketsToday</strong>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat-label">Doanh thu hôm nay</span>
+        <strong class="admin-stat-value is-accent" title="@Model.RevenueToday.Vnd()">@Model.RevenueToday.VndShort()</strong>
+        <span class="admin-stat-hint">@Model.RevenueToday.Vnd()</span>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat-label">Lấp đầy hôm nay</span>
+        <strong class="admin-stat-value">@Model.OccupancyToday.ToString("P0")</strong>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat-label">Doanh thu 7 ngày</span>
+        <strong class="admin-stat-value is-accent" title="@Model.Revenue7Days.Vnd()">@Model.Revenue7Days.VndShort()</strong>
+        <span class="admin-stat-hint">@Model.Tickets7Days vé · @Model.Revenue7Days.Vnd()</span>
+    </div>
 </div>
 
 <h2 class="h5 mt-4">Suất sắp chiếu hôm nay</h2>
