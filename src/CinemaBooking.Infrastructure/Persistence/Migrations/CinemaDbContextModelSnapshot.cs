@@ -111,6 +111,13 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("BookingTimeUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("CheckedInBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime?>("CheckedInUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("CustomerEmail")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -161,9 +168,17 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
                     b.Property<int>("BookingId")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("PriceAtBooking")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PromotionTitle")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<int>("SeatId")
                         .HasColumnType("int");
@@ -230,9 +245,20 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("AgeRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Cast")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Director")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("int");
@@ -255,6 +281,10 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("TrailerUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.HasKey("Id");
 
@@ -363,16 +393,32 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("ApplicableSeatType")
+                        .HasColumnType("int");
+
                     b.Property<string>("Badge")
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
+
+                    b.Property<int>("DaysOfWeekMask")
+                        .HasColumnType("int");
 
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<int?>("DiscountPercent")
+                        .HasColumnType("int");
+
                     b.Property<DateOnly>("EndDate")
                         .HasColumnType("date");
+
+                    b.Property<decimal?>("FixedPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<TimeOnly?>("FromTime")
+                        .HasColumnType("time");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -387,6 +433,9 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
+
+                    b.Property<TimeOnly?>("ToTime")
+                        .HasColumnType("time");
 
                     b.HasKey("Id");
 
@@ -407,6 +456,9 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("RoomType")
+                        .HasColumnType("int");
 
                     b.Property<int>("TheaterId")
                         .HasColumnType("int");
@@ -471,6 +523,9 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<int>("Language")
+                        .HasColumnType("int");
+
                     b.Property<int>("MovieId")
                         .HasColumnType("int");
 
@@ -506,6 +561,14 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -513,6 +576,14 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("OpeningHours")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.HasKey("Id");
 
