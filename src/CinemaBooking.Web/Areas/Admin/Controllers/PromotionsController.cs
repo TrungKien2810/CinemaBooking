@@ -50,7 +50,8 @@ public class PromotionsController : AdminControllerBase
                 .ToListAsync(ct))
             .Select(p => new PromotionListItem(
                 p.Id, p.Title, p.Badge, p.StartDate, p.EndDate, p.IsActive,
-                p.IsActive && p.StartDate <= today && p.EndDate >= today))
+                p.IsActive && p.StartDate <= today && p.EndDate >= today,
+                p.AppliesAutomatically ? PromotionRules.Describe(p) : "Chỉ quảng bá (không tự trừ giá)"))
             .ToList();
 
         return View(new PromotionsIndexViewModel(theater.Id, theater.Name, items));
@@ -144,5 +145,16 @@ public class PromotionsController : AdminControllerBase
         promotion.StartDate = form.StartDate!.Value;
         promotion.EndDate = form.EndDate!.Value;
         promotion.IsActive = form.IsActive;
+
+        // "none" xóa luôn mọi quy tắc cũ: điều kiện ngày/giờ/ghế vô nghĩa khi không có mức giảm.
+        var percent = form.DiscountKind == "percent";
+        var fixedPrice = form.DiscountKind == "fixed";
+        promotion.DiscountPercent = percent ? form.DiscountPercent : null;
+        promotion.FixedPrice = fixedPrice ? form.FixedPrice : null;
+        var automatic = percent || fixedPrice;
+        promotion.ApplicableSeatType = automatic ? form.ApplicableSeatType : null;
+        promotion.DaysOfWeekMask = automatic ? form.DaysOfWeekMask : 0;
+        promotion.FromTime = automatic ? form.FromTime : null;
+        promotion.ToTime = automatic ? form.ToTime : null;
     }
 }

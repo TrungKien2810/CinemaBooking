@@ -22,10 +22,20 @@ public sealed record BranchMovieInfo(
     int UpcomingShowtimes, DateTime NextShowtimeUtc, decimal FromPrice);
 
 public sealed record BranchPromotionInfo(
-    int Id, string Title, string? Description, string? Badge, DateOnly StartDate, DateOnly EndDate);
+    int Id, string Title, string? Description, string? Badge, DateOnly StartDate, DateOnly EndDate,
+    string? AutoRule = null);
 
 public sealed record BranchDetails(
     int Id, string Name, string City, string? Address,
     IReadOnlyList<BranchRoomInfo> Rooms,
     IReadOnlyList<BranchMovieInfo> Movies,
-    IReadOnlyList<BranchPromotionInfo> Promotions);
+    IReadOnlyList<BranchPromotionInfo> Promotions,
+    string? Phone = null, string? Email = null, string? OpeningHours = null, string? Description = null);
+
+/// <summary>Kết quả trang "Hệ thống rạp": các chi nhánh đã lọc (gom theo thành phố) và bộ lọc đang chọn.</summary>
+public sealed record BranchSearchViewModel(
+    List<IGrouping<string, BranchListItem>> Groups, string? Keyword, string? City, IReadOnlyList<string> Cities, int TotalBranches)
+{
+    public bool IsFiltered => Keyword is not null || City is not null;
+    public int Count => Groups.Sum(g => g.Count());
+}

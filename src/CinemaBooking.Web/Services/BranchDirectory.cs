@@ -22,7 +22,7 @@ public sealed class BranchDirectory : IBranchDirectory
     {
         var theater = await _db.Theaters.AsNoTracking()
             .Where(t => t.Id == id && t.IsActive)
-            .Select(t => new { t.Id, t.Name, t.City, t.Address })
+            .Select(t => new { t.Id, t.Name, t.City, t.Address, t.Phone, t.Email, t.OpeningHours, t.Description })
             .FirstOrDefaultAsync(ct);
         if (theater is null) return null;
 
@@ -53,12 +53,18 @@ public sealed class BranchDirectory : IBranchDirectory
             .OrderBy(m => m.NextShowtimeUtc)
             .ToList();
 
-        var promotions = await _db.Promotions.AsNoTracking()
+        var promotionRows = await _db.Promotions.AsNoTracking()
             .Where(p => p.TheaterId == id && p.IsActive && p.StartDate <= today && p.EndDate >= today)
             .OrderBy(p => p.EndDate)
-            .Select(p => new BranchPromotionInfo(p.Id, p.Title, p.Description, p.Badge, p.StartDate, p.EndDate))
             .ToListAsync(ct);
+        var promotions = promotionRows
+            .Select(p => new BranchPromotionInfo(
+                p.Id, p.Title, p.Description, p.Badge, p.StartDate, p.EndDate,
+                p.AppliesAutomatically ? PromotionRules.Describe(p) : null))
+            .ToList();
 
-        return new BranchDetails(theater.Id, theater.Name, theater.City, theater.Address, rooms, movies, promotions);
+        return new BranchDetails(
+            theater.Id, theater.Name, theater.City, theater.Address, rooms, movies, promotions,
+            theater.Phone, theater.Email, theater.OpeningHours, theater.Description);
     }
 }

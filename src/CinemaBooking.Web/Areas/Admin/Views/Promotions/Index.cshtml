@@ -27,7 +27,7 @@ else
     <div class="cb-card admin-table-wrap">
         <table class="table admin-table align-middle mb-0">
             <thead>
-                <tr><th>Chương trình</th><th>Nhãn</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr>
+                <tr><th>Chương trình</th><th>Nhãn</th><th>Quy tắc giảm giá</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr>
             </thead>
             <tbody>
                 @foreach (var p in Model.Items)
@@ -35,6 +35,7 @@ else
                     <tr>
                         <td class="fw-semibold">@p.Title</td>
                         <td>@p.Badge</td>
+                        <td class="small">@p.Rule</td>
                         <td class="text-nowrap">@p.StartDate.ToString("dd/MM/yyyy") – @p.EndDate.ToString("dd/MM/yyyy")</td>
                         <td>
                             @if (p.IsRunning) { <span class="badge text-bg-success">Đang chạy</span> }

@@ -26,7 +26,7 @@
     <div class="col-lg-5">
         <aside class="cb-card checkout-summary" aria-label="Tóm tắt đơn hàng">
             <h2 class="checkout-heading">@Model.Summary.MovieTitle</h2>
-            <p class="cb-muted mb-1">@Model.Summary.TheaterName (@Model.Summary.City) · @Model.Summary.RoomName</p>
+            <p class="cb-muted mb-1">@Model.Summary.TheaterName (@Model.Summary.City) · @Model.Summary.RoomName@(Model.Summary.FormatLabel is null ? "" : " (" + Model.Summary.FormatLabel + ")")</p>
             <p class="cb-muted">@Model.Summary.StartLocal.ToString("HH:mm dd/MM/yyyy")</p>
 
             <div id="checkout-hold-timer" class="seat-timer checkout-hold-timer"
@@ -50,14 +50,23 @@
                             <tr>
                                 <td>@seat.Label</td>
                                 <td>@seat.Type</td>
-                                <td class="text-end">@seat.Price.ToString("N0") ₫</td>
+                                <td class="text-end">
+                                    @if (seat.HasPromotion)
+                                    {
+                                        <span class="text-decoration-line-through cb-muted small">@seat.ListPrice.Vnd()</span>
+                                        <br />
+                                        <span class="small text-success">@seat.PromotionTitle</span>
+                                        <br />
+                                    }
+                                    @seat.Price.Vnd()
+                                </td>
                             </tr>
                         }
                     </tbody>
                     <tfoot>
                         <tr>
                             <th colspan="2">Tổng cộng</th>
-                            <th class="text-end">@Model.Summary.TotalAmount.ToString("N0") ₫</th>
+                            <th class="text-end">@Model.Summary.TotalAmount.Vnd()</th>
                         </tr>
                     </tfoot>
                 </table>
