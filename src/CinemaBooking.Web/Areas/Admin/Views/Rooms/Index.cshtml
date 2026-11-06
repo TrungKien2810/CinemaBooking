@@ -37,6 +37,7 @@ else
             <thead>
                 <tr>
                     <th>Phòng</th>
+                    <th>Loại</th>
                     <th>Sơ đồ</th>
                     <th class="text-end">Số ghế</th>
                     <th class="text-end">Suất chiếu</th>
@@ -48,6 +49,7 @@ else
                 {
                     <tr>
                         <td class="fw-semibold">@r.RoomName</td>
+                        <td><span class="badge text-bg-light">@r.RoomType.Label()</span></td>
                         <td class="text-nowrap">@r.TotalRows hàng × @r.TotalColumns ghế</td>
                         <td class="text-end">@r.SeatCount</td>
                         <td class="text-end">@r.ShowtimeCount</td>

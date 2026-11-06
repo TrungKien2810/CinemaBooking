@@ -19,11 +19,13 @@ public class RoomsController : AdminControllerBase
 {
     private readonly CinemaDbContext _db;
     private readonly IBranchScope _branches;
+    private readonly TimeProvider _clock;
 
-    public RoomsController(CinemaDbContext db, IBranchScope branches)
+    public RoomsController(CinemaDbContext db, IBranchScope branches, TimeProvider? clock = null)
     {
         _db = db;
         _branches = branches;
+        _clock = clock ?? TimeProvider.System;
     }
 
     public async Task<IActionResult> Index(int? theaterId, CancellationToken ct)
@@ -50,7 +52,7 @@ public class RoomsController : AdminControllerBase
             .OrderBy(r => r.RoomName)
             .Select(r => new RoomListItem(
                 r.Id, r.RoomName, r.TotalRows, r.TotalColumns,
-                r.Seats.Count, _db.Showtimes.Count(s => s.RoomId == r.Id)))
+                r.Seats.Count, _db.Showtimes.Count(s => s.RoomId == r.Id), r.RoomType))
             .ToListAsync(ct);
 
         return View(new RoomsIndexViewModel(theater.Id, theater.Name, rooms));
@@ -87,9 +89,10 @@ public class RoomsController : AdminControllerBase
             RoomName = form.RoomName.Trim(),
             TotalRows = form.TotalRows,
             TotalColumns = form.TotalColumns,
+            RoomType = form.RoomType,
         };
         // Gắn ghế qua navigation: EF điền RoomId sau khi insert phòng, gọn trong một SaveChanges.
-        foreach (var seat in SeatGenerator.Generate(room)) room.Seats.Add(seat);
+        foreach (var seat in SeatGenerator.Generate(room, form.LayoutPreset, form.AisleAfterColumn)) room.Seats.Add(seat);
 
         _db.Rooms.Add(room);
         await _db.SaveChangesAsync(ct);
@@ -120,7 +123,8 @@ public class RoomsController : AdminControllerBase
         form.TheaterId = room.TheaterId;
         form.TheaterName = room.Theater!.Name;
 
-        var layoutChanged = form.TotalRows != room.TotalRows || form.TotalColumns != room.TotalColumns;
+        var dimensionsChanged = form.TotalRows != room.TotalRows || form.TotalColumns != room.TotalColumns;
+        var layoutChanged = dimensionsChanged || form.RegenerateSeats;
         if (layoutChanged && await HasBookedSeatsAsync(room.Id, ct))
         {
             ModelState.AddModelError(string.Empty,
@@ -130,11 +134,12 @@ public class RoomsController : AdminControllerBase
         if (!ModelState.IsValid) return View("Form", form);
 
         room.RoomName = form.RoomName.Trim();
+        room.RoomType = form.RoomType;
         if (layoutChanged)
         {
             room.TotalRows = form.TotalRows;
             room.TotalColumns = form.TotalColumns;
-            await RegenerateSeatsAsync(room, ct);
+            await RegenerateSeatsAsync(room, form.LayoutPreset, form.AisleAfterColumn, ct);
         }
         await _db.SaveChangesAsync(ct);
 
@@ -156,13 +161,16 @@ public class RoomsController : AdminControllerBase
     /// Không đụng DB: chỉ chạy <see cref="SeatGenerator"/> trên một phòng tạm.
     /// </summary>
     [HttpGet]
-    public IActionResult SeatPreview(int rows, int columns) =>
-        PartialView("_SeatPreview", SeatPreviewModel.For(rows, columns));
+    public IActionResult SeatPreview(
+        int rows, int columns, SeatLayoutPreset preset = SeatLayoutPreset.Classic, int aisle = 0,
+        RoomType roomType = RoomType.Standard) =>
+        PartialView("_SeatPreview", SeatPreviewModel.For(rows, columns, preset, aisle, roomType));
 
     // ── Sửa loại ghế (BranchAdmin + Admin) ─────────────────────────────────────
 
     /// <summary>
-    /// Trang sửa loại ghế: hàng cuối luôn là ghế đôi (khóa), các hàng khác bấm để đổi Thường ↔ VIP.
+    /// Trang sửa loại ghế: chọn công cụ Thường / VIP / Ghế đôi rồi bấm ghế. Ghế đôi ghép hai ghế
+    /// liền kề cùng hàng, đặt ở hàng nào cũng được.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> Seats(int id, CancellationToken ct)
@@ -171,12 +179,13 @@ public class RoomsController : AdminControllerBase
         if (room is null) return NotFound();
         if (!await _branches.CanAccessTheaterAsync(room.TheaterId, ct)) return Forbid();
 
-        return View(BuildSeatsViewModel(room));
+        return View(BuildSeatsViewModel(room, await FutureBookedSeatIdsAsync(room.Id, ct)));
     }
 
     /// <summary>
-    /// Lưu loại ghế. <paramref name="types"/> có dạng <c>"12=Vip;13=Standard;…"</c>; ghế ở hàng cuối
-    /// luôn bị ép về Couple và không hàng nào khác được đặt Couple — quy ước "ghế đôi tự động hàng cuối".
+    /// Lưu loại ghế. <paramref name="types"/> có dạng <c>"12=Vip;13=Standard;14=Couple;…"</c>.
+    /// Từ chối cả lần lưu (không lưu dở) nếu: có ghế đôi lẻ loi (phải thành cặp liền kề cùng hàng), hoặc
+    /// đổi loại một ghế đang có vé của suất chưa chiếu (khách đã trả giá theo loại ghế cũ).
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -187,31 +196,57 @@ public class RoomsController : AdminControllerBase
         if (!await _branches.CanAccessTheaterAsync(room.TheaterId, ct)) return Forbid();
 
         var requested = ParseSeatTypes(types);
-        var changed = 0;
+        var changes = room.Seats
+            .Where(seat => requested.TryGetValue(seat.Id, out var type) && type != seat.SeatType)
+            .ToList();
 
-        foreach (var seat in room.Seats)
+        // Chỉ đụng tới ghế thuộc phòng này (room.Seats) — id lạ trong chuỗi bị bỏ qua.
+        var locked = await FutureBookedSeatIdsAsync(room.Id, ct);
+        // Ghế đang có vé: vé đã bán giữ nguyên giá (PriceAtBooking) nên vẫn đổi được Thường ↔ VIP cho các suất sau;
+        // nhưng KHÔNG ghép/tách ghế đôi — cặp đã bán phải giữ nguyên.
+        var lockedChanges = changes
+            .Where(seat => locked.Contains(seat.Id)
+                && (seat.SeatType == SeatType.Couple || requested[seat.Id] == SeatType.Couple))
+            .Select(seat => seat.Label)
+            .ToList();
+        if (lockedChanges.Count > 0)
         {
-            var isLastRow = seat.RowNumber == room.TotalRows;
-
-            if (isLastRow)
-            {
-                if (seat.SeatType != SeatType.Couple)
-                {
-                    seat.SeatType = SeatType.Couple;
-                    changed++;
-                }
-                continue;
-            }
-
-            // Chỉ nhận Thường/VIP ở các hàng trên; dữ liệu rác (Couple, số lạ) bị bỏ qua.
-            if (!requested.TryGetValue(seat.Id, out var type) || type is not (SeatType.Standard or SeatType.Vip))
-                continue;
-
-            if (seat.SeatType == type) continue;
-            seat.SeatType = type;
-            changed++;
+            SetError($"Không ghép/tách ghế đôi được ở {string.Join(", ", lockedChanges)}: đang có vé của suất chưa chiếu.");
+            return RedirectToAction(nameof(Seats), new { id });
         }
 
+        // Áp thử lên bộ nhớ rồi kiểm ghế đôi trước khi ghi DB. Ghế đôi lẻ loi có SẴN từ trước (phòng cũ
+        // tạo khi số cột lẻ) không chặn việc lưu — chỉ chặn lỗi MỚI do lần sửa này gây ra.
+        var preexistingOrphans = SeatPairing.OrphanCoupleSeats(room.Seats).Select(seat => seat.Id).ToHashSet();
+        var partnersBefore = SeatPairing.BuildPartnerMap(room.Seats);
+        var before = changes.ToDictionary(seat => seat.Id, seat => seat.SeatType);
+        foreach (var seat in changes) seat.SeatType = requested[seat.Id];
+
+        var layoutError = SeatPairing.ValidateLayout(room.Seats, preexistingOrphans);
+
+        // Ghế đôi đã có vé phải giữ NGUYÊN cặp: đổi ghế bên cạnh có thể làm lệch cách ghép trong đoạn
+        // ghế liền kề (ví dụ cặp 3+4 đã bán, thêm ghế đôi ở 2 và 5 thì thành (2,3)(4,5)) — khách giữ vé
+        // cặp 3+4 sẽ thành hai nửa của hai cặp khác nhau.
+        if (layoutError is null)
+        {
+            var partnersAfter = SeatPairing.BuildPartnerMap(room.Seats);
+            var broken = room.Seats
+                .Where(seat => locked.Contains(seat.Id))
+                .Where(seat => partnersBefore.GetValueOrDefault(seat.Id, 0) != partnersAfter.GetValueOrDefault(seat.Id, 0))
+                .Select(seat => seat.Label)
+                .ToList();
+            if (broken.Count > 0)
+                layoutError = $"Thay đổi này làm đổi cặp ghế đôi đang có vé ({string.Join(", ", broken)}). Hãy giữ nguyên cặp đó.";
+        }
+
+        if (layoutError is not null)
+        {
+            foreach (var seat in changes) seat.SeatType = before[seat.Id];
+            SetError(layoutError);
+            return RedirectToAction(nameof(Seats), new { id });
+        }
+
+        var changed = changes.Count;
         await _db.SaveChangesAsync(ct);
 
         // TempData chỉ có khi chạy trong pipeline MVC (unit test dựng controller trực tiếp thì null).
@@ -231,7 +266,25 @@ public class RoomsController : AdminControllerBase
             .Include(r => r.Seats)
             .FirstOrDefaultAsync(r => r.Id == id, ct);
 
-    private static RoomSeatsViewModel BuildSeatsViewModel(Room room)
+    private void SetError(string message)
+    {
+        // TempData chỉ có khi chạy trong pipeline MVC (unit test dựng controller trực tiếp thì null).
+        if (TempData is not null) TempData["Error"] = message;
+    }
+
+    /// <summary>Ghế của phòng đang có vé (BookingSeats) của suất chưa chiếu — đổi loại sẽ lệch giá đã bán.</summary>
+    private async Task<HashSet<int>> FutureBookedSeatIdsAsync(int roomId, CancellationToken ct)
+    {
+        var nowUtc = _clock.GetUtcNow().UtcDateTime;
+        var ids = await _db.BookingSeats.AsNoTracking()
+            .Where(bs => bs.Seat!.RoomId == roomId && bs.Showtime!.StartTimeUtc > nowUtc)
+            .Select(bs => bs.SeatId)
+            .Distinct()
+            .ToListAsync(ct);
+        return ids.ToHashSet();
+    }
+
+    private static RoomSeatsViewModel BuildSeatsViewModel(Room room, IReadOnlySet<int> lockedSeatIds)
     {
         var rows = room.Seats
             .GroupBy(s => s.RowNumber)
@@ -239,9 +292,9 @@ public class RoomsController : AdminControllerBase
             .Select(g => new RoomSeatRowViewModel(
                 // Nhãn hàng giống nhãn ghế: 1 → A, 2 → B… (Seat.Label dùng cùng quy ước).
                 ((char)('A' + g.Key - 1)).ToString(),
-                IsCoupleRow: g.Key == room.TotalRows,
                 g.OrderBy(s => s.ColumnNumber)
-                    .Select(s => new RoomSeatCellViewModel(s.Id, s.Label, s.SeatType))
+                    .Select(s => new RoomSeatCellViewModel(
+                        s.Id, s.Label, s.SeatType, s.RowNumber, s.ColumnNumber, lockedSeatIds.Contains(s.Id)))
                     .ToList()))
             .ToList();
 
@@ -260,7 +313,7 @@ public class RoomsController : AdminControllerBase
             var parts = pair.Split('=', 2);
             if (parts.Length != 2) continue;
             if (!int.TryParse(parts[0], out var seatId)) continue;
-            if (!Enum.TryParse<SeatType>(parts[1], ignoreCase: true, out var type)) continue;
+            if (!Enum.TryParse<SeatType>(parts[1], ignoreCase: true, out var type) || !Enum.IsDefined(type)) continue;
             result[seatId] = type;
         }
 
@@ -278,11 +331,11 @@ public class RoomsController : AdminControllerBase
     /// Xóa toàn bộ ghế cũ rồi sinh lại theo layout mới, thay vì thêm/bớt từng hàng: quy ước
     /// loại ghế mặc định (VIP ở giữa, ghế đôi hàng cuối) phụ thuộc tổng số hàng nên đổi layout là đổi cả sơ đồ.
     /// </summary>
-    private async Task RegenerateSeatsAsync(Room room, CancellationToken ct)
+    private async Task RegenerateSeatsAsync(Room room, SeatLayoutPreset preset, int aisleAfterColumn, CancellationToken ct)
     {
         var oldSeats = await _db.Seats.Where(s => s.RoomId == room.Id).ToListAsync(ct);
         _db.Seats.RemoveRange(oldSeats);
-        _db.Seats.AddRange(SeatGenerator.Generate(room));
+        _db.Seats.AddRange(SeatGenerator.Generate(room, preset, aisleAfterColumn));
     }
 
     /// <summary>
