@@ -4,7 +4,7 @@
     // Controller đã sắp theo chi nhánh rồi giờ chiếu.
     var byTheater = Model.Items.GroupBy(s => s.TheaterName).ToList();
 
-    string DayLink(DateOnly d) => Url.Action("Index", new { date = d.ToString("yyyy-MM-dd"), theaterId = Model.TheaterId })!;
+    string DayLink(DateOnly d) => Url.Action("Index", new { date = d.ToString("yyyy-MM-dd"), theaterId = Model.TheaterId, movieId = Model.MovieId, status = Model.Status })!;
 }
 
 <div class="admin-page-head">
@@ -14,7 +14,11 @@
             Ngày @Model.Date.ToString("dd/MM/yyyy") · @Model.Items.Count suất ở @byTheater.Count chi nhánh
         </p>
     </div>
-    <a asp-action="Create" class="btn btn-primary">Thêm suất chiếu</a>
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="AutoPlan" asp-route-theaterId="@Model.TheaterId" asp-route-date="@Model.Date.ToString("yyyy-MM-dd")"
+           class="btn btn-outline-primary">Gợi ý lịch cả ngày</a>
+        <a asp-action="Create" class="btn btn-primary">Thêm suất chiếu</a>
+    </div>
 </div>
 
 <form method="get" class="cb-card admin-filter">
@@ -32,6 +36,21 @@
         <select id="theaterId" name="theaterId" class="form-select"
                 asp-items="@(new SelectList(Model.Theaters, "Value", "Text", Model.TheaterId))">
             <option value="">Tất cả chi nhánh</option>
+        </select>
+    </div>
+    <div>
+        <label for="movieId" class="visually-hidden">Phim</label>
+        <select id="movieId" name="movieId" class="form-select" style="max-width:16rem"
+                asp-items="@(new SelectList(Model.Movies ?? new List<SelectListItem>(), "Value", "Text", Model.MovieId))">
+            <option value="">Mọi phim</option>
+        </select>
+    </div>
+    <div>
+        <label for="status" class="visually-hidden">Trạng thái</label>
+        <select id="status" name="status" class="form-select">
+            <option value="">Mọi trạng thái</option>
+            <option value="active" selected="@(Model.Status == "active")">Đang bán</option>
+            <option value="hidden" selected="@(Model.Status == "hidden")">Đang ẩn</option>
         </select>
     </div>
     <button type="submit" class="btn btn-outline-primary">Lọc</button>
@@ -89,8 +108,8 @@ else
                                 <span class="cb-muted">– @s.EndLocal.ToString("HH:mm")</span>
                             </td>
                             <td>@s.MovieTitle@if (!s.IsActive) { <span class="badge text-bg-secondary ms-1">Đang ẩn</span> }</td>
-                            <td class="text-nowrap">@s.RoomName</td>
-                            <td class="text-end text-nowrap">@s.BasePrice.ToString("N0") đ</td>
+                            <td class="text-nowrap">@s.RoomName <span class="badge text-bg-light">@s.RoomType.Label()</span> <span class="badge text-bg-light">@s.Language.Label()</span></td>
+                            <td class="text-end text-nowrap">@s.BasePrice.Vnd()</td>
                             <td class="text-end">@s.BookingCount</td>
                             <td class="admin-actions">
                                 <a asp-action="Edit" asp-route-id="@s.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>

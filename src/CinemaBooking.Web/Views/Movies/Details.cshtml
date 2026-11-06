@@ -27,9 +27,28 @@
             <span aria-hidden="true">·</span>
             <span>Khởi chiếu @m.ReleaseDate.ToString("dd/MM/yyyy")</span>
         </p>
+        @if (Model.Extra is { } x)
+        {
+            <p class="movie-meta mb-2">
+                <span class="badge text-bg-warning" title="@x.AgeRating.Describe()">@x.AgeRating.Label()</span>
+                <span class="cb-muted">@x.AgeRating.Describe()</span>
+            </p>
+            @if (!string.IsNullOrWhiteSpace(x.Director))
+            {
+                <p class="mb-1"><strong>Đạo diễn:</strong> @x.Director</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(x.Cast))
+            {
+                <p class="mb-2"><strong>Diễn viên:</strong> @x.Cast</p>
+            }
+        }
         @if (!string.IsNullOrWhiteSpace(Model.Description))
         {
             <p class="movie-description">@Model.Description</p>
+        }
+        @if (Model.Extra?.SafeTrailerUrl is { } trailer)
+        {
+            <p><a href="@trailer" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm">▶ Xem trailer</a></p>
         }
         <a href="#lich-chieu" class="btn btn-primary movie-hero-cta">Chọn suất chiếu</a>
     </div>
@@ -107,7 +126,11 @@
                                     <a class="showtime-slot" href="@Url.Content($"~/Booking/SeatMap/{s.Id}")"
                                        title="@s.RoomName · kết thúc @s.EndLocal.ToString("HH:mm")">
                                         <span class="showtime-time">@s.StartLocal.ToString("HH:mm")</span>
-                                        <span class="showtime-meta">@s.RoomName · @s.BasePrice.ToString("N0") đ</span>
+                                        <span class="showtime-meta">@s.RoomName · @s.BasePrice.Vnd()</span>
+                                        @if (!string.IsNullOrEmpty(s.FormatLabel))
+                                        {
+                                            <span class="showtime-meta">@s.FormatLabel</span>
+                                        }
                                     </a>
                                 </li>
                             }

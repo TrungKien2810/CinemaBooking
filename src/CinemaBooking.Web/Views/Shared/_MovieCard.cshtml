@@ -7,7 +7,8 @@
 
 <article class="cb-card movie-card position-relative">
     <div class="movie-poster">
-        <span class="movie-badge">Đang chiếu</span>
+        @{ var comingSoon = Model.ReleaseDate > DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)); }
+        <span class="movie-badge@(comingSoon ? " movie-badge-soon" : null)">@(comingSoon ? "Sắp chiếu" : "Đang chiếu")</span>
         <img src="@Model.PosterOrPlaceholder"
              data-poster-fallback="@MovieCardViewModel.PlaceholderPoster"
              alt="Poster phim @Model.Title"

@@ -2,6 +2,7 @@ using CinemaBooking.Domain;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Areas.Admin.Models;
+using CinemaBooking.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,16 +16,38 @@ public class MoviesController : AdminControllerBase
 
     public MoviesController(CinemaDbContext db) => _db = db;
 
-    /// <summary>Liệt kê cả phim đã ẩn — admin cần thấy để bật lại.</summary>
-    public async Task<IActionResult> Index(CancellationToken ct)
+    /// <summary>
+    /// Liệt kê cả phim đã ẩn — admin cần thấy để bật lại. Tìm theo tên/thể loại/đạo diễn/diễn viên (không phân biệt
+    /// dấu), lọc theo trạng thái ("active", "hidden", "soon" = chưa khởi chiếu) và thể loại.
+    /// </summary>
+    public async Task<IActionResult> Index(string? q, string? status, string? genre, CancellationToken ct)
     {
-        var movies = await _db.Movies.AsNoTracking()
+        var all = await _db.Movies.AsNoTracking()
             .OrderByDescending(m => m.IsActive)
             .ThenByDescending(m => m.ReleaseDate)
             .ThenBy(m => m.Title)
             .ToListAsync(ct);
 
-        return View(movies);
+        var genres = all.Select(m => m.Genre).Where(g => !string.IsNullOrWhiteSpace(g)).Select(g => g!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(g => g).ToList();
+        var selectedGenre = genres.FirstOrDefault(g => string.Equals(g, genre?.Trim(), StringComparison.OrdinalIgnoreCase));
+        var keyword = string.IsNullOrWhiteSpace(q) ? null : q.Trim();
+        var statusFilter = status is "active" or "hidden" or "soon" ? status : null;
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+
+        var items = all
+            .Where(m => selectedGenre is null || string.Equals(m.Genre?.Trim(), selectedGenre, StringComparison.OrdinalIgnoreCase))
+            .Where(m => statusFilter switch
+            {
+                "active" => m.IsActive && m.ReleaseDate <= today,
+                "hidden" => !m.IsActive,
+                "soon" => m.IsActive && m.ReleaseDate > today,
+                _ => true,
+            })
+            .Where(m => TextSearch.Matches(keyword, m.Title, m.Genre, m.Director, m.Cast))
+            .ToList();
+
+        return View(new MoviesIndexViewModel(items, keyword, statusFilter, selectedGenre, genres, all.Count, all.Count(m => m.IsActive)));
     }
 
     [HttpGet]

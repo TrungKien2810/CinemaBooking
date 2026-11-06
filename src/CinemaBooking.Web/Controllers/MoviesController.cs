@@ -1,3 +1,4 @@
+using CinemaBooking.Domain.Enums;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Models;
 using CinemaBooking.Web.Services;
@@ -42,6 +43,7 @@ public class MoviesController : Controller
             {
                 Card = new MovieCardViewModel(m.Id, m.Title, m.Genre, m.DurationMinutes, m.ReleaseDate, m.PosterUrl),
                 m.Description,
+                Extra = new MovieExtraInfo(m.AgeRating, m.Director, m.Cast, m.TrailerUrl),
             })
             .FirstOrDefaultAsync(ct);
 
@@ -82,14 +84,15 @@ public class MoviesController : Controller
                     g.Select(x => new ShowtimeSlotViewModel(
                             x.Showtime.Id, x.Showtime.RoomName,
                             _tz.ToLocalTime(x.Showtime.StartTimeUtc), _tz.ToLocalTime(x.Showtime.EndTimeUtc),
-                            x.Showtime.BasePrice))
+                            x.Showtime.BasePrice,
+                            x.Showtime.RoomType.Label() + " · " + x.Showtime.Language.Label()))
                         .ToList()))
                 .ToList();
         }
 
         ViewData["Title"] = movie.Card.Title;
         return View(new MovieDetailsViewModel(
-            movie.Card, movie.Description, today, dates, selected, filter, groups));
+            movie.Card, movie.Description, today, dates, selected, filter, groups, movie.Extra));
     }
 
     /// <summary>

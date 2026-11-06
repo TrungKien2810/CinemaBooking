@@ -29,6 +29,15 @@
         </select>
         <span asp-validation-for="RoomId" class="text-danger small"></span>
     </div>
+    <div class="mb-3">
+        <label asp-for="Language" class="form-label"></label>
+        <select asp-for="Language" class="form-select" style="max-width:14rem">
+            @foreach (var l in Enum.GetValues<CinemaBooking.Domain.Enums.ShowLanguage>())
+            {
+                <option value="@l" selected="@(l == Model.Language)">@l.Label()</option>
+            }
+        </select>
+    </div>
     <div class="mb-3" data-slot-picker data-url="@Url.Action("Suggest")" data-exclude="@Model.Id">
         <label for="suggest-date" class="form-label">Ngày chiếu</label>
         <input id="suggest-date" type="date" class="form-control" style="max-width:12rem" />
@@ -42,9 +51,7 @@
             <span asp-validation-for="StartTimeLocal" class="text-danger small"></span>
         </div>
         <div class="col-sm-5 mb-3">
-            <label asp-for="BasePrice" class="form-label"></label>
-            <input asp-for="BasePrice" class="form-control" step="1000" />
-            <span asp-validation-for="BasePrice" class="text-danger small"></span>
+            @await Html.PartialAsync("_PriceInput", new PriceInputModel("BasePrice", "Giá vé", Model.BasePrice))
         </div>
     </div>
     <ul class="form-text admin-hints">

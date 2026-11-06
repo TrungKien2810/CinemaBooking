@@ -11,7 +11,8 @@ public sealed record MovieDetailsViewModel(
     IReadOnlyList<DateOnly> Dates,
     DateOnly? SelectedDate,
     ShowtimeFilter Filter,
-    IReadOnlyList<BranchShowtimesViewModel> Branches)
+    IReadOnlyList<BranchShowtimesViewModel> Branches,
+    MovieExtraInfo? Extra = null)
 {
     public bool HasShowtimes => Branches.Count > 0;
 
@@ -51,4 +52,16 @@ public sealed record ShowtimeSlotViewModel(
     string RoomName,
     DateTime StartLocal,
     DateTime EndLocal,
-    decimal BasePrice);
+    decimal BasePrice,
+    string FormatLabel = "");
+
+/// <summary>Thông tin thêm của phim: độ tuổi, đạo diễn, diễn viên, trailer.</summary>
+public sealed record MovieExtraInfo(
+    CinemaBooking.Domain.Enums.AgeRating AgeRating, string? Director, string? Cast, string? TrailerUrl)
+{
+    /// <summary>Chỉ nhận link http/https để không nhúng được "javascript:" vào href.</summary>
+    public string? SafeTrailerUrl =>
+        Uri.TryCreate(TrailerUrl, UriKind.Absolute, out var u) && (u.Scheme == Uri.UriSchemeHttps || u.Scheme == Uri.UriSchemeHttp)
+            ? u.AbsoluteUri
+            : null;
+}
