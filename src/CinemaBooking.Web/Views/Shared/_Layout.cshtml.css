@@ -5,11 +5,7 @@
     white-space: nowrap;
 }
 
-/* Icon hamburger mặc định của Bootstrap là hình đen, chìm trên nền tối. */
+/* Icon hamburger lấy từ theme tối của Bootstrap (đã là màu sáng), không đảo màu thêm. */
 .navbar-toggler {
     border-color: var(--cb-border);
-}
-
-.navbar-toggler-icon {
-    filter: invert(1) grayscale(1) brightness(1.6);
 }

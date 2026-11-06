@@ -4,6 +4,10 @@
     // Admin/BranchAdmin chỉ xem: không có thanh tổng tiền, nút thanh toán, SignalR hay thao tác chọn ghế.
     var staffPreview = ViewData["StaffPreview"] as bool? == true;
     var seatColumns = Model.TotalColumns;
+    var cells = Model.Rows.SelectMany(r => r.Seats).OfType<SeatCellViewModel>().Where(c => !c.IsCoveredByPair).ToList();
+    var hasVip = cells.Any(c => c.Type == SeatType.Vip);
+    var hasCouple = cells.Any(c => c.Type == SeatType.Couple);
+    var promotions = cells.Where(c => c.HasPromotion).Select(c => c.PromotionTitle!).Distinct().ToList();
 
     // Ghế VIP / đôi có icon và viền riêng để khách nhận ra loại ghế trên sơ đồ,
     // không chỉ dựa vào màu trạng thái (trống / đang giữ / đã đặt).
@@ -32,6 +36,13 @@
 else
 {
     <partial name="_BookingSteps" model="1" />
+}
+
+@if (promotions.Count > 0)
+{
+    <div class="alert alert-success" role="status">
+        🎁 Suất này đang có khuyến mãi <strong>@string.Join(", ", promotions)</strong>. Giá giảm đã được trừ vào từng ghế.
+    </div>
 }
 
 <div class="seat-map-shell cb-card" id="seat-map"
@@ -83,8 +94,8 @@ else
                             data-seat-price="@seat.Price.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
                             data-seat-type="@seat.Type"
                             aria-pressed="@(seat.IsBooked ? "true" : "false")"
-                            aria-label="@seatKind @seat.Label, @seat.Type, @seat.Price.Vnd()@(seat.HasPromotion ? $", đang giảm giá ({seat.PromotionTitle}), giá gốc {seat.ListPrice.Vnd()}" : "")@(seat.IsBooked ? ", đã được đặt" : "")"
-                            title="@seatKind @seat.Label · @seat.Type · @seat.Price.Vnd()@(seat.HasPromotion ? $" (gốc {seat.ListPrice.Vnd()} — {seat.PromotionTitle})" : "")"
+                            aria-label="@seatKind @seat.Label, @seat.Type.Label(), @seat.Price.Vnd()@(seat.HasPromotion ? $", đang giảm giá ({seat.PromotionTitle}), giá gốc {seat.ListPrice.Vnd()}" : "")@(seat.IsBooked ? ", đã được đặt" : "")"
+                            title="@seatKind @seat.Label · @seat.Type.Label() · @seat.Price.Vnd()@(seat.HasPromotion ? $" (gốc {seat.ListPrice.Vnd()} — {seat.PromotionTitle})" : "")"
                             disabled="@(seat.IsBooked || staffPreview)">
                         <span class="seat-label">@seat.Label</span>
                     </button>
@@ -98,8 +109,14 @@ else
         <li><span class="seat-swatch is-mine" aria-hidden="true"></span>Bạn đang giữ</li>
         <li><span class="seat-swatch is-held" aria-hidden="true"></span>Người khác đang giữ</li>
         <li><span class="seat-swatch is-booked" aria-hidden="true"></span>Đã đặt</li>
-        <li><span class="seat-swatch is-vip" aria-hidden="true">★</span>Ghế VIP</li>
-        <li><span class="seat-swatch is-couple" aria-hidden="true">♥</span>Ghế đôi</li>
+        @if (hasVip)
+        {
+            <li><span class="seat-swatch is-vip" aria-hidden="true">★</span>Ghế VIP</li>
+        }
+        @if (hasCouple)
+        {
+            <li><span class="seat-swatch is-couple" aria-hidden="true">♥</span>Ghế đôi</li>
+        }
     </ul>
 </div>
 

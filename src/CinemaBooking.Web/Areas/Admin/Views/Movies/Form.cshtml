@@ -12,7 +12,7 @@
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form">
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" class="cb-card admin-form">
     <div asp-validation-summary="ModelOnly"></div>
 
     <div class="row g-4">
@@ -43,6 +43,12 @@
                 <label asp-for="PosterUrl" class="form-label"></label>
                 <input asp-for="PosterUrl" class="form-control" placeholder="https://… hoặc /img/…" data-poster-input />
                 <span asp-validation-for="PosterUrl" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="PosterFile" class="form-label"></label>
+                <input asp-for="PosterFile" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+                <div class="form-text">JPG, PNG hoặc WEBP, tối đa 5 MB. Có ảnh tải lên thì ảnh này được dùng thay cho URL.</div>
+                <span asp-validation-for="PosterFile" class="text-danger small"></span>
             </div>
             <div class="row">
                 <div class="col-sm-5 mb-3">
@@ -79,6 +85,7 @@
                 <input asp-for="IsActive" class="form-check-input" />
                 <label asp-for="IsActive" class="form-check-label"></label>
             </div>
+            <span asp-validation-for="IsActive" class="text-danger small d-block"></span>
             <p class="form-text mt-0">Bỏ chọn để ẩn phim khỏi trang khách. Suất chiếu và vé cũ vẫn được giữ.</p>
         </div>
 

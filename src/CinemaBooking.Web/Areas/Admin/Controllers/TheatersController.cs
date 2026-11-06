@@ -14,8 +14,13 @@ namespace CinemaBooking.Web.Areas.Admin.Controllers;
 public class TheatersController : AdminControllerBase
 {
     private readonly CinemaDbContext _db;
+    private readonly TimeProvider _clock;
 
-    public TheatersController(CinemaDbContext db) => _db = db;
+    public TheatersController(CinemaDbContext db, TimeProvider? clock = null)
+    {
+        _db = db;
+        _clock = clock ?? TimeProvider.System;
+    }
 
     /// <param name="q">Tìm theo tên, địa chỉ hoặc thành phố (không phân biệt dấu).</param>
     /// <param name="status">"active" = đang hoạt động, "closed" = đã đóng; bỏ trống = tất cả.</param>
@@ -43,20 +48,30 @@ public class TheatersController : AdminControllerBase
     }
 
     [HttpGet]
-    public IActionResult Create() => View("Form", new TheaterFormModel());
+    public async Task<IActionResult> Create(CancellationToken ct)
+    {
+        await FillCitiesAsync(ct);
+        return View("Form", new TheaterFormModel());
+    }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(TheaterFormModel form, CancellationToken ct)
     {
         await ValidateUniqueNameAsync(form, ct);
-        if (!ModelState.IsValid) return View("Form", form);
+        await UseExistingCitySpellingAsync(form, ct);
+        if (!ModelState.IsValid)
+        {
+            await FillCitiesAsync(ct);
+            return View("Form", form);
+        }
 
         var theater = new Theater();
         form.ApplyTo(theater);
         _db.Theaters.Add(theater);
         await _db.SaveChangesAsync(ct);
 
+        Notify($"Đã thêm chi nhánh {theater.Name}.");
         return RedirectToAction(nameof(Index));
     }
 
@@ -64,7 +79,10 @@ public class TheatersController : AdminControllerBase
     public async Task<IActionResult> Edit(int id, CancellationToken ct)
     {
         var theater = await _db.Theaters.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id, ct);
-        return theater is null ? NotFound() : View("Form", TheaterFormModel.From(theater));
+        if (theater is null) return NotFound();
+
+        await FillCitiesAsync(ct);
+        return View("Form", TheaterFormModel.From(theater));
     }
 
     [HttpPost]
@@ -76,11 +94,22 @@ public class TheatersController : AdminControllerBase
 
         form.Id = id;
         await ValidateUniqueNameAsync(form, ct);
-        if (!ModelState.IsValid) return View("Form", form);
+        await UseExistingCitySpellingAsync(form, ct);
+
+        // Bỏ tick hoạt động trong form cũng là đóng chi nhánh: phải qua đúng quy tắc như nút Đóng.
+        if (theater.IsActive && !form.IsActive && await UpcomingTicketsAsync(id, ct) is > 0 and var sold)
+            ModelState.AddModelError(nameof(form.IsActive), CloseBlockedMessage(sold));
+
+        if (!ModelState.IsValid)
+        {
+            await FillCitiesAsync(ct);
+            return View("Form", form);
+        }
 
         form.ApplyTo(theater);
         await _db.SaveChangesAsync(ct);
 
+        Notify($"Đã lưu chi nhánh {theater.Name}.");
         return RedirectToAction(nameof(Index));
     }
 
@@ -95,11 +124,40 @@ public class TheatersController : AdminControllerBase
         var theater = await _db.Theaters.FirstOrDefaultAsync(t => t.Id == id, ct);
         if (theater is null) return NotFound();
 
+        if (await UpcomingTicketsAsync(id, ct) is > 0 and var sold)
+        {
+            NotifyError(CloseBlockedMessage(sold));
+            return RedirectToAction(nameof(Index));
+        }
+
         theater.IsActive = false;
         await _db.SaveChangesAsync(ct);
 
+        Notify($"Đã đóng chi nhánh {theater.Name}.");
         return RedirectToAction(nameof(Index));
     }
+
+    private Task<int> UpcomingTicketsAsync(int theaterId, CancellationToken ct) =>
+        SoldTickets.UpcomingForTheaterAsync(_db, theaterId, _clock.GetUtcNow().UtcDateTime, ct);
+
+    private static string CloseBlockedMessage(int sold) =>
+        $"Chi nhánh còn {sold} đơn của các suất chưa chiếu nên chưa đóng được. Đợi chiếu xong, hoặc hủy các suất đó ở mục Suất chiếu.";
+
+    /// <summary>
+    /// Thành phố gõ tay: "hà nội" hay "ha noi" phải về đúng "Hà Nội" đã có, nếu không trang khách sẽ
+    /// hiện hai thành phố trùng nhau.
+    /// </summary>
+    private async Task UseExistingCitySpellingAsync(TheaterFormModel form, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(form.City)) return;
+
+        var typed = TextSearch.Normalize(form.City);
+        var cities = await _db.Theaters.AsNoTracking().Select(t => t.City).Distinct().ToListAsync(ct);
+        form.City = cities.FirstOrDefault(c => TextSearch.Normalize(c) == typed) ?? form.City.Trim();
+    }
+
+    private async Task FillCitiesAsync(CancellationToken ct) =>
+        ViewData["Cities"] = await _db.Theaters.AsNoTracking().Select(t => t.City).Distinct().OrderBy(c => c).ToListAsync(ct);
 
     /// <summary>
     /// Tên chi nhánh có unique index. Kiểm tra trước để trả lỗi ngay trên ô nhập thay vì để

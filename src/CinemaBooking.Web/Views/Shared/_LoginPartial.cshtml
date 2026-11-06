@@ -26,7 +26,7 @@
                 @if (User.IsInRole(AppRoles.Admin))
                 {
                     @* Role nằm sẵn trong claim của cookie — kiểm tra không tốn query. *@
-                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Movies" asp-action="Index">Trang quản trị</a></li>
+                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Trang quản trị</a></li>
                     <li><hr class="dropdown-divider" /></li>
                 }
                 else if (User.IsInRole(AppRoles.BranchAdmin))

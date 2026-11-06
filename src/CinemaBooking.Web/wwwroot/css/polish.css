@@ -349,3 +349,34 @@ form.admin-filter-grid .col-auto {
 .price-row-peak > th { box-shadow: inset 4px 0 0 #f59e0b; }
 .price-row-weekend:not(.price-row-peak) > th { box-shadow: inset 4px 0 0 #6366f1; }
 .price-row-weekend.price-row-peak > th { box-shadow: inset 4px 0 0 #f59e0b, inset 8px 0 0 #6366f1; }
+
+/* Nút "Áp dụng" không bị xuống hai dòng khi cột tóm tắt hẹp. */
+.voucher-form .btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* Hero gọn lại để ô tìm phim nằm trong màn hình đầu. */
+.home-hero {
+    padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.home-hero-art {
+    min-height: 0;
+}
+
+.hero-carousel {
+    width: min(100%, 165px);
+    margin-bottom: 1.1rem;
+}
+
+/* Poster đã có tên phim, chú thích đè lên chữ khi carousel nhỏ lại. */
+.hero-slide-caption {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    .home-hero-art {
+        display: none;
+    }
+}

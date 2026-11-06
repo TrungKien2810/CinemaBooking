@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
@@ -96,4 +97,5 @@ public sealed record PromotionListItem(
     int Id, string Title, string? Badge, DateOnly StartDate, DateOnly EndDate, bool IsActive, bool IsRunning,
     string Rule = "");
 
-public sealed record PromotionsIndexViewModel(int TheaterId, string TheaterName, List<PromotionListItem> Items);
+public sealed record PromotionsIndexViewModel(
+    int TheaterId, string TheaterName, List<PromotionListItem> Items, List<SelectListItem>? Branches = null);

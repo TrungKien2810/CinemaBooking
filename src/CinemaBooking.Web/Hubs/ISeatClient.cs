@@ -18,6 +18,12 @@ public interface ISeatClient
     /// <summary>Các ghế vừa trống trở lại (bỏ chọn, rớt mạng, hết hạn).</summary>
     Task SeatUnlocked(IReadOnlyList<int> seatIds);
 
+    /// <summary>
+    /// Ghế ĐÃ ĐẶT vừa trống lại (rạp hủy vé, đơn chờ thanh toán quá hạn). Tách khỏi <see cref="SeatUnlocked"/>:
+    /// client bỏ qua SeatUnlocked với ghế đã đặt để lock nhả chậm không làm ghế vừa bán hiện trống.
+    /// </summary>
+    Task SeatFreed(IReadOnlyList<int> seatIds);
+
     /// <summary>Các ghế vừa được đặt xong (đơn đã Confirmed) — client khác vẽ lại thành "đã đặt".</summary>
     Task SeatBooked(IReadOnlyList<int> seatIds);
 

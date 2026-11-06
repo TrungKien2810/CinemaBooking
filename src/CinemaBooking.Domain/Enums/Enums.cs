@@ -55,6 +55,33 @@ public static class EnumLabels
                 _ => SeatLayoutPreset.Classic,
             };
 
+    public static string Label(this SeatType t) => t switch
+    {
+        SeatType.Vip => "Ghế VIP",
+        SeatType.Couple => "Ghế đôi",
+        _ => "Ghế thường",
+    };
+
+    public static string Label(this BookingStatus s) => s switch
+    {
+        BookingStatus.Confirmed => "Đã xác nhận",
+        BookingStatus.Pending => "Đang chờ thanh toán",
+        BookingStatus.Cancelled => "Đã hủy",
+        BookingStatus.Expired => "Đã hết hạn",
+        _ => s.ToString(),
+    };
+
+    public static string Label(this PaymentStatus s) => s switch
+    {
+        PaymentStatus.Succeeded => "Đã thanh toán",
+        PaymentStatus.Pending => "Đang chờ",
+        PaymentStatus.Failed => "Thất bại",
+        PaymentStatus.Refunded => "Đã hoàn tiền",
+        PaymentStatus.RefundPending => "Chờ hoàn tiền",
+        PaymentStatus.RefundFailed => "Hoàn tiền thất bại",
+        _ => s.ToString(),
+    };
+
     public static string Label(this RoomType t) => t switch
     {
         RoomType.ThreeD => "3D",

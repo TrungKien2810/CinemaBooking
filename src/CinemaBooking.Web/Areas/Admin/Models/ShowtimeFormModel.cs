@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -11,6 +12,10 @@ namespace CinemaBooking.Web.Areas.Admin.Models;
 public sealed class ShowtimeFormModel
 {
     public int? Id { get; set; }
+
+    /// <summary>Số đơn còn hiệu lực: lớn hơn 0 thì khóa phim, phòng và giờ. Controller tự tính, không đọc từ form.</summary>
+    [BindNever]
+    public int SoldTickets { get; set; }
 
     [Display(Name = "Phim")]
     [Range(1, int.MaxValue, ErrorMessage = "Chọn phim.")]

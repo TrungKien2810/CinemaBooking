@@ -97,6 +97,7 @@ public class RoomsController : AdminControllerBase
         _db.Rooms.Add(room);
         await _db.SaveChangesAsync(ct);
 
+        Notify($"Đã thêm phòng {room.RoomName} với {room.Seats.Count} ghế.");
         return RedirectToAction(nameof(Index), new { theaterId = theater.Id });
     }
 

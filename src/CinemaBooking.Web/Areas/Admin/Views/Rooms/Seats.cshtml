@@ -76,8 +76,8 @@
                                 data-col="@seat.Column"
                                 data-type="@seat.Type"
                                 data-locked="@(seat.Locked ? "1" : "0")"
-                                aria-label="Ghế @seat.Label, @seat.Type@(seat.Locked ? ", đang có vé nên không đổi được" : "")"
-                                title="Ghế @seat.Label · @seat.Type@(seat.Locked ? " · đang có vé" : "")"></button>
+                                aria-label="Ghế @seat.Label, @seat.Type.Label()@(seat.Locked ? ", đang có vé nên không đổi được" : "")"
+                                title="Ghế @seat.Label · @seat.Type.Label()@(seat.Locked ? " · đang có vé" : "")"></button>
                     }
                 }
             </div>

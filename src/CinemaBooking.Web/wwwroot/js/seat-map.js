@@ -153,6 +153,14 @@
         setState(btn, 'free');
     }
 
+    // Ghế đã đặt trống lại: khác markFree ở chỗ được phép bỏ trạng thái "đã đặt".
+    function markFreed(seatId) {
+        var btn = seatButtons.get(seatId);
+        if (!btn) return;
+        if (selected.delete(btn)) renderSelection();
+        setState(btn, 'free');
+    }
+
     function markBooked(seatId) {
         var btn = seatButtons.get(seatId);
         if (!btn) return;
@@ -252,6 +260,10 @@
 
     connection.on('SeatUnlocked', function (seatIds) {
         (seatIds || []).forEach(markFree);
+    });
+
+    connection.on('SeatFreed', function (seatIds) {
+        (seatIds || []).forEach(markFreed);
     });
 
     connection.on('SeatRejected', function (seatId, message) {

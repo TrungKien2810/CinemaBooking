@@ -21,7 +21,13 @@
     </div>
     <div class="mb-3">
         <label asp-for="City" class="form-label"></label>
-        <input asp-for="City" class="form-control" placeholder="TP. Hồ Chí Minh" />
+        <input asp-for="City" class="form-control" placeholder="TP. Hồ Chí Minh" list="city-options" autocomplete="off" />
+        <datalist id="city-options">
+            @foreach (var city in ViewData["Cities"] as IEnumerable<string> ?? [])
+            {
+                <option value="@city"></option>
+            }
+        </datalist>
         <span asp-validation-for="City" class="text-danger small"></span>
         <div class="form-text">Khách lọc suất chiếu theo thành phố — gõ đúng như tên các chi nhánh khác cùng thành phố.</div>
     </div>
@@ -56,6 +62,7 @@
         <input asp-for="IsActive" class="form-check-input" />
         <label asp-for="IsActive" class="form-check-label"></label>
     </div>
+    <span asp-validation-for="IsActive" class="text-danger small d-block"></span>
     <p class="form-text mt-0">Chi nhánh đã đóng vẫn giữ phòng, suất chiếu và vé cũ để tra cứu.</p>
     @if (Model.Id is null)
     {

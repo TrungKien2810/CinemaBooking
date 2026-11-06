@@ -197,7 +197,7 @@ Gửi lỗi thì worker tự thử lại tối đa `EmailOutbox:MaxAttempts` l�
   giờ để đơn dưới 1.000đ, kiểm lại ở server lúc chốt đơn, và được chia vào giá từng ghế để doanh thu vẫn khớp. Đơn hủy/hết hạn
   trả lại lượt dùng. Quản lý ở `/Admin/Vouchers` (BranchAdmin chỉ mã của chi nhánh mình). Mã demo: `CINE10`, `WELCOME20`,
   `COUPLE50`, `LONGBIEN15`, `HETHAN` (đã hết hạn, để thử lỗi).
-- **Tài khoản quản trị không mua vé:** Admin/BranchAdmin chỉ xem sơ đồ ghế (không giữ ghế, không thanh toán, không có "Vé của tôi");
+- **Tài khoản quản trị không mua vé:** Admin/BranchAdmin chỉ xem sơ đồ ghế (không giữ ghế, không thanh toán, không vào được "Vé của tôi");
   muốn thử mua vé hãy dùng tài khoản khách.
 - **Quản lý tài khoản** (`/Admin/Users`, chỉ Admin): tìm/lọc tài khoản, tạo tài khoản quản lý chi nhánh và gán chi nhánh,
   khóa/mở khóa, đặt lại mật khẩu. Chi nhánh có thêm điện thoại, email, giờ mở cửa, giới thiệu.
@@ -213,7 +213,7 @@ Gửi lỗi thì worker tự thử lại tối đa `EmailOutbox:MaxAttempts` l�
 
 ---
 
-## Thanh toán và hoàn tiền VNPAY (Sandbox)
+## Thanh toán VNPAY (Sandbox) và hủy vé
 
 `Vnpay:TmnCode`, `Vnpay:PaymentUrl`, `Vnpay:ReturnUrl`… nằm trong `appsettings.json`. Riêng
 `Vnpay:HashSecret` **không commit**; đặt bằng user-secrets:
@@ -222,14 +222,18 @@ Gửi lỗi thì worker tự thử lại tối đa `EmailOutbox:MaxAttempts` l�
 dotnet user-secrets set "Vnpay:HashSecret" "..." --project src/CinemaBooking.Web
 ```
 
-- `Vnpay:RefundEnabled=false`: hủy vé sẽ hoàn tiền mô phỏng (chỉ đổi trạng thái), dùng khi
-  merchant sandbox chưa được cấp quyền API hoàn tiền.
-- `Vnpay:RefundEnabled=true`: gọi thật `POST /merchant_webapi/api/transaction`. Nếu VNPAY trả
-  `vnp_ResponseCode=99` (`Unexpected error`), kiểm tra merchant đã bật quyền **Refund/Querydr**
-  và đã whitelist IP máy chủ gửi request chưa. Lỗi này không làm mất vé: đơn vẫn `Confirmed`,
-  ghế vẫn giữ và khách có thể bấm hủy lại.
-- `Vnpay:IpAddr`: IP máy chủ gửi API (không phải IP khách). Khi triển khai thật phải đặt IP
-  công khai của server, không dùng `127.0.0.1`.
+Chưa có `HashSecret` thì môi trường Development mô phỏng thanh toán thành công (`Vnpay:SimulateWhenUnconfigured`).
+
+**Khách không tự hủy được vé đã mua.** Chỉ rạp hủy khi lỗi ở phía rạp:
+
+- Một đơn: `/Admin/Bookings/Details/{id}` → *Hủy vé và hoàn tiền* (Admin hoặc BranchAdmin đúng chi nhánh, bắt buộc nhập lý do).
+- Cả suất: `/Admin/Showtimes/Edit/{id}` → *Hủy suất và toàn bộ vé*, suất được ẩn luôn.
+- Hủy xong: ghế trả lại, lượt voucher trả lại, đơn ra khỏi doanh thu, khách nhận email kèm lý do. Tiền **hoàn thủ công** (không
+  gọi API hoàn tiền của VNPAY); đơn ở trạng thái *Chờ hoàn tiền* cho tới khi bấm *Đánh dấu đã hoàn tiền*.
+- Vé đã soát hoặc suất đã bắt đầu thì không hủy được.
+
+**Vé đã bán được bảo vệ:** suất có vé không đổi được phim, phòng, giờ. Phim và chi nhánh còn vé của suất chưa chiếu không ẩn/đóng
+được. Tạm ẩn một suất chỉ ngừng bán thêm, vé đã bán vẫn có hiệu lực.
 
 ---
 

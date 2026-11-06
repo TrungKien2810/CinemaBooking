@@ -14,6 +14,15 @@
     <a asp-action="Create" class="btn btn-primary">Thêm chi nhánh</a>
 </div>
 
+@if (TempData["Message"] is string message)
+{
+    <div class="alert alert-success" role="status">@message</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger" role="alert">@error</div>
+}
+
 <form method="get" class="cb-card admin-filter" role="search">
     <input name="q" value="@Model.Query" type="search" class="form-control" style="max-width:18rem" maxlength="100"
            placeholder="Tìm tên, địa chỉ, thành phố…" aria-label="Tìm chi nhánh" />

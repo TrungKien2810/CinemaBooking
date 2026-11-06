@@ -43,7 +43,7 @@
                     <span class="pwd-strength-label" data-password-label></span>
                 </div>
                 <span asp-validation-for="Password" class="text-danger small"></span>
-                <div class="form-text cb-muted">Tối thiểu 8 ký tự.</div>
+                <div class="form-text cb-muted">Tối thiểu 8 ký tự, có chữ hoa, chữ thường và chữ số.</div>
             </div>
 
             <div class="mb-4">
@@ -57,13 +57,14 @@
             </div>
 
             <div class="terms-check">
-                <input id="terms" type="checkbox" required />
+                <input asp-for="AcceptTerms" />
                 <span>
-                    <label for="terms" class="d-inline">Tôi đồng ý với</label>
+                    <label asp-for="AcceptTerms" class="d-inline">Tôi đồng ý với</label>
                     <a asp-controller="Home" asp-action="Privacy">Chính sách bảo mật</a>
                     và các điều khoản sử dụng.
                 </span>
             </div>
+            <span asp-validation-for="AcceptTerms" class="text-danger small d-block mb-2"></span>
 
             <button type="submit" class="btn btn-primary w-100">Đăng ký</button>
         </form>

@@ -56,6 +56,11 @@ public class HomeController : Controller
         return View();
     }
 
+    /// <summary>Trang lỗi cho các mã trạng thái không có nội dung (chạy lại từ UseStatusCodePages).</summary>
+    [Route("Home/Status/{id:int}")]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Status(int id) => View("Status", id);
+
     /// <param name="traceId">Do ExceptionHandlingMiddleware truyền sang khi chạy lại pipeline.</param>
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error(string? traceId)

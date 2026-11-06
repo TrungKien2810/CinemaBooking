@@ -6,7 +6,7 @@
 <div class="admin-page-head">
     <div>
         <a asp-action="Index" class="back-link">← Danh sách đơn</a>
-        <h1 class="page-title">Đơn @Model.BookingCode <span class="badge bg-secondary">@Model.Status</span></h1>
+        <h1 class="page-title">Đơn @Model.BookingCode <span class="badge bg-secondary">@Model.Status.Label()</span></h1>
     </div>
     <a asp-action="Index" class="btn btn-outline-secondary">Về danh sách</a>
 </div>
@@ -30,7 +30,12 @@
     <dt class="col-sm-3">Suất chiếu</dt>
     <dd class="col-sm-9">@Model.ShowtimeStartLocal.ToString("dd/MM/yyyy HH:mm") · @Model.TheaterName · @Model.RoomName</dd>
     <dt class="col-sm-3">Thanh toán</dt>
-    <dd class="col-sm-9">@(Model.PaymentStatus?.ToString() ?? "Chưa có") @(Model.TransactionId is null ? "" : "· " + Model.TransactionId)</dd>
+    <dd class="col-sm-9">@(Model.PaymentStatus?.Label() ?? "Chưa có") @(Model.TransactionId is null ? "" : "· " + Model.TransactionId)</dd>
+    @if (Model.CheckedInLocal is { } checkedIn)
+    {
+        <dt class="col-sm-3">Soát vé</dt>
+        <dd class="col-sm-9">Đã vào rạp lúc @checkedIn.ToString("HH:mm dd/MM/yyyy")</dd>
+    }
 </dl>
 
 <h2 class="h5">Ghế</h2>
@@ -47,13 +52,13 @@
         {
             <tr>
                 <td>@s.Label</td>
-                <td>@s.SeatType</td>
+                <td>@s.SeatType.Label()</td>
                 <td class="text-end">@s.Price.Vnd()</td>
             </tr>
         }
         @if (Model.Seats.Count == 0)
         {
-            <tr><td colspan="3" class="text-center text-muted">Đơn không còn giữ ghế nào (thanh toán quá hạn).</td></tr>
+            <tr><td colspan="3" class="text-center text-muted">Đơn không còn giữ ghế nào (đã hủy hoặc thanh toán quá hạn).</td></tr>
         }
     </tbody>
     <tfoot>
@@ -70,3 +75,28 @@
         </tr>
     </tfoot>
 </table></div>
+
+@if (Model.PaymentStatus == PaymentStatus.RefundPending)
+{
+    <form asp-action="MarkRefunded" asp-route-id="@Model.Id" method="post" class="cb-card admin-form mt-3"
+          data-confirm="Xác nhận đã chuyển trả @Model.TotalAmount.Vnd() cho khách?">
+        <h2 class="h5">Hoàn tiền</h2>
+        <p class="form-text">Đơn đã hủy, rạp cần hoàn @Model.TotalAmount.Vnd() cho khách. Chuyển tiền xong thì bấm nút dưới đây.</p>
+        <button type="submit" class="btn btn-primary">Đánh dấu đã hoàn tiền</button>
+    </form>
+}
+
+@if (Model.CancelBlockedReason is null)
+{
+    <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="cb-card admin-form mt-3"
+          data-confirm="Hủy vé @Model.BookingCode? Khách nhận email, ghế được trả lại và rạp phải hoàn tiền. Không hoàn tác được.">
+        <h2 class="h5">Rạp hủy vé</h2>
+        <p class="form-text">Chỉ dùng khi lỗi ở phía rạp. Khách không tự hủy được vé đã mua.</p>
+        <div class="mb-3">
+            <label for="cancel-reason" class="form-label">Lý do gửi cho khách</label>
+            <input id="cancel-reason" name="reason" class="form-control" maxlength="300" required
+                   placeholder="Ví dụ: Phòng chiếu gặp sự cố kỹ thuật" />
+        </div>
+        <button type="submit" class="btn btn-outline-danger">Hủy vé và hoàn tiền</button>
+    </form>
+}
