@@ -35,9 +35,13 @@
                     <li><a class="dropdown-item" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Quản lý chi nhánh</a></li>
                     <li><hr class="dropdown-divider" /></li>
                 }
-                <li>
-                    <a class="dropdown-item" asp-area="" asp-controller="Booking" asp-action="MyBookings">Vé của tôi</a>
-                </li>
+                @if (!User.IsInRole(AppRoles.Admin) && !User.IsInRole(AppRoles.BranchAdmin))
+                {
+                    @* Tài khoản quản trị không mua vé nên không có mục "Vé của tôi". *@
+                    <li>
+                        <a class="dropdown-item" asp-area="" asp-controller="Booking" asp-action="MyBookings">Vé của tôi</a>
+                    </li>
+                }
                 <li>
                     <a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Profile">Tài khoản</a>
                 </li>
