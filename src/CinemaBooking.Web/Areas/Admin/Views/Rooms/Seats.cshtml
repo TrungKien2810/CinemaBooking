@@ -16,8 +16,8 @@
         <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="back-link">← Phòng chiếu · @Model.TheaterName</a>
         <h1 class="page-title">Sửa loại ghế · @Model.RoomName</h1>
         <p class="cb-muted page-subtitle">
-            @Model.TotalRows hàng × @Model.TotalColumns ghế · bấm vào ghế để đổi <strong>Thường ↔ VIP</strong>.
-            Hàng cuối (@(Model.Rows.Count > 0 ? Model.Rows[^1].Label : "?")) tự động là <strong>ghế đôi</strong>, không sửa được.
+            @Model.TotalRows hàng × @Model.TotalColumns ghế · chọn công cụ rồi bấm vào ghế.
+            <strong>Ghế đôi</strong> đặt được ở bất kỳ hàng nào: ghép hai ghế <strong>liền kề cùng hàng</strong>.
         </p>
     </div>
 </div>
@@ -35,34 +35,49 @@
     @* Form tag helper tự gắn antiforgery token. *@
     <input type="hidden" name="types" id="seat-types" value="" />
 
+    <div class="seat-editor-tools" role="toolbar" aria-label="Công cụ sửa ghế">
+        <button type="button" class="btn btn-sm btn-outline-secondary is-active" data-tool="Standard" aria-pressed="true">
+            <span class="seat-dot seat-standard"></span> Ghế thường
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-tool="Vip" aria-pressed="false">
+            <span class="seat-dot seat-vip"></span> Ghế VIP
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-tool="Couple" aria-pressed="false">
+            <span class="seat-dot seat-couple"></span> Ghế đôi (ghép 2 ghế)
+        </button>
+    </div>
+    <p class="small cb-muted mb-2" id="editor-hint" role="status" aria-live="polite">
+        Bấm một ghế để đổi sang loại đang chọn.
+    </p>
+
     <div class="seat-preview">
         <div class="seat-screen" aria-hidden="true">Màn hình</div>
 
         <div class="seat-preview-scroll">
-            <div class="seat-preview-grid room-seat-editor" style="--seat-cols: @Model.TotalColumns"
+            <div class="seat-preview-grid room-seat-editor" id="seat-editor" style="--seat-cols: @Model.TotalColumns"
                  aria-label="Sơ đồ ghế @Model.RoomName">
                 @foreach (var row in Model.Rows)
                 {
                     <span class="seat-row-label">@row.Label</span>
-                    @foreach (var seat in row.Seats)
+                    @for (var column = 1; column <= Model.TotalColumns; column++)
                     {
-                        if (row.IsCoupleRow)
+                        var seat = row.Seats.FirstOrDefault(s => s.Column == column);
+                        if (seat is null)
                         {
-                            <span class="seat-dot seat-couple seat-locked"
-                                  title="Ghế đôi @seat.Label — tự động ở hàng cuối"
-                                  aria-label="Ghế đôi @seat.Label, tự động ở hàng cuối"></span>
+                            @* Cột không có ghế (lối đi): chừa ô trống để các cột vẫn thẳng hàng. *@
+                            <span class="seat-dot seat-gap" aria-hidden="true"></span>
+                            continue;
                         }
-                        else
-                        {
-                            <button type="button"
-                                    class="seat-dot @CssFor(seat.Type) seat-editable"
-                                    data-seat-id="@seat.SeatId"
-                                    data-seat-label="@seat.Label"
-                                    data-type="@seat.Type"
-                                    aria-pressed="@(seat.Type == SeatType.Vip ? "true" : "false")"
-                                    aria-label="Ghế @seat.Label, @seat.Type — bấm để đổi Thường hoặc VIP"
-                                    title="Ghế @seat.Label · @seat.Type"></button>
-                        }
+                        <button type="button"
+                                class="seat-dot @CssFor(seat.Type) seat-editable@(seat.Locked ? " seat-locked" : "")"
+                                data-seat-id="@seat.SeatId"
+                                data-seat-label="@seat.Label"
+                                data-row="@seat.Row"
+                                data-col="@seat.Column"
+                                data-type="@seat.Type"
+                                data-locked="@(seat.Locked ? "1" : "0")"
+                                aria-label="Ghế @seat.Label, @seat.Type@(seat.Locked ? ", đang có vé nên không đổi được" : "")"
+                                title="Ghế @seat.Label · @seat.Type@(seat.Locked ? " · đang có vé" : "")"></button>
                     }
                 }
             </div>
@@ -71,8 +86,12 @@
         <ul class="seat-legend">
             <li><span class="seat-dot seat-standard"></span> Thường · <span id="count-standard">@Model.StandardCount</span></li>
             <li><span class="seat-dot seat-vip"></span> VIP · <span id="count-vip">@Model.VipCount</span></li>
-            <li><span class="seat-dot seat-couple"></span> Ghế đôi (hàng cuối) · @Model.CoupleCount</li>
-            <li class="cb-muted">Tổng @(Model.TotalRows * Model.TotalColumns) ghế</li>
+            <li><span class="seat-dot seat-couple"></span> Ghế đôi · <span id="count-couple">@(Model.CoupleCount / 2)</span> cặp</li>
+            <li class="cb-muted">Tổng @Model.Rows.Sum(r => r.Seats.Count) ghế</li>
+            @if (Model.Rows.SelectMany(r => r.Seats).Any(s => s.Locked))
+            {
+                <li class="cb-muted"><span class="seat-dot seat-standard seat-locked"></span> Mờ = đang có vé (đổi Thường ↔ VIP được, không ghép/tách ghế đôi)</li>
+            }
         </ul>
     </div>
 
@@ -84,39 +103,154 @@
 
 @section Scripts {
     <script>
-        // Bấm ghế = đổi Thường ↔ VIP rồi ghi cả sơ đồ vào input ẩn dạng "id=Vip;id=Standard;…".
-        // Hàng cuối là span khóa (không có nút) nên không bao giờ bị gửi lên.
+        // Trình sửa ghế. Trạng thái nằm ở data-type của từng nút; mỗi lần đổi ghi cả sơ đồ vào input
+        // ẩn dạng "id=Type;…". Cách ghép ghế đôi PHẢI giống SeatPairing ở server: trong một hàng, các
+        // ghế đôi có cột liên tiếp tạo thành đoạn, ghép từng đôi từ trái sang phải. Server vẫn kiểm lại.
         (function () {
-            var buttons = Array.prototype.slice.call(document.querySelectorAll('.seat-editable'));
+            var seats = Array.prototype.slice.call(document.querySelectorAll('.seat-editable'));
             var input = document.getElementById('seat-types');
-            var vipCount = document.getElementById('count-vip');
-            var standardCount = document.getElementById('count-standard');
+            var hint = document.getElementById('editor-hint');
+            var tools = Array.prototype.slice.call(document.querySelectorAll('[data-tool]'));
+            var tool = 'Standard';
+            var pending = null;
 
-            function serialize() {
-                return buttons.map(function (b) {
-                    return b.dataset.seatId + '=' + b.dataset.type;
-                }).join(';');
+            var HINTS = {
+                Standard: 'Bấm một ghế để đổi thành ghế thường. Bấm vào ghế đôi để tách cặp.',
+                Vip: 'Bấm một ghế để đổi thành VIP. Bấm vào ghế đôi để tách cặp rồi đổi thành VIP.',
+                Couple: 'Bấm ghế thứ nhất, rồi bấm ghế liền kề (cùng hàng) để ghép thành ghế đôi. Bấm vào ghế đôi để tách.'
+            };
+
+            function row(btn) { return Number(btn.dataset.row); }
+            function col(btn) { return Number(btn.dataset.col); }
+            function say(text) { hint.textContent = text; }
+
+            // seat -> partner theo đúng quy ước server.
+            function partnerMap() {
+                var map = new Map();
+                var byRow = {};
+                seats.forEach(function (s) {
+                    if (s.dataset.type !== 'Couple') return;
+                    (byRow[row(s)] = byRow[row(s)] || []).push(s);
+                });
+                Object.keys(byRow).forEach(function (r) {
+                    var list = byRow[r].sort(function (a, b) { return col(a) - col(b); });
+                    for (var i = 0; i < list.length;) {
+                        if (i + 1 < list.length && col(list[i]) + 1 === col(list[i + 1])) {
+                            map.set(list[i], list[i + 1]);
+                            map.set(list[i + 1], list[i]);
+                            i += 2;
+                        } else { i += 1; }
+                    }
+                });
+                return map;
             }
 
-            function refreshCounts() {
-                var vip = buttons.filter(function (b) { return b.dataset.type === 'Vip'; }).length;
-                if (vipCount) vipCount.textContent = vip;
-                if (standardCount) standardCount.textContent = buttons.length - vip;
+            function orphans() {
+                var map = partnerMap();
+                return seats.filter(function (s) { return s.dataset.type === 'Couple' && !map.has(s); });
             }
 
-            buttons.forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    btn.dataset.type = btn.dataset.type === 'Vip' ? 'Standard' : 'Vip';
-                    btn.classList.toggle('seat-vip', btn.dataset.type === 'Vip');
-                    btn.classList.toggle('seat-standard', btn.dataset.type !== 'Vip');
-                    btn.setAttribute('aria-pressed', btn.dataset.type === 'Vip' ? 'true' : 'false');
-                    btn.title = 'Ghế ' + btn.dataset.seatLabel + ' · ' + btn.dataset.type;
-                    input.value = serialize();
-                    refreshCounts();
+            function snapshot() { return seats.map(function (s) { return s.dataset.type; }); }
+            function restore(snap) { seats.forEach(function (s, i) { s.dataset.type = snap[i]; }); }
+
+            function render() {
+                var map = partnerMap();
+                seats.forEach(function (s) {
+                    var t = s.dataset.type;
+                    s.classList.toggle('seat-standard', t === 'Standard');
+                    s.classList.toggle('seat-vip', t === 'Vip');
+                    s.classList.toggle('seat-couple', t === 'Couple');
+                    var partner = map.get(s);
+                    s.classList.toggle('pair-left', !!partner && col(partner) > col(s));
+                    s.classList.toggle('pair-right', !!partner && col(partner) < col(s));
+                    s.classList.toggle('seat-orphan', t === 'Couple' && !partner);
+                    s.classList.toggle('is-pending', s === pending);
+                    s.title = 'Ghế ' + s.dataset.seatLabel + ' · ' + t + (partner ? ' (cặp với ' + partner.dataset.seatLabel + ')' : '');
+                });
+                input.value = seats.map(function (s) { return s.dataset.seatId + '=' + s.dataset.type; }).join(';');
+                var count = function (t) { return seats.filter(function (s) { return s.dataset.type === t; }).length; };
+                document.getElementById('count-standard').textContent = count('Standard');
+                document.getElementById('count-vip').textContent = count('Vip');
+                document.getElementById('count-couple').textContent = Math.floor(count('Couple') / 2);
+            }
+
+            // Thực hiện một thay đổi; nếu nó tạo ra ghế đôi lẻ loi MỚI (ví dụ ghép cạnh một ghế đôi lẻ có
+            // sẵn làm lệch cách ghép) thì hoàn tác và báo lý do.
+            function attempt(change, okMessage) {
+                var snap = snapshot();
+                var before = orphans();
+                change();
+                var created = orphans().filter(function (s) { return before.indexOf(s) < 0; });
+                if (created.length) {
+                    restore(snap);
+                    say('Không làm được: sẽ để lại ghế đôi lẻ loi (' + created.map(function (s) { return s.dataset.seatLabel; }).join(', ') +
+                        '). Hãy tách ghế đôi lẻ bên cạnh trước.');
+                } else if (okMessage) { say(okMessage); }
+                render();
+            }
+
+            function onSeat(btn) {
+                var type = btn.dataset.type;
+                // Ghế đang có vé: vẫn đổi Thường ↔ VIP được (vé đã bán giữ nguyên giá), chỉ không ghép/tách ghế đôi.
+                if (btn.dataset.locked === '1' && (type === 'Couple' || tool === 'Couple')) {
+                    say('Ghế ' + btn.dataset.seatLabel + ' đang có vé của suất chưa chiếu nên không ghép/tách ghế đôi được.');
+                    return;
+                }
+
+                // Bấm vào ghế đôi (mọi công cụ) = tách cặp.
+                if (type === 'Couple') {
+                    pending = null;
+                    var partner = partnerMap().get(btn);
+                    if (partner && partner.dataset.locked === '1') { say('Ghế ' + partner.dataset.seatLabel + ' trong cặp đang có vé nên không tách được.'); return; }
+                    var target = tool === 'Vip' ? 'Vip' : 'Standard';
+                    attempt(function () { btn.dataset.type = target; if (partner) partner.dataset.type = target; },
+                        'Đã tách ghế đôi thành hai ghế ' + (target === 'Vip' ? 'VIP' : 'thường') + '.');
+                    return;
+                }
+
+                if (tool !== 'Couple') {
+                    pending = null;
+                    btn.dataset.type = tool;
+                    render();
+                    return;
+                }
+
+                // Công cụ ghế đôi: chọn đủ hai ghế liền kề.
+                if (!pending || pending === btn) {
+                    pending = pending === btn ? null : btn;
+                    say(pending ? 'Đã chọn ghế ' + btn.dataset.seatLabel + ' — bấm tiếp ghế liền kề để ghép.' : HINTS.Couple);
+                    render();
+                    return;
+                }
+                var first = pending;
+                if (row(first) !== row(btn) || Math.abs(col(first) - col(btn)) !== 1) {
+                    pending = btn;
+                    say('Hai ghế phải liền kề cùng hàng. Đã chọn lại ghế ' + btn.dataset.seatLabel + ' — bấm ghế bên cạnh.');
+                    render();
+                    return;
+                }
+                pending = null;
+                attempt(function () { first.dataset.type = 'Couple'; btn.dataset.type = 'Couple'; },
+                    'Đã ghép ' + first.dataset.seatLabel + ' + ' + btn.dataset.seatLabel + ' thành ghế đôi.');
+            }
+
+            seats.forEach(function (btn) { btn.addEventListener('click', function () { onSeat(btn); }); });
+            tools.forEach(function (t) {
+                t.addEventListener('click', function () {
+                    tool = t.dataset.tool;
+                    pending = null;
+                    tools.forEach(function (o) {
+                        var on = o === t;
+                        o.classList.toggle('is-active', on);
+                        o.setAttribute('aria-pressed', on ? 'true' : 'false');
+                    });
+                    say(HINTS[tool]);
+                    render();
                 });
             });
 
-            input.value = serialize();
+            say(HINTS[tool]);
+            render();
         })();
     </script>
 }

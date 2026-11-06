@@ -11,9 +11,10 @@ namespace CinemaBooking.Web.Services;
 /// một vé thường, cả cặp = hai vé thường.
 /// </para>
 /// <para>
-/// Quy ước cặp: trong một hàng, duyệt từ trái sang phải, hai ghế Couple có số cột liên tiếp
-/// (cột lẻ + cột chẵn kế tiếp) ghép thành một cặp. Ghế Couple lẻ loi (hàng có số ghế lẻ, hoặc bị
-/// khuyết ghế) không có cặp hợp lệ nên không bán được.
+/// Quy ước cặp: ghế Couple có thể nằm ở BẤT KỲ hàng nào. Trong một hàng, các ghế Couple có số cột
+/// liên tiếp tạo thành một "đoạn"; trong mỗi đoạn ghép từng đôi từ trái sang phải. Vì admin chỉ ghép
+/// được từng cặp liền kề nên mọi đoạn đều có độ dài chẵn và cách ghép là duy nhất (không cần lưu
+/// cặp trong DB). Ghế Couple lẻ loi (đoạn lẻ, hoặc bị khuyết ghế) không có cặp nên không bán được.
 /// </para>
 /// </summary>
 public static class SeatPairing
@@ -27,20 +28,52 @@ public static class SeatPairing
         {
             var ordered = row.OrderBy(s => s.ColumnNumber).ToList();
 
-            for (var i = 0; i + 1 < ordered.Count; i += 2)
+            // Quét trái → phải: gặp ghế kế bên liền kề thì ghép cả hai rồi nhảy 2; không thì ghế
+            // này lẻ loi, nhảy 1. Khác với "cứ hai ghế một" — một ghế lẻ ở đầu hàng không làm lệch cả hàng.
+            for (var i = 0; i < ordered.Count;)
             {
-                var left = ordered[i];
-                var right = ordered[i + 1];
-
-                // Chỉ ghép khi thật sự liền kề; một ghế bị khuyết ở giữa thì hai bên không cùng cặp.
-                if (left.ColumnNumber + 1 != right.ColumnNumber) continue;
-
-                partners[left.Id] = right.Id;
-                partners[right.Id] = left.Id;
+                if (i + 1 < ordered.Count && ordered[i].ColumnNumber + 1 == ordered[i + 1].ColumnNumber)
+                {
+                    partners[ordered[i].Id] = ordered[i + 1].Id;
+                    partners[ordered[i + 1].Id] = ordered[i].Id;
+                    i += 2;
+                }
+                else
+                {
+                    i += 1;
+                }
             }
         }
 
         return partners;
+    }
+
+    /// <summary>Ghế Couple không có cặp (đoạn lẻ / khuyết ghế) — không bán được.</summary>
+    public static IReadOnlyList<Seat> OrphanCoupleSeats(IEnumerable<Seat> seats)
+    {
+        var all = seats as IReadOnlyCollection<Seat> ?? seats.ToList();
+        var partners = BuildPartnerMap(all);
+        return all.Where(s => s.SeatType == SeatType.Couple && !partners.ContainsKey(s.Id)).ToList();
+    }
+
+    /// <summary>
+    /// Kiểm sơ đồ ghế của một phòng: mọi ghế Couple phải có cặp. Trả về thông báo lỗi (nêu tên ghế
+    /// lẻ loi) hoặc null nếu hợp lệ. Dùng khi admin lưu sơ đồ ghế; <paramref name="tolerated"/> là các
+    /// ghế lẻ loi có sẵn từ trước (phòng cũ) — không chặn lưu vì chuyện đã tồn tại.
+    /// </summary>
+    public static string? ValidateLayout(IEnumerable<Seat> seats, IReadOnlySet<int>? tolerated = null)
+    {
+        var all = seats as IReadOnlyCollection<Seat> ?? seats.ToList();
+
+        var orphans = OrphanCoupleSeats(all)
+            .Where(s => tolerated is null || !tolerated.Contains(s.Id))
+            .OrderBy(s => s.RowNumber).ThenBy(s => s.ColumnNumber)
+            .Select(s => s.Label)
+            .ToList();
+
+        return orphans.Count == 0
+            ? null
+            : $"Ghế đôi phải đi thành cặp hai ghế liền kề cùng hàng. Ghế lẻ loi: {string.Join(", ", orphans)}.";
     }
 
     /// <summary>
