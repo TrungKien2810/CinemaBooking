@@ -144,6 +144,7 @@ public class RoomsController : AdminControllerBase
         }
         await _db.SaveChangesAsync(ct);
 
+        Notify($"Đã lưu phòng {room.RoomName}.");
         return RedirectToAction(nameof(Index), new { theaterId = room.TheaterId });
     }
 
@@ -360,6 +361,7 @@ public class RoomsController : AdminControllerBase
         _db.Rooms.Remove(room);
         await _db.SaveChangesAsync(ct);
 
+        Notify($"Đã xóa phòng {room.RoomName}.");
         return RedirectToAction(nameof(Index), new { theaterId = room.TheaterId });
     }
 }

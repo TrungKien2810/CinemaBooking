@@ -149,6 +149,7 @@ public class PromotionsController : AdminControllerBase
         _db.Promotions.Remove(promotion);
         await _db.SaveChangesAsync(ct);
 
+        Notify("Đã xóa khuyến mãi.");
         return RedirectToAction(nameof(Index), new { theaterId = promotion.TheaterId });
     }
 
