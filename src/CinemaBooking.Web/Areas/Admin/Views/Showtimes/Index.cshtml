@@ -65,7 +65,8 @@
     <div class="alert alert-success">@msg</div>
 }
 
-<form asp-action="CopyDay" method="post" class="cb-card admin-filter">
+<form asp-action="CopyDay" method="post" class="cb-card admin-filter"
+      data-confirm="Sao chép toàn bộ lịch ngày @Model.Date.ToString("dd/MM") sang ngày đã chọn?">
     <input type="hidden" name="sourceDate" value="@Model.Date.ToString("yyyy-MM-dd")" />
     <input type="hidden" name="theaterId" value="@Model.TheaterId" />
     <label for="targetDate" class="mb-0">Sao chép lịch ngày @Model.Date.ToString("dd/MM") sang</label>

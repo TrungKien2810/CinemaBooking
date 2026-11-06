@@ -31,7 +31,8 @@
     <div class="alert alert-danger">@error</div>
 }
 
-<form asp-action="Seats" asp-route-id="@Model.RoomId" method="post" class="cb-card">
+<form asp-action="Seats" asp-route-id="@Model.RoomId" method="post" class="cb-card"
+      data-confirm="Lưu loại ghế mới cho @Model.RoomName? Vé bán từ bây giờ tính theo loại ghế mới, vé đã bán giữ nguyên giá.">
     @* Form tag helper tự gắn antiforgery token. *@
     <input type="hidden" name="types" id="seat-types" value="" />
 

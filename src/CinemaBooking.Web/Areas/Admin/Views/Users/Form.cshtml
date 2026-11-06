@@ -12,7 +12,8 @@
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form admin-form-narrow">
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form admin-form-narrow"
+      data-confirm="@(isEdit ? $"Lưu thay đổi cho tài khoản {Model.Email}? Nếu đặt lại mật khẩu, người dùng sẽ phải đăng nhập bằng mật khẩu mới." : null)">
     <div asp-validation-summary="ModelOnly"></div>
 
     <div class="mb-3">

@@ -11,7 +11,8 @@
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form">
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form"
+      data-confirm="@(isEdit ? "Lưu thay đổi của phòng này? Đổi số hàng, số ghế hoặc sinh lại sơ đồ sẽ thay toàn bộ ghế và mất các chỉnh sửa ghế bằng tay." : null)">
     <div asp-validation-summary="ModelOnly"></div>
     <input asp-for="TheaterId" type="hidden" />
 
