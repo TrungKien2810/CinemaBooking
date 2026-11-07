@@ -13,11 +13,19 @@
         <p class="admin-page-subtitle">@Model.Rooms.Count phòng · @Model.Rooms.Sum(r => r.SeatCount) ghế hoạt động</p>
     </div>
     <div class="admin-page-actions">
+        <a asp-controller="Promotions" asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="cb-btn cb-btn-secondary">Khuyến mãi</a>
         <a asp-action="Create" asp-route-theaterId="@Model.TheaterId" class="cb-btn cb-btn-primary">
             <span>+</span> Thêm phòng chiếu
         </a>
     </div>
 </div>
+
+@if (TempData["Message"] is string message)
+{
+    <div class="cb-alert cb-alert-success" role="status">
+        <span>@message</span>
+    </div>
+}
 
 @if (TempData["Error"] is string error)
 {
@@ -43,6 +51,7 @@ else
             <thead>
                 <tr>
                     <th>Tên phòng</th>
+                    <th>Loại</th>
                     <th>Quy cách sơ đồ</th>
                     <th class="cb-num">Tổng số ghế</th>
                     <th class="cb-num">Suất chiếu đã xếp</th>
@@ -58,6 +67,7 @@ else
                                 @r.RoomName
                             </div>
                         </td>
+                        <td><span class="cb-badge cb-badge-surface">@r.RoomType.Label()</span></td>
                         <td>
                             <span class="cb-badge cb-badge-surface" style="font-family: var(--cb-font-ticket);">
                                 @r.TotalRows hàng × @r.TotalColumns ghế

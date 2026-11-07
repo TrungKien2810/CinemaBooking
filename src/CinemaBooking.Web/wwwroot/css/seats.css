@@ -1,0 +1,303 @@
+/* =============================================================================
+   Ghế ngồi: hình ghế bành (SVG dùng làm mask, tô màu bằng CSS) cho sơ đồ của khách, trình sửa ghế
+   và xem trước phòng. Màu theo LOẠI ghế; trạng thái (đang chọn / đang giữ / đã đặt) đổi màu + dấu hiệu.
+   ============================================================================= */
+
+:root {
+    --seat-chair: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2040%2040'%3E%0A%3Cpath%20d%3D'M11%206.5C11%204.6%2012.6%203%2014.5%203h11C27.4%203%2029%204.6%2029%206.5V21H11z'%2F%3E%0A%3Crect%20x%3D'2.5'%20y%3D'13'%20width%3D'7'%20height%3D'18'%20rx%3D'3.2'%2F%3E%3Crect%20x%3D'30.5'%20y%3D'13'%20width%3D'7'%20height%3D'18'%20rx%3D'3.2'%2F%3E%0A%3Crect%20x%3D'10.5'%20y%3D'22.5'%20width%3D'19'%20height%3D'9'%20rx%3D'3.2'%2F%3E%0A%3Crect%20x%3D'12.5'%20y%3D'33.5'%20width%3D'3'%20height%3D'3'%20rx%3D'1.2'%2F%3E%3Crect%20x%3D'24.5'%20y%3D'33.5'%20width%3D'3'%20height%3D'3'%20rx%3D'1.2'%2F%3E%3C%2Fsvg%3E");
+    --seat-sofa: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2080%2040'%3E%0A%3Cpath%20d%3D'M10%206.5C10%204.6%2011.6%203%2013.5%203h53C68.4%203%2070%204.6%2070%206.5V21H10z'%2F%3E%0A%3Crect%20x%3D'1.5'%20y%3D'13'%20width%3D'7'%20height%3D'18'%20rx%3D'3.2'%2F%3E%3Crect%20x%3D'71.5'%20y%3D'13'%20width%3D'7'%20height%3D'18'%20rx%3D'3.2'%2F%3E%0A%3Crect%20x%3D'10'%20y%3D'22.5'%20width%3D'29'%20height%3D'9'%20rx%3D'3.2'%2F%3E%3Crect%20x%3D'41'%20y%3D'22.5'%20width%3D'29'%20height%3D'9'%20rx%3D'3.2'%2F%3E%0A%3Crect%20x%3D'13'%20y%3D'33.5'%20width%3D'3'%20height%3D'3'%20rx%3D'1.2'%2F%3E%3Crect%20x%3D'64'%20y%3D'33.5'%20width%3D'3'%20height%3D'3'%20rx%3D'1.2'%2F%3E%3C%2Fsvg%3E");
+
+    --seat-standard: #8da2c0;   /* xanh thép */
+    --seat-vip: #a98bff;        /* tím */
+    --seat-couple: #3fd6b4;     /* ngọc lam */
+    --seat-mine: #ff4d6d;
+    --seat-held: #f5a524;
+    --seat-booked: #3a4256;
+
+    --cb-seat-size: 2.6rem;
+    --cb-seat-standard: var(--seat-standard);
+    --cb-seat-vip: var(--seat-vip);
+    --cb-seat-couple: var(--seat-couple);
+}
+
+/* ── Sơ đồ ghế của khách ───────────────────────────────────────────────── */
+
+.seat-map-shell {
+    padding: 1.75rem 1.25rem 1.25rem;
+}
+
+.seat-map-screen span {
+    border-top: 0;
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    padding: 0.55rem 1rem 0.4rem;
+    color: #cfd6e6;
+    letter-spacing: 0.3em;
+    background: linear-gradient(to bottom, rgba(180, 196, 230, 0.34), rgba(180, 196, 230, 0.04) 85%, transparent);
+    box-shadow: 0 -10px 34px -8px rgba(160, 185, 240, 0.4);
+}
+
+.seat-rows {
+    gap: 0.45rem;
+    padding: 0.5rem 0 0.25rem;
+}
+
+.seat-row {
+    grid-template-columns: 1.5rem repeat(var(--seat-cols), var(--cb-seat-size));
+    gap: 0.3rem 0.35rem;
+}
+
+.seat {
+    --seat-color: var(--seat-standard);
+    --chair: var(--seat-chair);
+    position: relative;
+    width: var(--cb-seat-size);
+    height: var(--cb-seat-size);
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 0.6rem;
+    background: transparent;
+    color: #0b1224;
+    font-size: 0.6rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.12s ease, filter 0.15s ease;
+}
+
+.seat::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--seat-color);
+    -webkit-mask: var(--chair) center / contain no-repeat;
+    mask: var(--chair) center / contain no-repeat;
+    transition: background-color 0.15s ease;
+}
+
+/* Nhãn nằm trên lưng ghế, nên đẩy lên một chút so với tâm. */
+.seat-label {
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+    transform: translateY(-17%);
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.25);
+}
+
+.seat.seat-standard { --seat-color: var(--seat-standard); }
+.seat.seat-vip { --seat-color: var(--seat-vip); }
+.seat.seat-couple { --seat-color: var(--seat-couple); }
+
+/* Ghế đôi bán theo cặp: MỘT ghế sofa rộng 2 cột (nửa phải không được render). */
+.seat.seat-pair {
+    --chair: var(--seat-sofa);
+    grid-column: span 2;
+    width: 100%;
+}
+
+.seat.seat-pair .seat-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+/* Ghế đôi lẻ loi: không có cặp nên không bán — mờ đi, không bấm được. */
+.seat.seat-orphan {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.seat:hover:not(:disabled):not(.seat-orphan),
+.seat:focus-visible {
+    transform: translateY(-3px);
+    filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.55)) brightness(1.12);
+    outline: none;
+}
+
+.seat:focus-visible::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border: 2px solid #fff;
+    border-radius: 0.7rem;
+}
+
+.seat-gap {
+    visibility: hidden;
+    cursor: default;
+}
+
+/* Đang chọn: hồng đậm + dấu tích. */
+.seat.is-mine { --seat-color: var(--seat-mine); color: #fff; }
+.seat.is-mine::after {
+    content: "✓";
+    position: absolute;
+    top: -1px;
+    right: 1px;
+    width: 0.95rem;
+    height: 0.95rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--seat-mine);
+    font-size: 0.6rem;
+    font-weight: 900;
+    z-index: 2;
+}
+
+/* Người khác đang giữ: vàng cam + đồng hồ cát. */
+.seat.is-held { --seat-color: var(--seat-held); cursor: not-allowed; }
+.seat.is-held::after {
+    content: "⏳";
+    position: absolute;
+    top: -2px;
+    right: 0;
+    font-size: 0.62rem;
+    line-height: 1;
+    z-index: 2;
+}
+
+/* Đã đặt: xám tối, nhãn mờ, gạch chéo. */
+.seat.is-booked { --seat-color: var(--seat-booked); color: rgba(220, 226, 240, 0.4); cursor: not-allowed; }
+.seat.is-booked::after {
+    content: "✕";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding-top: 0.2rem;
+    color: rgba(248, 113, 113, 0.9);
+    font-size: 0.9rem;
+    font-weight: 700;
+    z-index: 2;
+}
+.seat.is-booked .seat-label { visibility: hidden; }
+.seat:disabled { opacity: 1; }
+
+/* ── Chú thích ─────────────────────────────────────────────────────────── */
+
+.seat-map-legend {
+    list-style: none;
+    padding: 1rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    font-size: 0.82rem;
+    color: var(--cb-text-muted);
+    gap: 0.75rem 1.4rem;
+    margin-top: 1.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--cb-border);
+}
+
+.seat-map-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.seat-swatch {
+    --seat-color: var(--seat-standard);
+    --chair: var(--seat-chair);
+    position: relative;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    font-size: 0;
+}
+
+.seat-swatch::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--seat-color);
+    -webkit-mask: var(--chair) center / contain no-repeat;
+    mask: var(--chair) center / contain no-repeat;
+}
+
+.seat-swatch.is-mine { --seat-color: var(--seat-mine); }
+.seat-swatch.is-held { --seat-color: var(--seat-held); }
+.seat-swatch.is-booked { --seat-color: var(--seat-booked); }
+.seat-swatch.is-vip { --seat-color: var(--seat-vip); }
+.seat-swatch.is-couple { --seat-color: var(--seat-couple); --chair: var(--seat-sofa); width: 2.4rem; }
+
+/* ── Trình sửa ghế và xem trước phòng (admin) ──────────────────────────── */
+
+.seat-preview-grid {
+    grid-template-columns: 1.4rem repeat(var(--seat-cols), minmax(1.2rem, 2.5rem));
+    gap: 0.3rem;
+    justify-content: center;
+    min-width: 0;
+}
+
+.seat-dot {
+    --seat-color: var(--seat-standard);
+    --chair: var(--seat-chair);
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 0.4rem;
+    background: transparent;
+}
+
+.seat-dot::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--seat-color);
+    -webkit-mask: var(--chair) center / contain no-repeat;
+    mask: var(--chair) center / contain no-repeat;
+    transition: background-color 0.15s ease;
+}
+
+.seat-dot.seat-standard { --seat-color: var(--seat-standard); background-color: transparent; }
+.seat-dot.seat-vip { --seat-color: var(--seat-vip); background-color: transparent; }
+.seat-dot.seat-couple { --seat-color: var(--seat-couple); background-color: transparent; }
+.seat-dot.seat-gap { visibility: hidden; }
+
+.room-seat-editor .seat-dot {
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.12s ease, filter 0.15s ease;
+}
+
+.room-seat-editor .seat-dot:hover {
+    transform: translateY(-2px);
+    box-shadow: none;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5)) brightness(1.15);
+}
+
+.room-seat-editor .seat-dot.seat-locked { opacity: 0.55; }
+
+/* Hai ghế của một cặp: nối bằng một thanh ở khoảng giữa để nhìn ra là cặp. */
+.room-seat-editor .seat-dot.pair-left,
+.room-seat-editor .seat-dot.pair-right {
+    width: 100%;
+    border-radius: 0.4rem;
+}
+
+.room-seat-editor .seat-dot.pair-left::after {
+    content: "";
+    position: absolute;
+    left: 85%;
+    top: 40%;
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 0.3rem;
+    background: var(--seat-couple);
+    z-index: 2;
+}
+
+.room-seat-editor .seat-dot.seat-orphan { outline: 2px dashed #fb7185; outline-offset: 1px; }
+.room-seat-editor .seat-dot.is-pending { box-shadow: none; filter: drop-shadow(0 0 7px #fff) brightness(1.25); }
+
+.seat-legend .seat-dot { width: 1.3rem; }
+.seat-editor-tools .seat-dot { width: 1.3rem; }

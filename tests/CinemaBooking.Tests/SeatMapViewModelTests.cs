@@ -75,8 +75,11 @@ public class SeatMapViewModelTests
     [Fact]
     public void Odd_number_of_couple_seats_leaves_an_unbookable_orphan()
     {
-        // Hàng B có 3 ghế đôi: B1–B2 ghép cặp, B3 lẻ loi.
-        var model = Build(BuildShowtime(rows: 2, columns: 3));
+        // Hàng B có 3 ghế đôi: B1–B2 ghép cặp, B3 lẻ loi. (SeatGenerator không còn tự sinh ghế lẻ —
+        // phòng cũ hoặc sửa tay mới có, nên dựng bằng tay ở đây.)
+        var showtime = BuildShowtime(rows: 2, columns: 3);
+        showtime.Room!.Seats.Single(s => s.Label == "B3").SeatType = SeatType.Couple;
+        var model = Build(showtime);
 
         Assert.Equal("B1–B2", model.Rows[1].Seats[0]!.Label);
         Assert.True(model.Rows[1].Seats[2]!.IsOrphan);
@@ -106,7 +109,9 @@ public class SeatMapViewModelTests
         var model = Build(showtime);
 
         Assert.Null(model.Rows[1].Seats[1]);
-        Assert.Equal("B3", model.Rows[1].Seats[2]!.Label);
+        // B1 bị khuyết bạn đồng hàng liền kề → lẻ loi; B3–B4 liền kề nên ghép thành một cặp.
+        Assert.True(model.Rows[1].Seats[0]!.IsOrphan);
+        Assert.Equal("B3–B4", model.Rows[1].Seats[2]!.Label);
         Assert.Equal(4, model.Rows[1].Seats.Count);
     }
 

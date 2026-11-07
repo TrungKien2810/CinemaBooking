@@ -1,3 +1,5 @@
+using CinemaBooking.Domain.Entities;
+using CinemaBooking.Domain.Enums;
 using CinemaBooking.Infrastructure.Persistence;
 using CinemaBooking.Web.Models;
 using CinemaBooking.Web.Services;
@@ -42,6 +44,7 @@ public class MoviesController : Controller
             {
                 Card = new MovieCardViewModel(m.Id, m.Title, m.Genre, m.DurationMinutes, m.ReleaseDate, m.PosterUrl),
                 m.Description,
+                Extra = new MovieExtraInfo(m.AgeRating, m.Director, m.Cast, m.TrailerUrl),
             })
             .FirstOrDefaultAsync(ct);
 
@@ -68,6 +71,11 @@ public class MoviesController : Controller
             // ⇒ suất của nó rơi ra luôn. B2.11 merge xong thì đọc thẳng từ item và bỏ bước này.
             var byName = branches.ToDictionary(b => b.Name);
 
+            // Giá trên nút suất phải khớp sơ đồ ghế: giá ghế thường sau khuyến mãi của chi nhánh trong ngày đó.
+            var promotions = new Dictionary<int, List<Promotion>>();
+            foreach (var branch in branches)
+                promotions[branch.Id] = await PromotionRules.LoadForShowtimeAsync(_db, branch.Id, day, ct);
+
             groups = items
                 // Suất hôm nay đã bắt đầu thì không bán nữa (trang chọn ghế cũng trả 404).
                 .Where(s => s.StartTimeUtc > nowUtc)
@@ -82,14 +90,17 @@ public class MoviesController : Controller
                     g.Select(x => new ShowtimeSlotViewModel(
                             x.Showtime.Id, x.Showtime.RoomName,
                             _tz.ToLocalTime(x.Showtime.StartTimeUtc), _tz.ToLocalTime(x.Showtime.EndTimeUtc),
-                            x.Showtime.BasePrice))
+                            x.Showtime.BasePrice,
+                            x.Showtime.RoomType.Label() + " · " + x.Showtime.Language.Label(),
+                            PromotionRules.Quote(x.Showtime.BasePrice, SeatType.Standard,
+                                _tz.ToLocalTime(x.Showtime.StartTimeUtc), promotions[x.Branch.Id])))
                         .ToList()))
                 .ToList();
         }
 
         ViewData["Title"] = movie.Card.Title;
         return View(new MovieDetailsViewModel(
-            movie.Card, movie.Description, today, dates, selected, filter, groups));
+            movie.Card, movie.Description, today, dates, selected, filter, groups, movie.Extra));
     }
 
     /// <summary>

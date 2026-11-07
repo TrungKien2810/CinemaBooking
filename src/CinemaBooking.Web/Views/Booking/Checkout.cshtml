@@ -41,7 +41,7 @@
         <div class="cb-ticket-body">
             <h2 class="cb-ticket-movie-title">@Model.Summary.MovieTitle</h2>
             <div class="cb-ticket-theater">
-                <span>@Model.Summary.TheaterName (@Model.Summary.City) · @Model.Summary.RoomName</span>
+                <span>@Model.Summary.TheaterName (@Model.Summary.City) · @Model.Summary.RoomName@(Model.Summary.FormatLabel is null ? "" : " (" + Model.Summary.FormatLabel + ")")</span>
                 <span class="cb-muted">@Model.Summary.StartLocal.ToString("HH:mm · dd/MM/yyyy")</span>
             </div>
 
@@ -72,18 +72,67 @@
                     {
                         <tr>
                             <td><strong>@seat.Label</strong></td>
-                            <td><span class="cb-badge cb-badge-surface">@seat.Type</span></td>
-                            <td class="cb-num">@seat.Price.ToString("N0") ₫</td>
+                            <td><span class="cb-badge cb-badge-surface">@seat.Type.Label()</span></td>
+                            <td class="cb-num">
+                                @if (seat.HasPromotion)
+                                {
+                                    <s class="cb-muted">@seat.ListPrice.Vnd()</s>
+                                    <br />
+                                    <small class="cb-success-text">@seat.PromotionTitle</small>
+                                    <br />
+                                }
+                                @seat.Price.Vnd()
+                            </td>
                         </tr>
                     }
                 </tbody>
                 <tfoot>
+                    @if (Model.Summary.HasVoucher)
+                    {
+                        <tr>
+                            <th colspan="2">Tạm tính</th>
+                            <td class="cb-num">@Model.Summary.Subtotal.Vnd()</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2" class="cb-success-text">Mã giảm giá @Model.Summary.VoucherCode</th>
+                            <td class="cb-num cb-success-text">−@Model.Summary.VoucherDiscount.Vnd()</td>
+                        </tr>
+                    }
                     <tr>
                         <th colspan="2">Tổng cộng</th>
-                        <td class="cb-num cb-ticket-total-val">@Model.Summary.TotalAmount.ToString("N0") ₫</td>
+                        <td class="cb-num cb-ticket-total-val" data-total>@Model.Summary.TotalAmount.Vnd()</td>
                     </tr>
                 </tfoot>
             </table>
+
+            @* Mã giảm giá: lưu vào phiên, server kiểm tra lại lúc dựng trang và lúc chốt đơn. *@
+            <section class="cb-voucher" aria-label="Mã giảm giá">
+                @if (Model.Summary.HasVoucher)
+                {
+                    <div class="cb-voucher-applied" role="status">
+                        <div>
+                            <strong>@Model.Summary.VoucherCode</strong>
+                            <small class="cb-muted">@Model.Summary.VoucherTitle · giảm @Model.Summary.VoucherDiscount.Vnd()</small>
+                        </div>
+                        <form asp-action="RemoveVoucher" method="post">
+                            <button type="submit" class="cb-btn cb-btn-outline cb-btn-sm">Bỏ mã</button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <form asp-action="ApplyVoucher" method="post" class="cb-voucher-form" data-submit-loading>
+                        <label for="voucher-code" class="visually-hidden">Mã giảm giá</label>
+                        <input id="voucher-code" name="code" class="cb-input" maxlength="30" autocomplete="off"
+                               style="text-transform: uppercase" placeholder="Nhập mã giảm giá" />
+                        <button type="submit" class="cb-btn cb-btn-outline">Áp dụng</button>
+                    </form>
+                }
+                @if (TempData["VoucherError"] is string voucherError)
+                {
+                    <p class="cb-field-error" role="alert">@voucherError</p>
+                }
+            </section>
 
             <a asp-controller="Booking" asp-action="SeatMap" asp-route-id="@Model.Summary.ShowtimeId"
                class="cb-btn cb-btn-outline" style="width: 100%; margin-top: 0.5rem;">

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using CinemaBooking.Domain;
 using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
@@ -9,6 +10,7 @@ using CinemaBooking.Web.Models;
 using CinemaBooking.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -33,6 +35,8 @@ public class BookingController : Controller
     private readonly TimeProvider _clock;
     private readonly SeatHoldOptions _hold;
     private readonly IOptions<VnpayOptions> _vnpayOptions;
+    private readonly IBranchScope _branches;
+    private readonly IVoucherService _vouchers;
 
     public BookingController(
         CinemaDbContext db,
@@ -46,8 +50,12 @@ public class BookingController : Controller
         IOptions<DisplayTimeZone> tz,
         TimeProvider clock,
         IOptions<SeatHoldOptions> hold,
-        IOptions<VnpayOptions> vnpayOptions)
+        IOptions<VnpayOptions> vnpayOptions,
+        IBranchScope branches,
+        IVoucherService vouchers)
     {
+        _branches = branches;
+        _vouchers = vouchers;
         _db = db;
         _bookedSeats = bookedSeats;
         _locks = locks;
@@ -62,11 +70,23 @@ public class BookingController : Controller
         _vnpayOptions = vnpayOptions;
     }
 
+    private const int MyBookingsPageSize = 10;
+
+    /// <summary>Tài khoản quản trị (Admin/BranchAdmin) chỉ XEM sơ đồ ghế, không đặt vé — mua vé là việc của khách.</summary>
+    private bool IsStaff => User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.BranchAdmin);
+
+    private IActionResult StaffCannotBuy(int? showtimeId = null)
+    {
+        TempData["Error"] = "Tài khoản quản trị không đặt vé. Hãy dùng tài khoản khách để mua vé.";
+        return showtimeId is { } id ? RedirectToAction(nameof(SeatMap), new { id }) : RedirectToAction("Index", "Home");
+    }
+
     [HttpGet]
     public async Task<IActionResult> SeatMap(int id, CancellationToken ct)
     {
         var showtime = await FindBookableShowtimeAsync(id, ct);
         if (showtime is null) return NotFound();
+        ViewData["StaffPreview"] = IsStaff;
 
         // Quay lại sơ đồ ghế sau khi đã sang Checkout nghĩa là khách đổi ý: nhả hold cũ
         // (đang thuộc hold-token trong Session) để ghế không hiện nhầm là "người khác giữ".
@@ -84,9 +104,13 @@ public class BookingController : Controller
         }
 
         var booked = await _bookedSeats.GetBookedSeatIdsAsync(showtime.Id, ct);
+        var startLocal = _tz.ToLocalTime(showtime.StartTimeUtc);
+        var promotions = await PromotionRules.LoadForShowtimeAsync(
+            _db, showtime.Room!.TheaterId, DateOnly.FromDateTime(startLocal), ct);
+        var surcharges = await PricingLoader.LoadSurchargesAsync(_db, showtime.Room.TheaterId, ct);
 
         return View(SeatMapViewModel.Build(
-            showtime, booked, _pricing, _tz.ToLocalTime(showtime.StartTimeUtc), (int)_hold.Duration.TotalSeconds));
+            showtime, booked, _pricing, startLocal, (int)_hold.Duration.TotalSeconds, promotions, surcharges));
     }
 
     /// <summary>
@@ -98,6 +122,8 @@ public class BookingController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SelectSeats(int showtimeId, int[] seatIds, string? connectionId, CancellationToken ct)
     {
+        if (IsStaff) return StaffCannotBuy(showtimeId);
+
         var showtime = await FindBookableShowtimeAsync(showtimeId, ct);
         if (showtime is null) return NotFound();
 
@@ -119,6 +145,17 @@ public class BookingController : Controller
             return RedirectToAction(nameof(SeatMap), new { id = showtimeId });
         }
 
+        // Đổi sang suất khác khi đang có ghế chờ thanh toán: giỏ chỉ giữ một suất, nên trả ghế cũ
+        // ngay thay vì để chúng khóa người khác cho tới khi hết hạn.
+        if (HttpContext.Session.GetSeatSelection() is { } previous && previous.ShowtimeId != showtimeId)
+        {
+            var released = previous.SeatIds
+                .Where(seatId => _locks.Release(new SeatKey(previous.ShowtimeId, seatId), previous.ConnectionId))
+                .ToList();
+            if (released.Count > 0)
+                await _seats.Clients.Group(SeatHub.GroupName(previous.ShowtimeId)).SeatUnlocked(released);
+        }
+
         // Mốc hết hạn để trang thanh toán chạy đồng hồ đếm ngược — cùng một con số với lock.
         var expiresUtc = _clock.GetUtcNow().UtcDateTime.Add(_hold.Duration);
         HttpContext.Session.SetSeatSelection(new SeatSelection(showtimeId, ids, holdToken, expiresUtc));
@@ -132,6 +169,8 @@ public class BookingController : Controller
     [HttpGet]
     public async Task<IActionResult> Checkout(CancellationToken ct)
     {
+        if (IsStaff) return StaffCannotBuy();
+
         var selection = HttpContext.Session.GetSeatSelection();
         if (selection is null) return RedirectToAction("Index", "Home");
 
@@ -158,6 +197,8 @@ public class BookingController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Checkout(CheckoutFormModel form, CancellationToken ct)
     {
+        if (IsStaff) return StaffCannotBuy();
+
         var selection = HttpContext.Session.GetSeatSelection();
         if (selection is null) return RedirectToAction("Index", "Home");
 
@@ -176,7 +217,8 @@ public class BookingController : Controller
             form.CustomerName,
             form.CustomerEmail,
             form.CustomerPhone,
-            User.FindFirstValue(ClaimTypes.NameIdentifier)), ct);
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Session.GetVoucherCode()), ct);
 
         if (result.IsRedirectToPayment)
         {
@@ -188,6 +230,8 @@ public class BookingController : Controller
 
         if (!result.IsSuccess)
         {
+            // Mã giảm giá không còn dùng được (hết lượt, hết hạn...): bỏ mã để khách thanh toán tiếp giá thường hoặc nhập mã khác.
+            if (result.Kind == BookingResultKind.VoucherInvalid) HttpContext.Session.ClearVoucherCode();
             TempData["Error"] = result.Message;
             return RedirectToAction(nameof(Checkout));
         }
@@ -196,7 +240,45 @@ public class BookingController : Controller
         await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatBooked(selection.SeatIds.ToList());
 
         HttpContext.Session.ClearSeatSelection();
+        // Khách guest vừa đặt: nhớ mã vé trong phiên để trang xác nhận hiện thông tin đầy đủ của chính họ.
+        if (result.BookingCode is not null) HttpContext.Session.RememberOwnedBooking(result.BookingCode);
         return RedirectToAction(nameof(Confirmation), new { code = result.BookingCode });
+    }
+
+    /// <summary>
+    /// Khách nhập mã giảm giá ở trang thanh toán. Chỉ LƯU mã vào Session; việc kiểm tra (hạn, chi nhánh, đơn tối thiểu, lượt dùng)
+    /// diễn ra khi dựng lại trang thanh toán và lần nữa ở server lúc chốt đơn.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ApplyVoucher(string? code)
+    {
+        if (IsStaff) return StaffCannotBuy();
+        if (HttpContext.Session.GetSeatSelection() is null) return RedirectToAction("Index", "Home");
+
+        var normalized = VoucherRules.Normalize(code);
+        if (normalized.Length == 0)
+        {
+            TempData["VoucherError"] = "Nhập mã giảm giá.";
+        }
+        else if (normalized.Length > 30)
+        {
+            TempData["VoucherError"] = "Mã giảm giá không hợp lệ.";
+        }
+        else
+        {
+            HttpContext.Session.SetVoucherCode(normalized);
+        }
+
+        return RedirectToAction(nameof(Checkout));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult RemoveVoucher()
+    {
+        HttpContext.Session.ClearVoucherCode();
+        return RedirectToAction(nameof(Checkout));
     }
 
     /// <summary>
@@ -214,7 +296,7 @@ public class BookingController : Controller
         }
 
         var vnpayRequest = new VnpayPaymentRequest(
-            TxnRef: response["vnp_TxnRef"] ?? string.Empty,
+            TxnRef: response.GetValueOrDefault("vnp_TxnRef") ?? string.Empty,
             Amount: 0,
             OrderInfo: string.Empty,
             ReturnUrl: _vnpayOptions.Value.ReturnUrl,
@@ -243,11 +325,15 @@ public class BookingController : Controller
         HttpContext.Session.ClearSeatSelection();
         if (selection is not null)
         {
+            // Phiên này là phiên đã khởi tạo thanh toán — được xem đầy đủ thông tin vé của mình.
+            if (result.IsSuccess && result.BookingCode is not null)
+                HttpContext.Session.RememberOwnedBooking(result.BookingCode);
+
             var seatIds = selection.SeatIds.ToList();
             if (result.IsSuccess)
                 await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatBooked(seatIds);
             else
-                await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatUnlocked(seatIds);
+                await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatFreed(seatIds);
         }
 
         if (!result.IsSuccess)
@@ -272,7 +358,7 @@ public class BookingController : Controller
         }
 
         var vnpayRequest = new VnpayPaymentRequest(
-            TxnRef: response["vnp_TxnRef"] ?? string.Empty,
+            TxnRef: response.GetValueOrDefault("vnp_TxnRef") ?? string.Empty,
             Amount: 0,
             OrderInfo: string.Empty,
             ReturnUrl: _vnpayOptions.Value.ReturnUrl,
@@ -303,7 +389,7 @@ public class BookingController : Controller
         if (booking is null)
             return View("BookingNotFound", code.Trim());
 
-        return View(ToDetails(booking));
+        return View(ToDetails(booking, await CanSeePersonalDataAsync(booking, ct)));
     }
 
     /// <summary>
@@ -328,6 +414,7 @@ public class BookingController : Controller
 
     /// <summary>Tra cứu vé theo mã, dùng được cho cả khách không đăng nhập.</summary>
     [HttpGet]
+    [EnableRateLimiting(TicketRateLimit.Policy)]
     public async Task<IActionResult> Lookup(string? code, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(code))
@@ -343,16 +430,17 @@ public class BookingController : Controller
         }
 
         return View(new BookingLookupViewModel(
-            booking.BookingCode, null, ToDetails(booking)));
+            booking.BookingCode, null, ToDetails(booking, await CanSeePersonalDataAsync(booking, ct))));
     }
 
     /// <summary>Vé của tài khoản đang đăng nhập, mới nhất trước.</summary>
     [Authorize]
     [HttpGet]
-    public async Task<IActionResult> MyBookings(string? tab, CancellationToken ct)
+    public async Task<IActionResult> MyBookings(string? tab, int? page, CancellationToken ct)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId is null) return Challenge();
+        if (IsStaff) return StaffCannotBuy();
 
         var bookings = await _db.Bookings.AsNoTracking()
             .Where(b => b.UserId == userId)
@@ -365,30 +453,41 @@ public class BookingController : Controller
             .ToListAsync(ct);
 
         var now = _clock.GetUtcNow().UtcDateTime;
+        // Suất đang chiếu vẫn là "sắp chiếu" với khách: chỉ khi hết phim mới sang "đã xem".
         var upcomingCount = bookings.Count(b =>
-            (b.Status is BookingStatus.Confirmed or BookingStatus.Pending) && b.Showtime!.StartTimeUtc > now);
+            (b.Status is BookingStatus.Confirmed or BookingStatus.Pending) && b.Showtime!.EndTimeUtc > now);
         var historyCount = bookings.Count(b =>
-            b.Status == BookingStatus.Confirmed && b.Showtime!.StartTimeUtc <= now);
+            b.Status == BookingStatus.Confirmed && b.Showtime!.EndTimeUtc <= now);
 
         var selected = string.IsNullOrWhiteSpace(tab) ? "all" : tab.Trim().ToLowerInvariant();
         var filtered = selected switch
         {
             "upcoming" => bookings.Where(b =>
-                (b.Status is BookingStatus.Confirmed or BookingStatus.Pending) && b.Showtime!.StartTimeUtc > now),
+                (b.Status is BookingStatus.Confirmed or BookingStatus.Pending) && b.Showtime!.EndTimeUtc > now),
             "history" => bookings.Where(b =>
-                b.Status == BookingStatus.Confirmed && b.Showtime!.StartTimeUtc <= now),
+                b.Status == BookingStatus.Confirmed && b.Showtime!.EndTimeUtc <= now),
             _ => bookings,
         };
 
-        var items = filtered.Select(ToDetails).ToList();
+        var matching = filtered.ToList();
+        var current = PageInfo.Clamp(page, matching.Count, MyBookingsPageSize);
+
+        // Vé của chính tài khoản đang đăng nhập (đã lọc theo UserId ở trên) — hiện đầy đủ.
+        var items = matching
+            .Skip((current - 1) * MyBookingsPageSize)
+            .Take(MyBookingsPageSize)
+            .Select(b => ToDetails(b, revealPersonalData: true))
+            .ToList();
 
         return View(new MyBookingsViewModel(
-            items, selected, upcomingCount, historyCount));
+            items, selected, upcomingCount, historyCount, bookings.Count,
+            new PageInfo(current, MyBookingsPageSize, matching.Count)));
     }
 
     /// <summary>Gửi lại email xác nhận; khách guest phải nhập đúng email trên vé.</summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting(TicketRateLimit.Policy)]
     public async Task<IActionResult> ResendEmail(string code, string? email, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(code))
@@ -431,7 +530,32 @@ public class BookingController : Controller
             return null;
         }
 
-        var seats = BuildCheckoutSeats(showtime, selection.SeatIds);
+        var startLocal = _tz.ToLocalTime(showtime.StartTimeUtc);
+        var promotions = await PromotionRules.LoadForShowtimeAsync(
+            _db, showtime.Room!.TheaterId, DateOnly.FromDateTime(startLocal), ct);
+        var surcharges = await PricingLoader.LoadSurchargesAsync(_db, showtime.Room!.TheaterId, ct);
+        var seats = BuildCheckoutSeats(showtime, selection.SeatIds, startLocal, promotions, surcharges);
+
+        // Mã giảm giá đang áp (lưu ở Session): kiểm lại mỗi lần dựng trang — mã có thể vừa hết lượt/hết hạn.
+        var subtotal = seats.Sum(s => s.Price);
+        string? voucherCode = null, voucherTitle = null;
+        var voucherDiscount = 0m;
+        if (HttpContext.Session.GetVoucherCode() is { Length: > 0 } stored)
+        {
+            var check = await _vouchers.CheckAsync(
+                stored, showtime.Room.TheaterId, subtotal, User.FindFirstValue(ClaimTypes.NameIdentifier), User.Identity?.Name, ct);
+            if (check.IsOk)
+            {
+                voucherCode = check.Voucher!.Code;
+                voucherTitle = check.Voucher.Title;
+                voucherDiscount = check.Discount;
+            }
+            else
+            {
+                HttpContext.Session.ClearVoucherCode();
+                TempData["VoucherError"] = check.Message;
+            }
+        }
 
         var summary = new CheckoutViewModel(
             showtime.Id,
@@ -441,7 +565,9 @@ public class BookingController : Controller
             showtime.Room.RoomName,
             _tz.ToLocalTime(showtime.StartTimeUtc),
             seats,
-            seats.Sum(s => s.Price));
+            subtotal - voucherDiscount,
+            showtime.Room.RoomType.Label() + " · " + showtime.Language.Label(),
+            voucherCode, voucherDiscount, voucherTitle);
 
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
         var remaining = selection.ExpiresUtc is { } expiresUtc
@@ -455,7 +581,9 @@ public class BookingController : Controller
     /// Một dòng cho mỗi ghế, riêng ghế đôi gộp cả cặp thành một dòng "J1–J2" với giá của cả cặp —
     /// khớp với khối ghế trên sơ đồ, không để khách thấy hai dòng nửa ghế.
     /// </summary>
-    private List<CheckoutSeatItem> BuildCheckoutSeats(Showtime showtime, IReadOnlyCollection<int> selectedIds)
+    private List<CheckoutSeatItem> BuildCheckoutSeats(
+        Showtime showtime, IReadOnlyCollection<int> selectedIds, DateTime startLocal, IReadOnlyList<Promotion> promotions,
+        SeatSurcharges? surcharges)
     {
         var allSeats = showtime.Room!.Seats.ToList();
         var byId = allSeats.ToDictionary(s => s.Id);
@@ -471,7 +599,8 @@ public class BookingController : Controller
         {
             if (!consumed.Add(seat.Id)) continue;
 
-            var unitPrice = _pricing.PriceFor(showtime.BasePrice, seat.SeatType);
+            var unit = PromotionRules.Quote(
+                _pricing.PriceFor(showtime.BasePrice, seat.SeatType, surcharges), seat.SeatType, startLocal, promotions);
 
             if (seat.SeatType == SeatType.Couple
                 && partners.TryGetValue(seat.Id, out var partnerId)
@@ -479,11 +608,12 @@ public class BookingController : Controller
             {
                 consumed.Add(partnerId);
                 var partner = byId[partnerId];
-                items.Add(new CheckoutSeatItem($"{seat.Label}–{partner.Label}", SeatType.Couple, unitPrice * 2));
+                items.Add(new CheckoutSeatItem(
+                    $"{seat.Label}–{partner.Label}", SeatType.Couple, unit.FinalPrice * 2, unit.ListPrice * 2, unit.PromotionTitle));
                 continue;
             }
 
-            items.Add(new CheckoutSeatItem(seat.Label, seat.SeatType, unitPrice));
+            items.Add(new CheckoutSeatItem(seat.Label, seat.SeatType, unit.FinalPrice, unit.ListPrice, unit.PromotionTitle));
         }
 
         return items;
@@ -497,13 +627,14 @@ public class BookingController : Controller
 
         var user = await _db.Users.AsNoTracking()
             .Where(u => u.Id == userId)
-            .Select(u => new { u.FullName, u.Email })
+            .Select(u => new { u.FullName, u.Email, u.PhoneNumber })
             .FirstOrDefaultAsync(ct);
 
         if (user is null) return form;
 
         form.CustomerName = user.FullName ?? user.Email ?? string.Empty;
         form.CustomerEmail = user.Email ?? string.Empty;
+        form.CustomerPhone = user.PhoneNumber;
         return form;
     }
 
@@ -519,33 +650,21 @@ public class BookingController : Controller
             .FirstOrDefaultAsync(b => b.BookingCode == normalized, ct);
     }
 
-    private BookingTicketViewModel ToDetails(Booking booking)
+    private BookingTicketViewModel ToDetails(Booking booking, bool revealPersonalData) =>
+        BookingTicketMapper.ToViewModel(booking, _tz, revealPersonalData);
+
+    /// <summary>
+    /// Ai được xem họ tên/email/SĐT đầy đủ trên trang vé: chủ tài khoản đặt vé, khách vừa đặt trong phiên
+    /// này (guest), Admin, và BranchAdmin của đúng chi nhánh chiếu. Người chỉ có mã vé chỉ thấy bản đã che.
+    /// </summary>
+    private async Task<bool> CanSeePersonalDataAsync(Booking booking, CancellationToken ct)
     {
-        var showtime = booking.Showtime!;
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is not null && string.Equals(booking.UserId, userId, StringComparison.Ordinal)) return true;
+        if (HttpContext.Session.OwnsBooking(booking.BookingCode)) return true;
 
-        var seats = booking.Seats
-            .Where(bs => bs.Seat is not null)
-            .OrderBy(bs => bs.Seat!.RowNumber).ThenBy(bs => bs.Seat!.ColumnNumber)
-            .Select(bs => new BookingSeatLine(bs.Seat!.Label, bs.Seat.SeatType, bs.PriceAtBooking))
-            .ToList();
-
-        return new BookingTicketViewModel(
-            booking.BookingCode,
-            showtime.Movie?.Title ?? string.Empty,
-            showtime.Room?.Theater?.Name ?? string.Empty,
-            showtime.Room?.Theater?.City ?? string.Empty,
-            showtime.Room?.RoomName ?? string.Empty,
-            _tz.ToLocalTime(showtime.StartTimeUtc),
-            _tz.ToLocalTime(booking.BookingTimeUtc),
-            booking.Status,
-            booking.Payment?.Status ?? PaymentStatus.Pending,
-            booking.Payment?.PaymentMethod ?? "VNPAY",
-            booking.Payment?.TransactionId,
-            booking.CustomerName,
-            booking.CustomerEmail,
-            booking.CustomerPhone,
-            booking.TotalAmount,
-            seats);
+        var theaterId = booking.Showtime?.Room?.TheaterId;
+        return theaterId is not null && await _branches.CanAccessTheaterAsync(theaterId.Value, ct);
     }
 
     private async Task<string?> ValidateSelectionAsync(Showtime showtime, List<int> ids, string? connectionId, CancellationToken ct)
@@ -583,6 +702,6 @@ public class BookingController : Controller
             .Include(s => s.Room!).ThenInclude(r => r.Seats)
             .AsSplitQuery()
             .FirstOrDefaultAsync(s => s.Id == id && s.StartTimeUtc > nowUtc
-                                      && s.Movie!.IsActive && s.Room!.Theater!.IsActive, ct);
+                                      && s.IsActive && s.Movie!.IsActive && s.Room!.Theater!.IsActive, ct);
     }
 }

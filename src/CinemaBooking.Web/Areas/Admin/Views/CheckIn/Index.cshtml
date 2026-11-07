@@ -1,0 +1,79 @@
+@using CinemaBooking.Web.Services
+@using CinemaBooking.Web.Areas.Admin.Controllers
+@model CinemaBooking.Web.Areas.Admin.Models.CheckInPageModel
+@{
+    ViewData["Title"] = "Soát vé";
+}
+
+<div class="admin-page-head">
+    <div>
+        <h1 class="admin-page-title">Soát vé tại rạp</h1>
+        <p class="cb-muted admin-page-subtitle">
+            Nhập mã vé (hoặc quét QR trên vé rồi bấm “Soát vé này”). Mỗi vé chỉ vào được <strong>một lần</strong>;
+            cổng soát vé mở trước giờ chiếu @((int)TicketCheckInRules.OpensBefore.TotalMinutes) phút.
+        </p>
+    </div>
+</div>
+
+@if (TempData["Message"] is string message)
+{
+    <div class="cb-alert cb-alert-success" role="status">@message</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="cb-alert cb-alert-danger" role="alert">@error</div>
+}
+
+<form method="get" class="cb-card admin-filter">
+    <label for="code" class="admin-label mb-0">Mã vé</label>
+    <input id="code" name="code" value="@Model.Code" class="admin-input" style="max-width: 16rem"
+           placeholder="CB-XXXXXX" autocomplete="off" autofocus />
+    <button type="submit" class="cb-btn cb-btn-primary">Tra mã</button>
+</form>
+
+@if (Model.Code is not null)
+{
+    if (Model.Outcome == CheckInOutcome.NotFound || Model.Ticket is null)
+    {
+        <div class="cb-alert cb-alert-danger" role="alert">
+            Không tìm thấy vé với mã <strong>@Model.Code</strong> tại chi nhánh của bạn.
+        </div>
+    }
+    else
+    {
+        var t = Model.Ticket;
+        var tone = Model.Outcome == CheckInOutcome.Ok ? "success" : "danger";
+        <div class="alert alert-@tone" role="status">
+            <strong>@(Model.Outcome == CheckInOutcome.Ok ? "✔ Vé hợp lệ — cho khách vào" : "✖ Không cho vào")</strong><br />
+            @CheckInController.Describe(Model.Outcome!.Value)
+            @if (Model.Outcome == CheckInOutcome.TooEarly)
+            {
+                <text> Cổng mở lúc @Model.OpensAtLocal!.Value.ToString("HH:mm dd/MM/yyyy").</text>
+            }
+            @if (t.IsCheckedIn)
+            {
+                <text> Đã soát lúc @t.CheckedInLocal!.Value.ToString("HH:mm dd/MM/yyyy")@(string.IsNullOrEmpty(t.CheckedInBy) ? "" : " bởi " + t.CheckedInBy).</text>
+            }
+        </div>
+
+        <div class="cb-card">
+            <h2 class="booking-movie">@t.MovieTitle</h2>
+            <p class="cb-muted mb-1">@t.TheaterName · @t.RoomName</p>
+            <p class="booking-time">@t.StartLocal.ToString("HH:mm · dd/MM/yyyy")</p>
+            <dl class="row mb-2">
+                <dt class="col-sm-3">Mã vé</dt><dd class="col-sm-9">@t.BookingCode</dd>
+                <dt class="col-sm-3">Khách</dt><dd class="col-sm-9">@t.CustomerName</dd>
+                <dt class="col-sm-3">Ghế</dt><dd class="col-sm-9">@string.Join(", ", t.Seats.Select(s => s.Label))</dd>
+                <dt class="col-sm-3">Trạng thái</dt><dd class="col-sm-9">@t.StatusLabel · @t.PaymentStateLabel</dd>
+            </dl>
+
+            @if (Model.CanCheckIn)
+            {
+                <form asp-action="Confirm" method="post" class="mt-3">
+                    <input type="hidden" name="code" value="@t.BookingCode" />
+                    <button type="submit" class="cb-btn cb-btn-primary cb-btn-lg">Xác nhận soát vé — cho vào rạp</button>
+                </form>
+            }
+        </div>
+    }
+}

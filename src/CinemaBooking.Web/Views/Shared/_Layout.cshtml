@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/features.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
     <link rel="stylesheet" href="~/css/credits.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/CinemaBooking.Web.styles.css" asp-append-version="true" />
@@ -29,12 +30,16 @@
     <a class="skip-link" href="#main-content">Bỏ qua điều hướng</a>
 
     <header class="cr-bar">
-        <a class="cr-brand" asp-controller="Home" asp-action="Index" aria-label="Trang chủ CinemaBooking">Cinema<span>Booking</span></a>
+        <a class="cr-brand" asp-area="" asp-controller="Home" asp-action="Index" aria-label="Trang chủ CinemaBooking">Cinema<span>Booking</span></a>
         <nav class="cr-nav" aria-label="Điều hướng chính">
-            <a class="@NavClass("Home", "Index")" asp-controller="Home" asp-action="Index" aria-current="@(IsCurrent("Home", "Index") ? "page" : null)">Phim</a>
-            <a class="@NavClass("Branches", "Index")" asp-controller="Branches" asp-action="Index" aria-current="@(IsCurrent("Branches", "Index") ? "page" : null)">Rạp</a>
-            <a class="@NavClass("Booking", "Lookup")" asp-controller="Booking" asp-action="Lookup" aria-current="@(IsCurrent("Booking", "Lookup") ? "page" : null)">Tra cứu</a>
-            <a class="@NavClass("Booking", "MyBookings")" asp-controller="Booking" asp-action="MyBookings" aria-current="@(IsCurrent("Booking", "MyBookings") ? "page" : null)">Vé của tôi</a>
+            <a class="@NavClass("Home", "Index")" asp-area="" asp-controller="Home" asp-action="Index" aria-current="@(IsCurrent("Home", "Index") ? "page" : null)">Phim</a>
+            <a class="@NavClass("Branches", "Index")" asp-area="" asp-controller="Branches" asp-action="Index" aria-current="@(IsCurrent("Branches", "Index") ? "page" : null)">Rạp</a>
+            <a class="@NavClass("Prices", "Index")" asp-area="" asp-controller="Prices" asp-action="Index" aria-current="@(IsCurrent("Prices", "Index") ? "page" : null)">Giá vé</a>
+            <a class="@NavClass("Booking", "Lookup")" asp-area="" asp-controller="Booking" asp-action="Lookup" aria-current="@(IsCurrent("Booking", "Lookup") ? "page" : null)">Tra cứu</a>
+            @if (!User.IsInRole(AppRoles.Admin) && !User.IsInRole(AppRoles.BranchAdmin))
+            {
+                <a class="@NavClass("Booking", "MyBookings")" asp-area="" asp-controller="Booking" asp-action="MyBookings" aria-current="@(IsCurrent("Booking", "MyBookings") ? "page" : null)">Vé của tôi</a>
+            }
         </nav>
         <div class="cr-account"><partial name="_LoginPartial" /></div>
     </header>
@@ -47,9 +52,10 @@
         <p class="cr-footer-end">Hết</p>
         <p>&copy; @DateTime.Now.Year CinemaBooking.Smart · Đồ án PRN222</p>
         <nav aria-label="Liên kết chân trang">
-            <a asp-controller="Home" asp-action="Index">Phim đang chiếu</a>
-            <a asp-controller="Booking" asp-action="Lookup">Tra cứu vé</a>
-            <a asp-controller="Home" asp-action="Privacy">Riêng tư</a>
+            <a asp-area="" asp-controller="Home" asp-action="Index">Phim đang chiếu</a>
+            <a asp-area="" asp-controller="Prices" asp-action="Index">Bảng giá vé</a>
+            <a asp-area="" asp-controller="Booking" asp-action="Lookup">Tra cứu vé</a>
+            <a asp-area="" asp-controller="Home" asp-action="Privacy">Riêng tư</a>
         </nav>
     </footer>
 

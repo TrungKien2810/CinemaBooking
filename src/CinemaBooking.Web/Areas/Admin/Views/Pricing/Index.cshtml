@@ -1,0 +1,108 @@
+@model PricingFormModel
+@{
+    ViewData["Title"] = "Bảng giá vé — " + Model.TheaterName;
+}
+
+<div class="admin-page-head">
+    <div>
+        <h1 class="admin-page-title">Bảng giá vé</h1>
+        <p class="cb-muted admin-page-subtitle">
+            Giá vé theo <strong>loại phòng</strong>, <strong>loại ghế</strong>, <strong>giờ chiếu</strong> và <strong>ngày</strong> — không theo phim.
+            Khách xem bảng này ở trang <a asp-area="" asp-controller="Prices" asp-action="Index" asp-route-theaterId="@Model.TheaterId">Bảng giá vé</a>.
+        </p>
+    </div>
+</div>
+
+@if (TempData["Message"] is string message) { <div class="cb-alert cb-alert-success" role="status">@message</div> }
+@if (TempData["Error"] is string error) { <div class="cb-alert cb-alert-danger" role="alert">@error</div> }
+
+@if (Model.Theaters.Count > 1)
+{
+    <form method="get" class="cb-card admin-filter">
+        <label for="theaterId" class="mb-0 fw-semibold">Chi nhánh</label>
+        <select id="theaterId" name="theaterId" class="admin-input" style="max-width:22rem" asp-items="Model.Theaters" onchange="this.form.submit()"></select>
+        <noscript><button type="submit" class="cb-btn cb-btn-outline">Xem</button></noscript>
+    </form>
+}
+
+<div class="row g-4">
+    <div class="col-12 col-xxl-5" style="max-width:44rem">
+        <form asp-action="Save" method="post" class="cb-card admin-form"
+              data-confirm="Lưu bảng giá của @Model.TheaterName? Suất đã có giữ giá cũ cho đến khi bấm “Áp dụng cho suất chưa chiếu”.">
+            <div asp-validation-summary="ModelOnly"></div>
+            <input type="hidden" asp-for="TheaterId" />
+
+            <h2 class="h6 fw-bold">Giá ghế thường theo loại phòng</h2>
+            <p class="admin-form-hint mt-0">Ngày thường, trước giờ cao điểm. Gõ theo nghìn đồng (95 = 95.000đ).</p>
+            <div class="row">
+                <div class="col-6 mb-3">@await Html.PartialAsync("_PriceInput", new PriceInputModel("StandardPrice", "Phòng 2D", Model.StandardPrice))</div>
+                <div class="col-6 mb-3">@await Html.PartialAsync("_PriceInput", new PriceInputModel("ThreeDPrice", "Phòng 3D", Model.ThreeDPrice))</div>
+                <div class="col-6 mb-3">@await Html.PartialAsync("_PriceInput", new PriceInputModel("ImaxPrice", "Phòng IMAX", Model.ImaxPrice))</div>
+                <div class="col-6 mb-3">@await Html.PartialAsync("_PriceInput", new PriceInputModel("FourDxPrice", "Phòng 4DX", Model.FourDxPrice))</div>
+            </div>
+
+            <h2 class="h6 fw-bold mt-2">Phụ thu loại ghế (mỗi ghế)</h2>
+            <div class="row">
+                <div class="col-6 mb-3">@await Html.PartialAsync("_PriceInput", new PriceInputModel("VipSurcharge", "Ghế VIP", Model.VipSurcharge))</div>
+                <div class="col-6 mb-3">@await Html.PartialAsync("_PriceInput", new PriceInputModel("CoupleSurcharge", "Ghế đôi (mỗi ghế)", Model.CoupleSurcharge))</div>
+            </div>
+
+            <h2 class="h6 fw-bold mt-2">Phụ thu thời gian</h2>
+            <div class="row">
+                <div class="col-6 mb-3" data-surcharge-group>
+                    <div class="form-check form-switch mb-2">
+                        <input type="checkbox" class="form-check-input" id="PeakEnabled" name="PeakEnabled" value="true" checked="@Model.PeakEnabled" data-surcharge-toggle />
+                        <input type="hidden" name="PeakEnabled" value="false" />
+                        <label class="form-check-label" for="PeakEnabled">Thu phụ thu giờ cao điểm</label>
+                    </div>
+                    @await Html.PartialAsync("_PriceInput", new PriceInputModel("PeakSurcharge", "Phụ thu giờ cao điểm", Model.PeakSurcharge))
+                </div>
+                <div class="col-6 mb-3" data-surcharge-group>
+                    <div class="form-check form-switch mb-2">
+                        <input type="checkbox" class="form-check-input" id="WeekendEnabled" name="WeekendEnabled" value="true" checked="@Model.WeekendEnabled" data-surcharge-toggle />
+                        <input type="hidden" name="WeekendEnabled" value="false" />
+                        <label class="form-check-label" for="WeekendEnabled">Thu phụ thu cuối tuần</label>
+                    </div>
+                    @await Html.PartialAsync("_PriceInput", new PriceInputModel("WeekendSurcharge", "Phụ thu cuối tuần", Model.WeekendSurcharge))
+                </div>
+                <div class="col-6 mb-3">
+                    <label asp-for="PeakFromHour" class="admin-label"></label>
+                    <div class="input-group">
+                        <input asp-for="PeakFromHour" type="number" min="10" max="23" class="admin-input" />
+                        <span class="input-group-text">giờ</span>
+                    </div>
+                    <span asp-validation-for="PeakFromHour" class="text-danger small"></span>
+                </div>
+            </div>
+            <p class="admin-form-hint">Tắt công tắc nếu chi nhánh không tăng giá giờ cao điểm hoặc cuối tuần. Cuối tuần = Thứ 7, Chủ nhật và Thứ 6 từ giờ cao điểm. Giá một ghế = giá phòng + phụ thu ghế + phụ thu giờ + phụ thu cuối tuần.</p>
+
+            <div class="admin-form-actions">
+                <button type="submit" class="cb-btn cb-btn-primary">Lưu bảng giá</button>
+            </div>
+        </form>
+
+        <form asp-action="ApplyToShowtimes" method="post" class="cb-card admin-form mt-3"
+              data-confirm="Tính lại giá của mọi suất chưa chiếu (chưa có vé) theo bảng giá đã lưu?">
+            <input type="hidden" name="theaterId" value="@Model.TheaterId" />
+            <h2 class="h6 fw-bold">Áp bảng giá cho các suất đã có</h2>
+            <p class="admin-form-hint mt-0">Tính lại giá của mọi suất <strong>chưa chiếu và chưa có vé</strong> theo bảng giá đã lưu. Suất đã có vé và suất đã chiếu giữ nguyên.</p>
+            <button type="submit" class="cb-btn cb-btn-outline">Áp dụng cho suất chưa chiếu</button>
+        </form>
+    </div>
+
+    <div class="col-12 col-xxl-7">
+        <h2 class="h6 fw-bold">Xem trước giá khách thấy (theo số bạn đang nhập)</h2>
+        @await Html.PartialAsync("_PriceMatrix", Model.Preview!)
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        document.querySelectorAll("[data-surcharge-group]").forEach(g => {
+            const toggle = g.querySelector("[data-surcharge-toggle]"), input = g.querySelector("input[type=text], input[inputmode]");
+            const sync = () => { g.querySelectorAll(".input-group input").forEach(i => i.disabled = !toggle.checked); g.classList.toggle("opacity-50", !toggle.checked); };
+            toggle.addEventListener("change", sync); sync();
+        });
+    </script>
+}

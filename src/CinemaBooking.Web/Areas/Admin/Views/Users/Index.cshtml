@@ -1,0 +1,81 @@
+@model UsersIndexViewModel
+@{
+    ViewData["Title"] = "Tài khoản";
+    string RoleLabel(string r) => r switch
+    {
+        AppRoles.Admin => "Quản trị viên",
+        AppRoles.BranchAdmin => "Quản lý chi nhánh",
+        AppRoles.Customer => "Khách hàng",
+        _ => r,
+    };
+}
+
+<div class="admin-page-head">
+    <div>
+        <h1 class="admin-page-title">Tài khoản</h1>
+        <p class="cb-muted admin-page-subtitle">@Model.StaffCount tài khoản quản trị · @Model.CustomerCount khách hàng · @Model.Paging.Total kết quả</p>
+    </div>
+    <a asp-action="Create" class="cb-btn cb-btn-primary">Tạo tài khoản quản lý chi nhánh</a>
+</div>
+
+@if (TempData["Message"] is string message) { <div class="cb-alert cb-alert-success" role="status">@message</div> }
+@if (TempData["Error"] is string error) { <div class="cb-alert cb-alert-danger" role="alert">@error</div> }
+
+<form method="get" class="cb-card admin-filter" role="search">
+    <input name="q" value="@Model.Query" type="search" class="admin-input" style="max-width:18rem" maxlength="100"
+           placeholder="Tìm email, họ tên, số điện thoại…" aria-label="Tìm tài khoản" />
+    <select name="role" class="admin-input" style="max-width:14rem" aria-label="Vai trò">
+        <option value="">Mọi vai trò</option>
+        @foreach (var r in AppRoles.All)
+        {
+            <option value="@r" selected="@(r == Model.Role)">@RoleLabel(r)</option>
+        }
+    </select>
+    <button type="submit" class="cb-btn cb-btn-outline">Lọc</button>
+    @if (Model.Query is not null || Model.Role is not null) { <a asp-action="Index" class="cb-btn cb-btn-secondary">Xóa lọc</a> }
+</form>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="cb-card cb-empty">
+        <p class="cb-empty-title">Không có tài khoản nào khớp</p>
+        <p class="cb-muted">Thử từ khóa khác hoặc <a asp-action="Index">xóa bộ lọc</a>.</p>
+    </div>
+}
+else
+{
+    <div class="admin-table-wrap">
+        <table class="admin-table mb-0">
+            <thead>
+                <tr><th>Tài khoản</th><th>Vai trò</th><th>Chi nhánh</th><th>Trạng thái</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model.Items)
+                {
+                    <tr class="@(u.IsLocked ? "is-inactive" : null)">
+                        <td>
+                            <div class="fw-semibold">@(string.IsNullOrWhiteSpace(u.FullName) ? "—" : u.FullName)</div>
+                            <div class="small cb-muted">@u.Email@(string.IsNullOrWhiteSpace(u.Phone) ? "" : " · " + u.Phone)</div>
+                        </td>
+                        <td><span class="cb-badge @(u.Role == AppRoles.Admin ? "cb-badge-danger" : u.Role == AppRoles.BranchAdmin ? "cb-badge-accent" : "text-bg-light")">@RoleLabel(u.Role)</span></td>
+                        <td class="text-nowrap">@(u.TheaterName ?? "—")</td>
+                        <td><span class="status-badge @(u.IsLocked ? "is-off" : "is-on")">@(u.IsLocked ? "Đã khóa" : "Hoạt động")</span></td>
+                        <td class="admin-actions">
+                            <a asp-action="Edit" asp-route-id="@u.Id" class="cb-btn cb-btn-sm cb-btn-secondary">Sửa</a>
+                            @if (!u.IsSelf)
+                            {
+                                <form asp-action="ToggleLock" asp-route-id="@u.Id" method="post" class="d-inline"
+                                      data-confirm="@(u.IsLocked ? "Mở khóa" : "Khóa") tài khoản @u.Email?">
+                                    <button type="submit" class="cb-btn cb-btn-sm @(u.IsLocked ? "cb-btn cb-btn-outline" : "cb-btn cb-btn-danger")">@(u.IsLocked ? "Mở khóa" : "Khóa")</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @await Html.PartialAsync("_Pager", new PagerModel("Index", Model.Paging,
+        new Dictionary<string, object?> { ["q"] = Model.Query, ["role"] = Model.Role }))
+}

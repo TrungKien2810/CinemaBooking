@@ -2,19 +2,20 @@
 
 <article class="movie-card">
     <div class="movie-poster">
-        <span class="movie-badge">Đang chiếu</span>
+        @{ var comingSoon = Model.ReleaseDate > DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)); }
+        <span class="movie-badge@(comingSoon ? " movie-badge-soon" : null)">@(comingSoon ? "Sắp chiếu" : "Đang chiếu")</span>
         <img src="@Model.PosterOrPlaceholder"
              data-poster-fallback="@MovieCardViewModel.PlaceholderPoster"
              alt="Poster phim @Model.Title"
              loading="lazy" width="200" height="300" />
-        <a asp-controller="Movies" asp-action="Details" asp-route-id="@Model.Id"
+        <a asp-area="" asp-controller="Movies" asp-action="Details" asp-route-id="@Model.Id"
            class="movie-overlay" aria-hidden="true" tabindex="-1">
             Xem chi tiết →
         </a>
     </div>
     <div class="movie-card-body">
         <h3 class="movie-title">
-            <a asp-controller="Movies" asp-action="Details" asp-route-id="@Model.Id" class="movie-title-link">
+            <a asp-area="" asp-controller="Movies" asp-action="Details" asp-route-id="@Model.Id" class="movie-title-link">
                 @Model.Title
             </a>
         </h3>

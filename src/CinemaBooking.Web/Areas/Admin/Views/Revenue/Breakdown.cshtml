@@ -18,6 +18,8 @@
     </div>
 </div>
 
+@await Html.PartialAsync("_RangeChips", new RangeChipsModel("Breakdown", Model.From, Model.To, Model.Today, Model.TheaterId))
+
 <form method="get" class="admin-filter-bar">
     <div class="admin-filter-item">
         <label for="from" class="admin-filter-label">Từ ngày</label>
@@ -27,13 +29,16 @@
         <label for="to" class="admin-filter-label">Đến ngày</label>
         <input id="to" name="to" type="date" value="@Model.To.ToString("yyyy-MM-dd")" class="admin-filter-input" />
     </div>
-    <div class="admin-filter-item">
-        <label for="theaterId" class="admin-filter-label">Chi nhánh</label>
-        <select id="theaterId" name="theaterId" class="admin-filter-input"
-                asp-items="@(new SelectList(Model.Theaters, "Value", "Text", Model.TheaterId))">
-            <option value="">Tất cả chi nhánh</option>
-        </select>
-    </div>
+    @if (!User.IsInRole(AppRoles.BranchAdmin))
+    {
+        <div class="admin-filter-item">
+            <label for="theaterId" class="admin-filter-label">Chi nhánh</label>
+            <select id="theaterId" name="theaterId" class="admin-filter-input"
+                    asp-items="@(new SelectList(Model.Theaters, "Value", "Text", Model.TheaterId))">
+                <option value="">Tất cả chi nhánh</option>
+            </select>
+        </div>
+    }
     <div class="admin-filter-item" style="align-self: flex-end;">
         <button type="submit" class="cb-btn cb-btn-primary cb-btn-sm">
             <span>🔍</span> Lọc dữ liệu
@@ -65,7 +70,7 @@
                 <tr>
                     <td style="font-weight: 600;">@m.MovieTitle</td>
                     <td class="cb-num">@m.Tickets</td>
-                    <td class="cb-num" style="color: var(--cb-accent); font-weight: 700;">@m.Revenue.ToString("N0") ₫</td>
+                    <td class="cb-num" style="color: var(--cb-accent); font-weight: 700;">@m.Revenue.Vnd()</td>
                     <td>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
                             <div class="admin-occupancy-bar" style="height: 6px;">
@@ -133,7 +138,7 @@
                         </div>
                     </td>
                     <td class="cb-num" style="color: var(--cb-accent); font-weight: 700;">
-                        @s.Revenue.ToString("N0") ₫
+                        @s.Revenue.Vnd()
                     </td>
                 </tr>
             }

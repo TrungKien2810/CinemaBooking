@@ -120,6 +120,113 @@ public class AdminCatalogRulesTests
     }
 
     [Fact]
+    public async Task Create_rejects_a_showtime_in_the_past()
+    {
+        var (db, movie, room) = await SeedWithShowtimeAsync();
+        var form = Form(movie, room, 15);
+        form.StartTimeLocal = new DateTime(2026, 9, 1, 15, 0, 0); // trước Now (01/10/2026)
+        var controller = CreateController(db);
+
+        var result = await controller.Create(form, CancellationToken.None);
+
+        Assert.IsType<ViewResult>(result);
+        Assert.True(controller.ModelState.ContainsKey(nameof(ShowtimeFormModel.StartTimeLocal)));
+        Assert.Equal(1, await db.Showtimes.CountAsync());
+    }
+
+    [Fact]
+    public async Task Editing_only_the_price_of_a_started_showtime_is_allowed()
+    {
+        var (db, movie, room) = await SeedWithShowtimeAsync();
+        var existing = await db.Showtimes.SingleAsync();
+        // Giờ hiện tại đã qua giờ bắt đầu của suất có sẵn.
+        var controller = new ShowtimesController(
+            db, new ShowtimeScheduler(db), Options.Create(new DisplayTimeZone()),
+            new FixedTimeProvider(ExistingStartUtc.AddHours(1)), FakeBranchScope.Admin());
+        var form = Form(movie, room, 10);
+        form.BasePrice = 120_000m;
+
+        var result = await controller.Edit(existing.Id, form, CancellationToken.None);
+
+        Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal(120_000m, (await db.Showtimes.SingleAsync()).BasePrice);
+    }
+
+    [Fact]
+    public async Task Deleting_a_showtime_that_has_bookings_is_refused()
+    {
+        var (db, _, _) = await SeedWithShowtimeAsync();
+        var showtime = await db.Showtimes.SingleAsync();
+        db.Bookings.Add(new Booking
+        {
+            BookingCode = "CB-DEL001", ShowtimeId = showtime.Id,
+            CustomerName = "Khách", CustomerEmail = "khach@example.com",
+        });
+        await db.SaveChangesAsync();
+
+        var controller = CreateController(db);
+        controller.TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
+            new Microsoft.AspNetCore.Http.DefaultHttpContext(), new NullTempDataProvider());
+        await controller.Delete(showtime.Id, CancellationToken.None);
+
+        Assert.Equal(1, await db.Showtimes.CountAsync());
+    }
+
+    private static ShowtimesController WithTempData(ShowtimesController c)
+    {
+        c.TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
+            new Microsoft.AspNetCore.Http.DefaultHttpContext(), new NullTempDataProvider());
+        return c;
+    }
+
+    [Fact]
+    public async Task CopyDay_duplicates_showtimes_to_the_target_day_and_skips_clashes()
+    {
+        var (db, _, _) = await SeedWithShowtimeAsync();
+        var controller = WithTempData(CreateController(db));
+        var source = new DateOnly(2026, 10, 2);
+        var target = new DateOnly(2026, 10, 3);
+
+        await controller.CopyDay(source, target, null, CancellationToken.None);
+        Assert.Equal(2, await db.Showtimes.CountAsync());
+        Assert.Equal(ExistingStartUtc.AddDays(1), (await db.Showtimes.OrderBy(s => s.Id).LastAsync()).StartTimeUtc);
+
+        await controller.CopyDay(source, target, null, CancellationToken.None); // lần hai: trùng lịch hết
+        Assert.Equal(2, await db.Showtimes.CountAsync());
+    }
+
+    [Fact]
+    public async Task ToggleActive_hides_and_shows_a_showtime()
+    {
+        var (db, _, _) = await SeedWithShowtimeAsync();
+        var controller = WithTempData(CreateController(db));
+        var id = (await db.Showtimes.SingleAsync()).Id;
+
+        await controller.ToggleActive(id, CancellationToken.None);
+        Assert.False((await db.Showtimes.SingleAsync()).IsActive);
+
+        await controller.ToggleActive(id, CancellationToken.None);
+        Assert.True((await db.Showtimes.SingleAsync()).IsActive);
+    }
+
+    [Fact]
+    public async Task Creating_a_room_with_a_taken_name_in_the_same_branch_is_a_validation_error()
+    {
+        var db = TestDatabase.Create();
+        var room = db.SeedRoom(roomName: "Phòng 1");
+        await db.SaveChangesAsync();
+        var controller = new RoomsController(db, FakeBranchScope.Admin());
+
+        var result = await controller.Create(
+            new RoomFormModel { TheaterId = room.TheaterId, RoomName = " Phòng 1 ", TotalRows = 3, TotalColumns = 4 },
+            CancellationToken.None);
+
+        Assert.IsType<ViewResult>(result);
+        Assert.True(controller.ModelState.ContainsKey(nameof(RoomFormModel.RoomName)));
+        Assert.Equal(1, await db.Rooms.CountAsync());
+    }
+
+    [Fact]
     public async Task Create_rejects_an_inactive_movie_posted_by_a_tampered_form()
     {
         var (db, _, room) = await SeedWithShowtimeAsync();
@@ -236,4 +343,10 @@ public class AdminCatalogRulesTests
         Assert.False(controller.ModelState.IsValid);
         Assert.Equal(5, (await db.Rooms.SingleAsync()).TotalRows);
     }
+}
+
+file sealed class NullTempDataProvider : Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider
+{
+    public IDictionary<string, object> LoadTempData(Microsoft.AspNetCore.Http.HttpContext context) => new Dictionary<string, object>();
+    public void SaveTempData(Microsoft.AspNetCore.Http.HttpContext context, IDictionary<string, object> values) { }
 }

@@ -2,8 +2,8 @@ using CinemaBooking.Domain.Enums;
 
 namespace CinemaBooking.Web.Areas.Admin.Models;
 
-/// <summary>Trang "Sửa loại ghế" của một phòng: hàng cuối luôn là ghế đôi, các hàng còn lại
-/// admin chọn Thường/VIP.</summary>
+/// <summary>Trang "Sửa loại ghế" của một phòng: admin chọn Thường / VIP cho từng ghế và ghép hai
+/// ghế liền kề cùng hàng thành ghế đôi ở bất kỳ hàng nào.</summary>
 public sealed record RoomSeatsViewModel(
     int RoomId,
     int TheaterId,
@@ -18,10 +18,10 @@ public sealed record RoomSeatsViewModel(
     public int CoupleCount => Rows.SelectMany(r => r.Seats).Count(s => s.Type == SeatType.Couple);
 }
 
-/// <summary>Một hàng trong trang sửa ghế. <see cref="IsCoupleRow"/> = hàng cuối (khóa, tự động ghế đôi).</summary>
+/// <summary>Một hàng trong trang sửa ghế.</summary>
 public sealed record RoomSeatRowViewModel(
     string Label,
-    bool IsCoupleRow,
     IReadOnlyList<RoomSeatCellViewModel> Seats);
 
-public sealed record RoomSeatCellViewModel(int SeatId, string Label, SeatType Type);
+/// <summary><see cref="Locked"/>: ghế đang có vé của suất chưa chiếu — không đổi loại được (giá vé đã bán không đổi).</summary>
+public sealed record RoomSeatCellViewModel(int SeatId, string Label, SeatType Type, int Row, int Column, bool Locked = false);

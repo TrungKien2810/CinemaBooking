@@ -1090,3 +1090,20 @@
         position: static;
     }
 }
+
+/* Hộp thoại xác nhận (form/nút có data-confirm) — <dialog> thuần, site.js tạo lúc cần */
+.cb-confirm {
+    width: min(92vw, 28rem);
+    padding: var(--cb-space-6, 1.5rem);
+    color: var(--cb-text);
+    background: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius);
+    animation: cb-confirm-in var(--cb-dur-surface) var(--cb-ease-out, ease-out);
+}
+.cb-confirm::backdrop { background: rgb(0 0 0 / .6); }
+.cb-confirm-title { margin: 0 0 .5rem; font-size: 1.15rem; }
+.cb-confirm-msg { margin: 0 0 1.25rem; color: var(--cb-text-muted, var(--cb-text)); overflow-wrap: anywhere; }
+.cb-confirm-actions { display: flex; gap: .75rem; justify-content: flex-end; flex-wrap: wrap; }
+@keyframes cb-confirm-in { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .cb-confirm { animation: none; } }

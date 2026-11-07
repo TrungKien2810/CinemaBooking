@@ -24,5 +24,17 @@ public static class SeatSelectionSessionExtensions
     public static SeatSelection? GetSeatSelection(this ISession session) =>
         session.GetString(Key) is { } json ? JsonSerializer.Deserialize<SeatSelection>(json) : null;
 
-    public static void ClearSeatSelection(this ISession session) => session.Remove(Key);
+    public static void ClearSeatSelection(this ISession session)
+    {
+        session.Remove(Key);
+        session.Remove(VoucherKey);   // mã giảm giá gắn với giỏ ghế đang chọn
+    }
+
+    private const string VoucherKey = "Booking.VoucherCode";
+
+    public static void SetVoucherCode(this ISession session, string code) => session.SetString(VoucherKey, code);
+
+    public static string? GetVoucherCode(this ISession session) => session.GetString(VoucherKey);
+
+    public static void ClearVoucherCode(this ISession session) => session.Remove(VoucherKey);
 }

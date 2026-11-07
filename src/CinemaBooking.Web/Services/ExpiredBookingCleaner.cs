@@ -96,7 +96,7 @@ public sealed class ExpiredBookingCleaner : BackgroundService
         await db.SaveChangesAsync(ct);
 
         foreach (var showtime in freed)
-            await _hub.Clients.Group(SeatHub.GroupName(showtime.ShowtimeId)).SeatUnlocked(showtime.SeatIds);
+            await _hub.Clients.Group(SeatHub.GroupName(showtime.ShowtimeId)).SeatFreed(showtime.SeatIds);
 
         _log.LogInformation("Đã hết hạn {Count} đơn chờ thanh toán và trả ghế.", stale.Count);
     }

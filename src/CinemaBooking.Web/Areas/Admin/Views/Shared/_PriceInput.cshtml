@@ -1,0 +1,13 @@
+@model PriceInputModel
+@* Ô nhập giá theo NGHÌN đồng: gõ 90 → 90.000 đ. Số từ 1.000 trở lên coi như đã là đồng. Server chuẩn hóa lại
+   (MoneyFormat.ExpandThousands), JS chỉ để hiện xem trước. *@
+<label for="@Model.Name" class="admin-label">@Model.Label</label>
+<div class="input-group price-input">
+    <input id="@Model.Name" name="@Model.Name" type="text" inputmode="decimal" autocomplete="off"
+           class="admin-input" value="@Model.Value?.ToThousands()" placeholder="vd: 90" data-price-input />
+    <span class="input-group-text">.000 đ</span>
+</div>
+<div class="admin-form-hint price-preview" data-price-preview="@Model.Name">
+    @(Model.Value is { } v && v > 0 ? "= " + v.Vnd() : (Model.Hint ?? "Gõ theo nghìn đồng: 90 = 90.000 đ"))
+</div>
+@Html.ValidationMessage(Model.Name, new { @class = "text-danger small" })

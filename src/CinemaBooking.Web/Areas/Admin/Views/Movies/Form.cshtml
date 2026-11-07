@@ -13,7 +13,8 @@
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="admin-form">
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" class="admin-form"
+      data-confirm="@(isEdit ? "Lưu thay đổi phim này? Khách sẽ thấy thông tin mới ngay. Nếu bỏ chọn hiển thị, phim sẽ bị ẩn khỏi trang khách." : null)">
     <div asp-validation-summary="ModelOnly" class="cb-alert cb-alert-danger" style="margin-bottom: 1.5rem;"></div>
 
     <div class="admin-form-layout-poster">
@@ -49,6 +50,42 @@
             </div>
 
             <div class="admin-form-group">
+                <label asp-for="PosterFile" class="admin-label"></label>
+                <input asp-for="PosterFile" class="admin-input" accept=".jpg,.jpeg,.png,.webp" />
+                <div class="admin-form-hint">JPG, PNG hoặc WEBP, tối đa 5 MB. Có ảnh tải lên thì ảnh này được dùng thay cho URL.</div>
+                <span asp-validation-for="PosterFile" class="admin-form-error"></span>
+            </div>
+
+            <div class="admin-form-grid">
+                <div class="admin-form-group">
+                    <label asp-for="AgeRating" class="admin-label"></label>
+                    <select asp-for="AgeRating" class="admin-input">
+                        @foreach (var r in Enum.GetValues<CinemaBooking.Domain.Enums.AgeRating>())
+                        {
+                            <option value="@r" selected="@(r == Model.AgeRating)">@r.Describe()</option>
+                        }
+                    </select>
+                </div>
+                <div class="admin-form-group">
+                    <label asp-for="Director" class="admin-label"></label>
+                    <input asp-for="Director" class="admin-input" />
+                    <span asp-validation-for="Director" class="admin-form-error"></span>
+                </div>
+            </div>
+
+            <div class="admin-form-group">
+                <label asp-for="Cast" class="admin-label"></label>
+                <input asp-for="Cast" class="admin-input" placeholder="Diễn viên A, Diễn viên B" />
+                <span asp-validation-for="Cast" class="admin-form-error"></span>
+            </div>
+
+            <div class="admin-form-group">
+                <label asp-for="TrailerUrl" class="admin-label"></label>
+                <input asp-for="TrailerUrl" class="admin-input" placeholder="https://www.youtube.com/watch?v=…" />
+                <span asp-validation-for="TrailerUrl" class="admin-form-error"></span>
+            </div>
+
+            <div class="admin-form-group">
                 <label asp-for="Description" class="admin-label"></label>
                 <textarea asp-for="Description" rows="5" class="admin-input" placeholder="Tóm tắt nội dung phim…"></textarea>
                 <span asp-validation-for="Description" class="admin-form-error"></span>
@@ -58,6 +95,7 @@
                 <input asp-for="IsActive" class="form-check-input" />
                 <label asp-for="IsActive" class="admin-label" style="margin-bottom: 0; cursor: pointer;">Đang chiếu (hiển thị trên trang khách)</label>
             </div>
+            <span asp-validation-for="IsActive" class="admin-form-error" style="display:block"></span>
             <p class="admin-form-hint">Bỏ chọn để ẩn phim khỏi trang khách. Toàn bộ suất chiếu và vé cũ vẫn được lưu trữ nguyên vẹn.</p>
         </div>
 

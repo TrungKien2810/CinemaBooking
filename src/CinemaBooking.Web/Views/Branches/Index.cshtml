@@ -1,35 +1,84 @@
 @using CinemaBooking.Web.Services
-@model List<IGrouping<string, BranchListItem>>
+@model BranchSearchViewModel
 @{
     ViewData["Title"] = "Hệ thống rạp";
+    string CityLink(string? city) => Url.Action("Index", new { q = Model.Keyword, city })!;
 }
 
 <section class="cr-card">
-    <small>@Model.Sum(g => g.Count()) chi nhánh · @Model.Count thành phố</small>
+    <small>@Model.TotalBranches chi nhánh · @Model.Cities.Count thành phố</small>
     <h1 class="cb-page-title">Hệ thống rạp</h1>
-    <p class="cr-desc">Chọn phim ở trang chủ để xem lịch chiếu theo từng chi nhánh.</p>
+    <p class="cr-desc">Chọn chi nhánh để xem phim, phòng chiếu và khuyến mãi.</p>
 </section>
 
-@if (Model.Count == 0)
+<div class="cr-toolbar">
+    <form method="get" asp-action="Index" class="cr-search" role="search">
+        <label for="q" class="visually-hidden">Tìm chi nhánh</label>
+        <input id="q" name="q" type="search" value="@Model.Keyword" class="cb-input" list="branch-suggestions"
+               placeholder="Tìm theo tên chi nhánh, địa chỉ hoặc thành phố…" maxlength="100" autocomplete="off" />
+        <datalist id="branch-suggestions">
+            @foreach (var c in Model.Cities) { <option value="@c"></option> }
+            @foreach (var b in Model.Groups.SelectMany(g => g)) { <option value="@b.Name"></option> }
+        </datalist>
+        @if (Model.City is not null)
+        {
+            <input type="hidden" name="city" value="@Model.City" />
+        }
+        <button type="submit" class="cb-btn cb-btn-primary">Tìm</button>
+    </form>
+
+    @if (Model.Cities.Count > 1)
+    {
+        <nav class="cr-chips" aria-label="Lọc theo thành phố">
+            <a href="@CityLink(null)" class="cr-chip @(Model.City is null ? "is-active" : null)">Tất cả</a>
+            @foreach (var c in Model.Cities)
+            {
+                var isCurrent = c == Model.City;
+                <a href="@CityLink(c)" class="cr-chip @(isCurrent ? "is-active" : null)"
+                   aria-current="@(isCurrent ? "true" : null)">@c</a>
+            }
+        </nav>
+    }
+</div>
+
+@if (Model.IsFiltered)
+{
+    <p class="cr-note">
+        @Model.Count chi nhánh
+        @if (Model.Keyword is not null) { <text>khớp “<strong>@Model.Keyword</strong>”</text> }
+        @if (Model.City is not null) { <text>tại <strong>@Model.City</strong></text> }
+        · <a asp-action="Index">Xóa bộ lọc</a>
+    </p>
+}
+
+@if (Model.Groups.Count == 0)
 {
     <div class="cr-empty">
-        <p class="cr-empty-title">Chưa có chi nhánh nào mở cửa</p>
-        <p>Vui lòng quay lại sau nhé.</p>
+        @if (Model.IsFiltered)
+        {
+            <p class="cr-empty-title">Không tìm thấy chi nhánh phù hợp</p>
+            <p>Thử từ khóa khác (không cần gõ dấu) hoặc <a asp-action="Index">xem tất cả chi nhánh</a>.</p>
+        }
+        else
+        {
+            <p class="cr-empty-title">Chưa có chi nhánh nào mở cửa</p>
+            <p>Vui lòng quay lại sau nhé.</p>
+        }
     </div>
 }
 else
 {
-    @foreach (var city in Model)
+    @foreach (var city in Model.Groups)
     {
         <section aria-labelledby="city-@city.First().Id">
             <h2 id="city-@city.First().Id" class="cr-role">@city.Key</h2>
             @foreach (var b in city)
             {
                 <article class="cr-credit cr-branch">
-                    <h3 class="cr-credit-title">@b.Name</h3>
+                    <h3 class="cr-credit-title"><a asp-area="" asp-action="Details" asp-route-id="@b.Id" class="stretched-link">@b.Name</a></h3>
                     <div class="cr-credit-side cr-branch-info">
                         <p>@(b.Address ?? "Đang cập nhật địa chỉ")</p>
-                        <p class="cb-muted">@b.RoomCount phòng chiếu</p>
+                        <p class="cb-muted">@b.RoomCount phòng chiếu · Xem phim, phòng và khuyến mãi →</p>
                     </div>
                 </article>
             }

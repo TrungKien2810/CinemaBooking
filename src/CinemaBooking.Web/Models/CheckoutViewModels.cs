@@ -12,9 +12,24 @@ public sealed record CheckoutViewModel(
     string RoomName,
     DateTime StartLocal,
     IReadOnlyList<CheckoutSeatItem> Seats,
-    decimal TotalAmount);
+    decimal TotalAmount,
+    string? FormatLabel = null,
+    string? VoucherCode = null,
+    decimal VoucherDiscount = 0m,
+    string? VoucherTitle = null)
+{
+    /// <summary>Tổng tiền ghế trước khi trừ mã giảm giá.</summary>
+    public decimal Subtotal => TotalAmount + VoucherDiscount;
 
-public sealed record CheckoutSeatItem(string Label, SeatType Type, decimal Price);
+    public bool HasVoucher => VoucherCode is not null && VoucherDiscount > 0;
+}
+
+/// <summary><see cref="Price"/> là giá khách trả (đã trừ khuyến mãi); <see cref="ListPrice"/> là giá niêm yết.</summary>
+public sealed record CheckoutSeatItem(
+    string Label, SeatType Type, decimal Price, decimal ListPrice = 0m, string? PromotionTitle = null)
+{
+    public bool HasPromotion => PromotionTitle is not null && ListPrice > Price;
+}
 
 /// <summary>
 /// Trang thanh toán: tóm tắt đơn (đọc từ Session) + form thông tin khách.
@@ -43,7 +58,7 @@ public sealed class CheckoutFormModel
     [Display(Name = "Email")]
     public string CustomerEmail { get; set; } = string.Empty;
 
-    [Phone(ErrorMessage = "Số điện thoại không hợp lệ.")]
+    [RegularExpression(PhoneRules.Pattern, ErrorMessage = PhoneRules.Message)]
     [StringLength(20)]
     [Display(Name = "Số điện thoại")]
     public string? CustomerPhone { get; set; }

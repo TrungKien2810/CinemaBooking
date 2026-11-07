@@ -8,7 +8,7 @@
 
 @if (Model.HasMovies && !Model.IsFiltered)
 {
-    var feat = Model.Movies[0];
+    var feat = Model.NowShowing.Count > 0 ? Model.NowShowing[0] : Model.Movies[0];
     <section class="cr-hero" aria-labelledby="hero-title">
         <img class="cr-hero-bg" src="@feat.PosterOrPlaceholder" alt="" aria-hidden="true" />
         <div class="cr-hero-in">
@@ -35,8 +35,11 @@ else
 
 <div class="cr-toolbar">
     <form method="get" asp-action="Index" class="cr-search" role="search">
+        <datalist id="movie-suggestions">
+            @foreach (var sg in Model.SuggestionOptions) { <option value="@sg"></option> }
+        </datalist>
         <label for="q" class="visually-hidden">Tìm phim</label>
-        <input id="q" name="q" type="search" value="@Model.Keyword" class="cb-input"
+        <input id="q" name="q" type="search" value="@Model.Keyword" class="cb-input" list="movie-suggestions"
                placeholder="Tìm theo tên phim hoặc thể loại…" maxlength="100" autocomplete="off" />
         @if (Model.Genre is not null)
         {
@@ -69,7 +72,7 @@ else
     </p>
 }
 
-@if (!Model.HasMovies)
+@if (!Model.HasMovies || Model.NowShowing.Count == 0 && Model.ComingSoon.Count == 0)
 {
     <div class="cr-empty">
         @if (Model.IsFiltered)
@@ -89,9 +92,9 @@ else
 }
 else
 {
-    <h2 class="cr-section">Tất cả phim đang chiếu</h2>
+    <h2 class="cr-section">Phim đang chiếu</h2>
     <div class="cr-films">
-        @foreach (var movie in Model.Movies)
+        @foreach (var movie in Model.NowShowing)
         {
             <article class="cr-film">
                 <a class="cr-film-poster" asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id" tabindex="-1" aria-hidden="true">
@@ -108,4 +111,27 @@ else
             </article>
         }
     </div>
+
+    @if (Model.ComingSoon.Count > 0)
+    {
+        <h2 class="cr-section">Sắp chiếu</h2>
+        <div class="cr-films">
+        @foreach (var movie in Model.ComingSoon)
+        {
+            <article class="cr-film">
+                <a class="cr-film-poster" asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id" tabindex="-1" aria-hidden="true">
+                    <img src="@movie.PosterOrPlaceholder" data-poster-fallback="@MovieCardViewModel.PlaceholderPoster"
+                         alt="" width="120" height="180" loading="lazy" />
+                </a>
+                <div class="cr-film-body">
+                    <p class="cr-film-genre">@movie.GenreOrDefault</p>
+                    <h3 class="cr-film-title"><a asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id">@movie.Title</a></h3>
+                    <p class="cr-film-meta">@movie.DurationMinutes phút, khởi chiếu @movie.ReleaseDate.ToString("dd/MM/yyyy")</p>
+                    <a class="cr-chip cr-chip-go" asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id"
+                       aria-label="Chọn suất chiếu phim @movie.Title">Chọn suất</a>
+                </div>
+            </article>
+        }
+        </div>
+    }
 }

@@ -1,0 +1,118 @@
+@using CinemaBooking.Web.Services
+@model BranchDetails
+@{
+    ViewData["Title"] = Model.Name;
+    var tz = (DisplayTimeZone)ViewData["Tz"]!;
+}
+
+<a asp-action="Index" class="cr-back">← Hệ thống rạp</a>
+
+<section class="cr-card">
+    <h1 class="cb-page-title">@Model.Name</h1>
+    <p class="cr-desc">@Model.City · @(Model.Address ?? "Đang cập nhật địa chỉ")</p>
+    @if (!string.IsNullOrWhiteSpace(Model.Description))
+    {
+        <p class="mb-2" style="max-width:60ch">@Model.Description</p>
+    }
+    <ul class="branch-contact">
+        @if (!string.IsNullOrWhiteSpace(Model.Phone))
+        {
+            <li><a href="tel:@Model.Phone.Replace(" ", "")">@Model.Phone</a></li>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Email))
+        {
+            <li><a href="mailto:@Model.Email">@Model.Email</a></li>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.OpeningHours))
+        {
+            <li>@Model.OpeningHours</li>
+        }
+    </ul>
+</section>
+
+<section aria-labelledby="promo-title">
+    <h2 class="cr-section" id="promo-title">Khuyến mãi tại chi nhánh</h2>
+    @if (Model.Promotions.Count == 0)
+    {
+        <div class="cr-empty"><p class="cb-muted mb-0">Chi nhánh hiện chưa có khuyến mãi.</p></div>
+    }
+    else
+    {
+        <div>
+            @foreach (var p in Model.Promotions)
+            {
+                <article class="cr-credit cr-branch">
+                    @if (!string.IsNullOrWhiteSpace(p.Badge))
+                    {
+                        <span class="cb-badge cb-badge-danger mb-2">@p.Badge</span>
+                    }
+                    <h3 class="cr-credit-title">@p.Title</h3>
+                    <div class="cr-credit-side cr-branch-info">
+                    @if (!string.IsNullOrWhiteSpace(p.Description))
+                    {
+                        <p class="mb-2">@p.Description</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(p.AutoRule))
+                    {
+                        <p class="small mb-2"><strong>Tự động trừ vào giá vé:</strong> @p.AutoRule</p>
+                    }
+                    <p class="cb-muted small mb-0">Áp dụng đến @p.EndDate.ToString("dd/MM/yyyy")</p>
+                                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>
+
+<section aria-labelledby="movies-title">
+    <h2 class="cr-section" id="movies-title">Phim đang chiếu tại đây</h2>
+    @if (Model.Movies.Count == 0)
+    {
+        <div class="cr-empty"><p class="cb-muted mb-0">Chi nhánh chưa có suất chiếu sắp tới.</p></div>
+    }
+    else
+    {
+        <div>
+            @foreach (var m in Model.Movies)
+            {
+                <article class="cr-credit cr-branch">
+                    <h3 class="cr-credit-title">
+                        <a asp-controller="Movies" asp-action="Details" asp-route-id="@m.MovieId" asp-route-theaterId="@Model.Id" class="stretched-link">@m.Title</a>
+                    </h3>
+                    <div class="cr-credit-side cr-branch-info">
+                    <p class="cb-muted mb-1">@(m.Genre ?? "Chưa phân loại") · @m.DurationMinutes phút</p>
+                    <p class="mb-0 small">
+                        @m.UpcomingShowtimes suất sắp chiếu · gần nhất @tz.ToLocalTime(m.NextShowtimeUtc).ToString("HH:mm dd/MM") ·
+                        từ @m.FromPrice.Vnd()
+                    </p>
+                                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>
+
+<section aria-labelledby="rooms-title">
+    <h2 class="cr-section" id="rooms-title">Phòng chiếu</h2>
+    @if (Model.Rooms.Count == 0)
+    {
+        <div class="cr-empty"><p class="cb-muted mb-0">Chưa có phòng chiếu.</p></div>
+    }
+    else
+    {
+        <div>
+            @foreach (var r in Model.Rooms)
+            {
+                <article class="cr-credit cr-branch">
+                    <h3 class="cr-credit-title">@r.Name</h3>
+                    <div class="cr-credit-side cr-branch-info">
+                    <p class="mb-1">@r.SeatCount ghế · @r.Rows hàng × @r.Columns cột</p>
+                    <p class="cb-muted small mb-0">
+                        @(r.SeatCount - r.VipCount - r.CoupleCount) thường · @r.VipCount VIP · @r.CoupleCount ghế đôi
+                    </p>
+                                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

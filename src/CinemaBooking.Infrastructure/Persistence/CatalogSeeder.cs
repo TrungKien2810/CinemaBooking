@@ -1,4 +1,5 @@
-﻿using CinemaBooking.Domain.Entities;
+﻿using CinemaBooking.Domain;
+using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +28,157 @@ public static class CatalogSeeder
     private sealed record BranchSchedule(TimeOnly[] StartTimes, decimal BasePrice, int MovieOffset);
 
     public static async Task SeedAsync(CinemaDbContext db, CancellationToken ct = default)
+    {
+        await SeedCatalogAsync(db, ct);
+        await UpgradeCatalogDetailsAsync(db, ct);
+        await SeedPromotionsAsync(db, ct);
+        await EnsurePricingAsync(db, name => SeedBasePrices.TryGetValue(name, out var p) ? p : null, ct);
+    }
+
+    /// <summary>Giá ghế thường 2D (ngày thường, trước giờ cao điểm) của các chi nhánh mẫu.</summary>
+    private static readonly Dictionary<string, decimal> SeedBasePrices = new()
+    {
+        ["CineSmart Nguyễn Huệ"] = 95_000m,
+        ["CineSmart Thảo Điền"] = 85_000m,
+        ["CineSmart Cầu Giấy"] = 90_000m,
+        ["CineSmart Hoàn Kiếm"] = 80_000m,
+        // Chi nhánh của dữ liệu demo (DemoDataSeeder) — cùng giá để bảng giá nhất quán dù seed theo thứ tự nào.
+        ["CineSmart Bình Thạnh"] = 90_000m,
+        ["CineSmart Long Biên"] = 95_000m,
+        ["CineSmart Đà Nẵng"] = 85_000m,
+        ["CineSmart Cần Thơ"] = 75_000m,
+        ["CineSmart Hải Phòng"] = 80_000m,
+    };
+
+    /// <summary>
+    /// Bảo đảm chi nhánh nào cũng có bảng giá vé (<see cref="TheaterPricing"/>). Chi nhánh đã có thì giữ nguyên — không đè lên
+    /// giá chủ chi nhánh đã chỉnh. <paramref name="basePriceOf"/> trả giá ghế thường 2D theo tên chi nhánh (null = mặc định 85.000đ).
+    /// </summary>
+    public static async Task EnsurePricingAsync(CinemaDbContext db, Func<string, decimal?> basePriceOf, CancellationToken ct = default)
+    {
+        var have = (await db.TheaterPricings.Select(p => p.TheaterId).ToListAsync(ct)).ToHashSet();
+        var missing = await db.Theaters.Where(t => !have.Contains(t.Id)).ToListAsync(ct);
+        foreach (var theater in missing)
+            db.TheaterPricings.Add(PricingRules.DefaultFor(theater.Id, basePriceOf(theater.Name) ?? 85_000m));
+
+        if (missing.Count > 0) await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Thông tin thêm của phim mẫu (độ tuổi, đạo diễn, diễn viên, trailer).</summary>
+    private static readonly Dictionary<string, (AgeRating Age, string Director, string Cast, string Trailer, bool Foreign)> MovieDetails = new()
+    {
+        ["Mắt Biếc"] = (AgeRating.T13, "Victor Vũ", "Trần Nghĩa, Trúc Anh, Khánh Vân", "https://www.youtube.com/results?search_query=M%E1%BA%AFt+Bi%E1%BA%BFc+trailer", false),
+        ["Nhà Bà Nữ"] = (AgeRating.T13, "Trấn Thành", "Lê Giang, Uyển Ân, Trấn Thành", "https://www.youtube.com/results?search_query=Nh%C3%A0+B%C3%A0+N%E1%BB%AF+trailer", false),
+        ["Dune: Part Two"] = (AgeRating.T13, "Denis Villeneuve", "Timothée Chalamet, Zendaya, Rebecca Ferguson", "https://www.youtube.com/results?search_query=Dune+Part+Two+trailer", true),
+        ["Inside Out 2"] = (AgeRating.P, "Kelsey Mann", "Amy Poehler, Maya Hawke, Kensington Tallman", "https://www.youtube.com/results?search_query=Inside+Out+2+trailer", true),
+        ["Địa Đạo: Mặt Trời Trong Bóng Tối"] = (AgeRating.T16, "Bùi Thạc Chuyên", "Thái Hòa, Quốc Huy, Hạ Anh", "https://www.youtube.com/results?search_query=%C4%90%E1%BB%8Ba+%C4%90%E1%BA%A1o+trailer", false),
+    };
+
+    /// <summary>Loại phòng mẫu: phòng lớn nhất của Cầu Giấy là IMAX, Nguyễn Huệ Phòng 2 là 3D.</summary>
+    private static readonly Dictionary<(string Theater, string Room), RoomType> RoomTypes = new()
+    {
+        [("CineSmart Cầu Giấy", "Phòng A")] = RoomType.Imax,
+        [("CineSmart Nguyễn Huệ", "Phòng 2")] = RoomType.ThreeD,
+    };
+
+    /// <summary>
+    /// Điền thông tin chi tiết cho dữ liệu mẫu — chạy cả trên DB cũ (chưa có các cột này). Chỉ đụng vào dòng còn
+    /// ở giá trị mặc định (chưa ai nhập) nên không đè lên thứ admin đã sửa.
+    /// </summary>
+    private static async Task UpgradeCatalogDetailsAsync(CinemaDbContext db, CancellationToken ct)
+    {
+        // Chỉ chạy MỘT lần trên DB còn nguyên trạng cũ: đã có phim nào có đạo diễn (do lần nâng cấp trước hoặc do
+        // admin nhập) thì thôi. Nếu không, mỗi lần khởi động sẽ ghi đè lựa chọn của admin (ví dụ đặt suất Dune về
+        // "Bản gốc" cố ý) vì giá trị mặc định không phân biệt được "chưa nhập" với "chủ ý chọn".
+        if (await db.Movies.AnyAsync(m => m.Director != null, ct)) return;
+
+        var movies = await db.Movies.Where(m => m.Director == null && m.Cast == null).ToListAsync(ct);
+        var foreignIds = new List<int>();
+        foreach (var movie in movies)
+        {
+            if (!MovieDetails.TryGetValue(movie.Title, out var d)) continue;
+            movie.AgeRating = d.Age;
+            movie.Director = d.Director;
+            movie.Cast = d.Cast;
+            movie.TrailerUrl ??= d.Trailer;
+            if (d.Foreign) foreignIds.Add(movie.Id);
+        }
+
+        var rooms = await db.Rooms.Include(r => r.Theater).Where(r => r.RoomType == RoomType.Standard).ToListAsync(ct);
+        foreach (var room in rooms)
+            if (RoomTypes.TryGetValue((room.Theater!.Name, room.RoomName), out var type)) room.RoomType = type;
+
+        // Phim nước ngoài chiếu phụ đề; chỉ chỉnh suất còn "Bản gốc" mặc định.
+        if (foreignIds.Count > 0)
+        {
+            var showtimes = await db.Showtimes
+                .Where(s => foreignIds.Contains(s.MovieId) && s.Language == ShowLanguage.Original)
+                .ToListAsync(ct);
+            foreach (var s in showtimes) s.Language = ShowLanguage.Subtitled;
+        }
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Khuyến mãi mẫu, mỗi chi nhánh một bộ khác nhau. Chạy cả khi catalog đã có (DB cũ chưa có bảng
+    /// khuyến mãi); chỉ thêm khi bảng còn trống để không đè lên dữ liệu chủ chi nhánh đã nhập.
+    /// </summary>
+    private static async Task SeedPromotionsAsync(CinemaDbContext db, CancellationToken ct)
+    {
+        // Quy tắc giảm giá của từng chương trình mẫu. "Sinh viên" cố ý KHÔNG có quy tắc: cần xuất
+        // trình thẻ tại quầy nên hệ thống không tự trừ được — chỉ là thông tin quảng bá.
+        const int Tuesday = 1 << (int)DayOfWeek.Tuesday;
+        const int Weekdays = (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow + VietnamOffset);
+        var plans = new Dictionary<string, (string Title, string Badge, string Description, Action<Promotion>? Rule)[]>
+        {
+            ["CineSmart Nguyễn Huệ"] = [("Thứ 3 đồng giá", "Đồng giá 60k", "Mọi suất chiếu thứ 3 chỉ 60.000đ/vé, mọi loại ghế thường.",
+                p => { p.FixedPrice = 60_000m; p.ApplicableSeatType = SeatType.Standard; p.DaysOfWeekMask = Tuesday; })],
+            ["CineSmart Thảo Điền"] = [
+                ("Combo cặp đôi", "Ghế đôi -15%", "Giảm 15% khi đặt ghế đôi các suất sau 18:00.",
+                    p => { p.DiscountPercent = 15; p.ApplicableSeatType = SeatType.Couple; p.FromTime = new TimeOnly(18, 0); }),
+                ("Sinh viên", "-20%", "Xuất trình thẻ sinh viên tại quầy để được giảm 20%.", null)],
+            ["CineSmart Cầu Giấy"] = [("Suất sớm", "-25%", "Giảm 25% cho các suất bắt đầu trước 12:00 các ngày trong tuần.",
+                p => { p.DiscountPercent = 25; p.DaysOfWeekMask = Weekdays; p.ToTime = new TimeOnly(12, 0); })],
+        };
+
+        if (await db.Promotions.AnyAsync(ct))
+        {
+            // DB cũ: khuyến mãi mẫu đã có nhưng chưa có quy tắc giảm giá. Chỉ nâng cấp MỘT lần: đã có khuyến mãi
+            // nào mang quy tắc giảm giá (do lần nâng cấp trước hoặc do chủ chi nhánh đặt) thì thôi. Nếu không, mỗi
+            // lần khởi động sẽ bật lại mức giảm mà chủ chi nhánh cố ý tắt (chuyển về "chỉ quảng bá" nhưng giữ nguyên mô tả).
+            if (await db.Promotions.AnyAsync(p => p.DiscountPercent != null || p.FixedPrice != null, ct)) return;
+
+            var existing = await db.Promotions.Include(p => p.Theater)
+                .Where(p => p.DiscountPercent == null && p.FixedPrice == null).ToListAsync(ct);
+            foreach (var promo in existing)
+            {
+                if (!plans.TryGetValue(promo.Theater!.Name, out var seeded)) continue;
+                var match = seeded.FirstOrDefault(s => s.Title == promo.Title && s.Description == promo.Description);
+                match.Rule?.Invoke(promo);
+            }
+            await db.SaveChangesAsync(ct);
+            return;
+        }
+
+        var theaters = await db.Theaters.Where(t => plans.Keys.Contains(t.Name)).ToListAsync(ct);
+        foreach (var theater in theaters)
+            foreach (var (title, badge, description, rule) in plans[theater.Name])
+            {
+                var promotion = new Promotion
+                {
+                    TheaterId = theater.Id, Title = title, Badge = badge, Description = description,
+                    StartDate = today, EndDate = today.AddDays(60),
+                };
+                rule?.Invoke(promotion);
+                db.Promotions.Add(promotion);
+            }
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static async Task SeedCatalogAsync(CinemaDbContext db, CancellationToken ct)
     {
         if (await db.Movies.AnyAsync(ct)) return;
 

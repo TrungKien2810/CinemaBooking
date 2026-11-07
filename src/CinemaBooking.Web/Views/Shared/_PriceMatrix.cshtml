@@ -1,0 +1,56 @@
+@model PriceMatrixModel
+@* Bảng giá vé theo loại phòng → khung giờ/ngày → loại ghế. Giá/ghế; ghế đôi bán theo cặp (2 ghế). *@
+@if (PricingRules.PeakEnabled(Model.Pricing) || PricingRules.WeekendEnabled(Model.Pricing))
+{
+    <div class="price-legend" role="note">
+        @if (PricingRules.PeakEnabled(Model.Pricing))
+        {
+            <span><span class="cb-badge price-tag price-tag-peak">Giờ cao điểm</span> suất bắt đầu từ <strong>@Model.Pricing.PeakFromHour:00</strong> trở đi, phụ thu <strong>@Model.Pricing.PeakSurcharge.Vnd()</strong>/ghế</span>
+        }
+        @if (PricingRules.WeekendEnabled(Model.Pricing))
+        {
+            <span><span class="cb-badge price-tag price-tag-weekend">Cuối tuần</span> Thứ 7, Chủ nhật và Thứ 6 từ @Model.Pricing.PeakFromHour:00, phụ thu <strong>@Model.Pricing.WeekendSurcharge.Vnd()</strong>/ghế</span>
+        }
+    </div>
+}
+<div class="price-tables">
+    @foreach (var table in Model.Tables)
+    {
+        <section class="cb-card price-card" aria-labelledby="room-@table.Type">
+            <h3 class="price-card-title" id="room-@table.Type">
+                <span class="cb-badge cb-badge-accent">@table.Type.Label()</span>
+                Phòng chiếu @table.Type.Label()
+            </h3>
+            <div class="table-responsive">
+                <table class="table price-table mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Ngày &amp; giờ chiếu</th>
+                            <th scope="col" class="text-end">Ghế thường</th>
+                            <th scope="col" class="text-end">Ghế VIP</th>
+                            <th scope="col" class="text-end">Ghế đôi <span class="d-block small fw-normal">(1 ghế)</span></th>
+                            <th scope="col" class="text-end">Ghế đôi <span class="d-block small fw-normal">(cả cặp)</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in table.Rows)
+                        {
+                            <tr class="@(row.IsPeak ? "price-row-peak" : null) @(row.IsWeekend ? "price-row-weekend" : null)">
+                                <th scope="row">
+                                    <span class="fw-semibold">@row.Label</span>
+                                    @if (row.IsPeak) { <span class="cb-badge price-tag price-tag-peak">Giờ cao điểm</span> }
+                                    @if (row.IsWeekend) { <span class="cb-badge price-tag price-tag-weekend">Cuối tuần</span> }
+                                    <span class="d-block small fw-normal cb-muted">@row.Detail</span>
+                                </th>
+                                <td class="text-end">@row.Standard.Vnd()</td>
+                                <td class="text-end">@row.Vip.Vnd()</td>
+                                <td class="text-end">@row.CoupleSeat.Vnd()</td>
+                                <td class="text-end fw-semibold">@row.CouplePair.Vnd()</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</div>

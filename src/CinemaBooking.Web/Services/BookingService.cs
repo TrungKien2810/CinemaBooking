@@ -1,3 +1,4 @@
+using CinemaBooking.Domain;
 using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
@@ -30,6 +31,13 @@ public sealed class BookingService : IBookingService
     private readonly IOptions<VnpayOptions> _vnpayOptions;
     private readonly DisplayTimeZone _tz;
     private readonly ILogger<BookingService> _log;
+    private readonly IVoucherService? _vouchers;
+
+    /// <summary>Số thư xác nhận tối đa cho một vé trong <see cref="ResendWindow"/> (tính cả thư đầu tiên).</summary>
+    public const int MaxResendsInWindow = 3;
+    public static readonly TimeSpan ResendWindow = TimeSpan.FromMinutes(10);
+
+    private readonly IHttpContextAccessor? _http;
 
     public BookingService(
         CinemaDbContext db,
@@ -41,8 +49,12 @@ public sealed class BookingService : IBookingService
         TimeProvider clock,
         IOptions<VnpayOptions> vnpayOptions,
         DisplayTimeZone tz,
-        ILogger<BookingService> log)
+        ILogger<BookingService> log,
+        IVoucherService? vouchers = null,
+        IHttpContextAccessor? http = null)
     {
+        _vouchers = vouchers;
+        _http = http;
         _db = db;
         _bookedSeats = bookedSeats;
         _locks = locks;
@@ -94,7 +106,24 @@ public sealed class BookingService : IBookingService
         if (!_locks.ValidateLocks(keys, request.ConnectionId))
             return BookingResult.Failed(BookingResultKind.LocksExpired, "Thời gian giữ ghế đã hết hoặc ghế không còn do bạn giữ. Vui lòng chọn lại.");
 
-        var booking = BuildBooking(request, showtime, seats);
+        var startLocal = _tz.ToLocalTime(showtime.StartTimeUtc);
+        var promotions = await PromotionRules.LoadForShowtimeAsync(
+            _db, showtime.Room!.TheaterId, DateOnly.FromDateTime(startLocal), ct);
+        var surcharges = await PricingLoader.LoadSurchargesAsync(_db, showtime.Room.TheaterId, ct);
+        var booking = BuildBooking(request, showtime, seats, startLocal, promotions, surcharges);
+
+        // Mã giảm giá kiểm lại Ở SERVER với tổng tiền thật của đơn (khách có thể sửa session/form), rồi chia vào giá từng ghế.
+        if (!string.IsNullOrWhiteSpace(request.VoucherCode))
+        {
+            if (_vouchers is null)
+                return BookingResult.Failed(BookingResultKind.VoucherInvalid, "Hệ thống chưa hỗ trợ mã giảm giá.");
+
+            var check = await _vouchers.CheckAsync(
+                request.VoucherCode, showtime.Room.TheaterId, booking.TotalAmount, request.UserId, request.CustomerEmail, ct);
+            if (!check.IsOk) return BookingResult.Failed(BookingResultKind.VoucherInvalid, check.Message);
+
+            ApplyVoucher(booking, check);
+        }
 
         // Transaction 1: giữ chỗ. Suất chiếu đã bắt đầu hay chưa được kiểm lại ở trên; đơn Pending
         // + unique index chính là thứ giữ ghế trong lúc khách thanh toán (General.md §7.5) — mất
@@ -193,7 +222,7 @@ public sealed class BookingService : IBookingService
     {
         var booking = await _db.Bookings
             .Include(b => b.Payment)
-            .Include(b => b.Showtime)
+            .Include(b => b.Showtime!).ThenInclude(sh => sh.Movie)
             .Include(b => b.Seats).ThenInclude(bs => bs.Seat)
             .FirstOrDefaultAsync(b => b.BookingCode == bookingCode, ct);
 
@@ -233,7 +262,7 @@ public sealed class BookingService : IBookingService
         booking.Payment.PaidUtc = ParseVnpayDateToUtc(verify.PayDate) ?? _clock.GetUtcNow().UtcDateTime;
 
         var seats = booking.Seats.Where(bs => bs.Seat is not null).Select(bs => bs.Seat!).ToList();
-        _db.OutboxEmails.Add(BuildConfirmationEmail(booking, booking.Showtime!, seats));
+        _db.OutboxEmails.Add(await BuildConfirmationEmailAsync(booking, booking.Showtime!, seats, ct));
 
         await _db.SaveChangesAsync(ct);
 
@@ -259,8 +288,15 @@ public sealed class BookingService : IBookingService
             return BookingResult.Failed(BookingResultKind.PaymentFailed,
                 "Chỉ gửi lại email cho vé đã xác nhận.");
 
+        var subject = ConfirmationSubject(booking.BookingCode);
+        var since = _clock.GetUtcNow().UtcDateTime - ResendWindow;
+        var recent = await _db.OutboxEmails.CountAsync(e => e.Subject == subject && e.CreatedUtc >= since, ct);
+        if (recent >= MaxResendsInWindow)
+            return BookingResult.Failed(BookingResultKind.PaymentFailed,
+                $"Email đã được gửi {recent} lần gần đây. Vui lòng kiểm tra hộp thư (cả mục Spam) hoặc thử lại sau ít phút.");
+
         var seats = booking.Seats.Where(bs => bs.Seat is not null).Select(bs => bs.Seat!).ToList();
-        _db.OutboxEmails.Add(BuildConfirmationEmail(booking, booking.Showtime!, seats));
+        _db.OutboxEmails.Add(await BuildConfirmationEmailAsync(booking, booking.Showtime!, seats, ct));
         await _db.SaveChangesAsync(ct);
 
         return BookingResult.Success(booking.BookingCode);
@@ -311,13 +347,34 @@ public sealed class BookingService : IBookingService
                 || message.Contains("duplicate", StringComparison.OrdinalIgnoreCase));
     }
 
-    private Booking BuildBooking(BookingRequest request, Showtime showtime, IReadOnlyList<Seat> seats)
+    /// <summary>Trừ mã giảm giá khỏi đơn: chia theo tỷ lệ giá từng ghế để doanh thu (tính theo ghế) vẫn khớp tổng đơn.</summary>
+    private static void ApplyVoucher(Booking booking, VoucherResult check)
+    {
+        var shares = VoucherRules.Allocate(check.Discount, booking.Seats.Select(s => s.PriceAtBooking).ToList());
+        for (var i = 0; i < booking.Seats.Count; i++)
+        {
+            var seat = booking.Seats.ElementAt(i);
+            seat.PriceAtBooking -= shares[i];
+            seat.VoucherShare = shares[i];
+        }
+
+        booking.VoucherCode = check.Voucher!.Code;
+        booking.VoucherDiscount = check.Discount;
+        booking.TotalAmount -= check.Discount;
+        if (booking.Payment is not null) booking.Payment.Amount = booking.TotalAmount;
+    }
+
+    private Booking BuildBooking(
+        BookingRequest request, Showtime showtime, IReadOnlyList<Seat> seats,
+        DateTime startLocal, IReadOnlyList<Promotion> promotions, SeatSurcharges? surcharges = null)
     {
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
+        // Giá chốt ở server từ cùng PromotionRules với sơ đồ ghế/thanh toán — không tin giá client.
         var priced = seats
-            .Select(seat => (Seat: seat, Price: _pricing.PriceFor(showtime.BasePrice, seat.SeatType)))
+            .Select(seat => (Seat: seat, Quote: PromotionRules.Quote(
+                _pricing.PriceFor(showtime.BasePrice, seat.SeatType, surcharges), seat.SeatType, startLocal, promotions)))
             .ToList();
-        var total = priced.Sum(x => x.Price);
+        var total = priced.Sum(x => x.Quote.FinalPrice);
 
         return new Booking
         {
@@ -334,7 +391,9 @@ public sealed class BookingService : IBookingService
             {
                 SeatId = x.Seat.Id,
                 ShowtimeId = showtime.Id,
-                PriceAtBooking = x.Price,
+                PriceAtBooking = x.Quote.FinalPrice,
+                DiscountAmount = x.Quote.Discount,
+                PromotionTitle = x.Quote.PromotionTitle,
             }).ToList(),
             Payment = new Payment
             {
@@ -350,8 +409,14 @@ public sealed class BookingService : IBookingService
     /// Thư xác nhận chỉ là dữ liệu trong outbox; nội dung hiển thị ở đây phải đủ để khách đọc lại
     /// mà không cần mở DB (mã vé, phim, suất, ghế, số tiền).
     /// </summary>
-    private OutboxEmail BuildConfirmationEmail(Booking booking, Showtime showtime, IReadOnlyList<Seat> seats)
+    private async Task<OutboxEmail> BuildConfirmationEmailAsync(
+        Booking booking, Showtime showtime, IReadOnlyList<Seat> seats, CancellationToken ct)
     {
+        var place = await _db.Rooms.AsNoTracking()
+            .Where(r => r.Id == showtime.RoomId)
+            .Select(r => new { r.RoomName, r.Theater!.Name, r.Theater.Address })
+            .FirstOrDefaultAsync(ct);
+
         var labels = string.Join(", ", seats
             .OrderBy(s => s.RowNumber).ThenBy(s => s.ColumnNumber)
             .Select(s => s.Label));
@@ -365,18 +430,32 @@ public sealed class BookingService : IBookingService
             $"Đơn {booking.BookingCode} của bạn đã được xác nhận.\n" +
             $"Phim: {showtime.Movie?.Title}\n" +
             $"Suất chiếu: {startLocal:HH:mm dd/MM/yyyy}\n" +
+            (place is null ? "" : $"Rạp: {place.Name} · {place.RoomName}\n") +
+            (string.IsNullOrWhiteSpace(place?.Address) ? "" : $"Địa chỉ: {place.Address}\n") +
             $"Ghế: {labels}\n" +
-            $"Tổng tiền: {booking.TotalAmount:N0} VND\n\n" +
+            (booking.VoucherCode is null ? "" : $"Mã giảm giá {booking.VoucherCode}: -{booking.VoucherDiscount.Vnd()}\n") +
+            $"Tổng tiền: {booking.TotalAmount.Vnd()}\n\n" +
+            TicketLink(booking.BookingCode) +
+            "Vui lòng đưa mã vé cho nhân viên khi tới rạp.\n" +
             "Cảm ơn bạn đã đặt vé tại CinemaBooking.";
 
         return new OutboxEmail
         {
             ToAddress = booking.CustomerEmail,
-            Subject = $"Xác nhận đặt vé {booking.BookingCode}",
+            Subject = ConfirmationSubject(booking.BookingCode),
             Body = body,
             Status = OutboxStatus.Pending,
             CreatedUtc = _clock.GetUtcNow().UtcDateTime,
         };
+    }
+
+    private static string ConfirmationSubject(string bookingCode) => $"Xác nhận đặt vé {bookingCode}";
+
+    /// <summary>Link mở vé và mã QR; rỗng khi không chạy trong một HTTP request (tác vụ nền, test).</summary>
+    private string TicketLink(string bookingCode)
+    {
+        if (_http?.HttpContext?.Request is not { } request) return string.Empty;
+        return $"Xem vé và mã QR: {request.Scheme}://{request.Host}/Booking/Confirmation?code={bookingCode}\n\n";
     }
 
     /// <summary>Đổi <c>vnp_PayDate</c> (GMT+7, yyyyMMddHHmmss) sang UTC để lưu DB.</summary>
@@ -402,6 +481,7 @@ public sealed class BookingService : IBookingService
             .Include(s => s.Room!).ThenInclude(r => r.Seats)
             .FirstOrDefaultAsync(s => s.Id == showtimeId
                 && s.StartTimeUtc > nowUtc
+                && s.IsActive
                 && s.Movie!.IsActive
                 && s.Room!.Theater!.IsActive, ct);
     }

@@ -1,0 +1,133 @@
+@model PromotionFormModel
+@{
+    var isEdit = Model.Id is not null;
+    ViewData["Title"] = (isEdit ? "Sửa khuyến mãi" : "Thêm khuyến mãi") + " — " + Model.TheaterName;
+}
+
+<div class="admin-page-head">
+    <div>
+        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="admin-back-link">← Khuyến mãi · @Model.TheaterName</a>
+        <h1 class="admin-page-title">@(isEdit ? "Sửa khuyến mãi" : "Thêm khuyến mãi")</h1>
+    </div>
+</div>
+
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form admin-form-narrow"
+      data-confirm="@(isEdit ? "Lưu thay đổi khuyến mãi này? Các đơn đặt từ bây giờ sẽ tính theo điều kiện mới." : null)">
+    <div asp-validation-summary="ModelOnly"></div>
+    <input asp-for="TheaterId" type="hidden" />
+
+    <div class="mb-3">
+        <label asp-for="Title" class="admin-label"></label>
+        <input asp-for="Title" class="admin-input" placeholder="Thứ 3 vui vẻ" />
+        <span asp-validation-for="Title" class="text-danger small"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Badge" class="admin-label"></label>
+        <input asp-for="Badge" class="admin-input" placeholder="Đồng giá 60k" />
+        <span asp-validation-for="Badge" class="text-danger small"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Description" class="admin-label"></label>
+        <textarea asp-for="Description" class="admin-input" rows="3"></textarea>
+        <span asp-validation-for="Description" class="text-danger small"></span>
+    </div>
+    <div class="row">
+        <div class="col-sm-6 mb-3">
+            <label asp-for="StartDate" class="admin-label"></label>
+            <input asp-for="StartDate" type="date" class="admin-input" />
+            <span asp-validation-for="StartDate" class="text-danger small"></span>
+        </div>
+        <div class="col-sm-6 mb-3">
+            <label asp-for="EndDate" class="admin-label"></label>
+            <input asp-for="EndDate" type="date" class="admin-input" />
+            <span asp-validation-for="EndDate" class="text-danger small"></span>
+        </div>
+    </div>
+    <div class="form-check mb-3">
+        <input asp-for="IsActive" class="form-check-input" />
+        <label asp-for="IsActive" class="form-check-label"></label>
+    </div>
+
+    <fieldset class="promo-rule mb-3">
+        <legend class="admin-label fs-6 fw-semibold">Giảm giá tự động khi đặt vé</legend>
+        <p class="admin-form-hint mt-0">
+            Chọn “Chỉ quảng bá” nếu ưu đãi cần nhân viên kiểm tra tại quầy (ví dụ thẻ sinh viên) — hệ thống sẽ không tự trừ giá.
+            Mỗi ghế chỉ hưởng <strong>một</strong> khuyến mãi (cái cho giá thấp nhất), không cộng dồn.
+        </p>
+        <div class="mb-2">
+            <select asp-for="DiscountKind" class="admin-input" id="discount-kind">
+                <option value="none">Chỉ quảng bá (không tự trừ giá)</option>
+                <option value="percent">Giảm theo phần trăm</option>
+                <option value="fixed">Đồng giá mỗi ghế</option>
+            </select>
+        </div>
+        <div id="rule-fields">
+            <div class="row">
+                <div class="col-sm-6 mb-3" data-kind="percent">
+                    <label asp-for="DiscountPercent" class="admin-label"></label>
+                    <input asp-for="DiscountPercent" type="number" min="1" max="100" class="admin-input" placeholder="25" />
+                    <span asp-validation-for="DiscountPercent" class="text-danger small"></span>
+                </div>
+                <div class="col-sm-6 mb-3" data-kind="fixed">
+                    @await Html.PartialAsync("_PriceInput", new PriceInputModel("FixedPrice", "Giá đồng giá (mỗi ghế)", Model.FixedPrice))
+                </div>
+            </div>
+            <div class="mb-3">
+                <label asp-for="ApplicableSeatType" class="admin-label"></label>
+                <select asp-for="ApplicableSeatType" class="admin-input">
+                    <option value="">Mọi loại ghế</option>
+                    <option value="Standard">Ghế thường</option>
+                    <option value="Vip">Ghế VIP</option>
+                    <option value="Couple">Ghế đôi</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <span class="admin-label d-block">Các thứ áp dụng <span class="cb-muted">(không chọn = mọi ngày)</span></span>
+                @foreach (var (day, name) in new[] { (1, "T2"), (2, "T3"), (3, "T4"), (4, "T5"), (5, "T6"), (6, "T7"), (0, "CN") })
+                {
+                    <label class="form-check form-check-inline">
+                        <input type="checkbox" class="form-check-input" name="Days" value="@day" checked="@Model.Days.Contains(day)" />
+                        <span class="form-check-label">@name</span>
+                    </label>
+                }
+                <span asp-validation-for="Days" class="text-danger small"></span>
+            </div>
+            <div class="row">
+                <div class="col-sm-6 mb-3">
+                    <label asp-for="FromTime" class="admin-label"></label>
+                    <input asp-for="FromTime" type="time" class="admin-input" />
+                    <span asp-validation-for="FromTime" class="text-danger small"></span>
+                </div>
+                <div class="col-sm-6 mb-3">
+                    <label asp-for="ToTime" class="admin-label"></label>
+                    <input asp-for="ToTime" type="time" class="admin-input" />
+                    <span asp-validation-for="ToTime" class="text-danger small"></span>
+                </div>
+            </div>
+            <p class="admin-form-hint">Giờ tính theo <strong>giờ bắt đầu của suất chiếu</strong> (giờ rạp), không phải giờ khách đặt.</p>
+        </div>
+    </fieldset>
+
+    <div class="admin-form-actions">
+        <button type="submit" class="cb-btn cb-btn-primary">Lưu</button>
+        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="cb-btn cb-btn-secondary">Hủy</a>
+    </div>
+</form>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        (function () {
+            var kind = document.getElementById('discount-kind');
+            var box = document.getElementById('rule-fields');
+            function refresh() {
+                box.hidden = kind.value === 'none';
+                box.querySelectorAll('[data-kind]').forEach(function (el) {
+                    el.hidden = el.dataset.kind !== kind.value;
+                });
+            }
+            kind.addEventListener('change', refresh);
+            refresh();
+        })();
+    </script>
+}

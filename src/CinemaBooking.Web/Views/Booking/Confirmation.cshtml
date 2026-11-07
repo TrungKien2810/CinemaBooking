@@ -10,11 +10,15 @@
 }
 
 <div class="cb-page-header" style="text-align: center; align-items: center;">
-    <h1 class="cb-page-title">@(confirmed ? "Đặt vé thành công " : "Thanh toán chưa hoàn tất")</h1>
+    <h1 class="cb-page-title">@(confirmed ? "Đặt vé thành công" : Model.CancelledByCinema ? "Vé đã bị rạp hủy" : "Thanh toán chưa hoàn tất")</h1>
     <p class="cb-page-subtitle" style="max-width: 600px;">
         @if (confirmed)
         {
             <text>Cảm ơn <strong>@Model.CustomerName</strong>! Vé đã được xác nhận và email thông báo đã được gửi tới <strong>@Model.CustomerEmail</strong>.</text>
+        }
+        else if (Model.CancelledByCinema)
+        {
+            <text>Rạp không thể chiếu suất này nên đã hủy vé @Model.BookingCode. Rạp sẽ hoàn tiền cho bạn, chi tiết nằm trong email đã gửi tới @Model.CustomerEmail.</text>
         }
         else
         {
@@ -43,6 +47,29 @@
 }
 
 <partial name="_BookingSteps" model="3" />
+
+@if (Model.IsMasked)
+{
+    <p class="cb-muted" style="text-align: center; font-size: 0.875rem;">
+        Họ tên, email và số điện thoại được che vì bạn chưa đăng nhập bằng tài khoản đã đặt vé này.
+    </p>
+}
+
+@if (confirmed && Model.IsCheckedIn)
+{
+    <div class="cb-alert cb-alert-warning" role="status" style="max-width: 760px; margin: 0 auto 1.5rem;">
+        <span>Vé đã được soát lúc <strong>@Model.CheckedInLocal!.Value.ToString("HH:mm dd/MM/yyyy")</strong> — không dùng lại được.</span>
+    </div>
+}
+
+@if (confirmed && (User.IsInRole("Admin") || User.IsInRole("BranchAdmin")))
+{
+    <div class="cb-alert cb-alert-info" role="status" style="max-width: 760px; margin: 0 auto 1.5rem;">
+        <span>Bạn là nhân viên rạp:</span>
+        <a asp-area="Admin" asp-controller="CheckIn" asp-action="Index" asp-route-code="@Model.BookingCode"
+           class="cb-btn cb-btn-primary cb-btn-sm">Soát vé này</a>
+    </div>
+}
 
 <div class="cb-ticket cb-confirmation-card">
     <div class="cb-ticket-head">

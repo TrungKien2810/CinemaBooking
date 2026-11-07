@@ -1,0 +1,138 @@
+@model AutoPlanViewModel
+@{
+    ViewData["Title"] = "Gợi ý lịch chiếu cả ngày";
+    var form = Model.Form;
+}
+
+<div class="admin-page-head">
+    <div>
+        <a asp-action="Index" asp-route-theaterId="@form.TheaterId" class="admin-back-link">← Suất chiếu</a>
+        <h1 class="admin-page-title">Gợi ý lịch chiếu cả ngày · @Model.TheaterName</h1>
+        <p class="cb-muted admin-page-subtitle">
+            Hệ thống đề xuất lịch theo cách rạp thường xếp: <strong>phim mới/hot vào phòng lớn nhất ở giờ vàng (18:00–22:00)</strong>,
+            mỗi phòng một phim khác nhau ở giờ vàng, ngoài giờ vàng xoay vòng phim, các suất cách nhau thời gian dọn phòng.
+            Bạn xem trước rồi mới áp dụng; suất đã có sẵn không bị đụng tới.
+        </p>
+    </div>
+</div>
+
+<form asp-action="AutoPlan" method="post" class="cb-card admin-form">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            @if (Model.Theaters.Count > 1)
+            {
+                <label for="TheaterId" class="admin-label">Chi nhánh</label>
+                <select id="TheaterId" name="TheaterId" class="admin-input"
+                        onchange="location.href='@Url.Action("AutoPlan")?theaterId=' + this.value + '&date=' + document.getElementById('Date').value">
+                    @foreach (var t in Model.Theaters)
+                    {
+                        <option value="@t.Id" selected="@(t.Id == form.TheaterId)">@t.Name</option>
+                    }
+                </select>
+            }
+            else
+            {
+                <input type="hidden" name="TheaterId" value="@form.TheaterId" />
+                <span class="admin-label d-block">Chi nhánh</span>
+                <div class="form-control-plaintext fw-semibold">@Model.TheaterName</div>
+            }
+        </div>
+        <div class="col-md-4 mb-3">
+            <label asp-for="Form.Date" class="admin-label"></label>
+            <input asp-for="Form.Date" type="date" id="Date" name="Date" class="admin-input" />
+            <span asp-validation-for="Form.Date" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <input type="hidden" name="UsePricing" value="true" />
+    <p class="admin-form-hint mb-3">Giá mỗi suất tự tính theo loại phòng, giờ và ngày chiếu của chi nhánh (xem <a asp-controller="Pricing" asp-action="Index" asp-route-theaterId="@form.TheaterId">Bảng giá vé</a>), không phụ thuộc phim.</p>
+
+    <div class="mb-3">
+        <label asp-for="Form.Language" class="admin-label"></label>
+        <select asp-for="Form.Language" name="Language" class="admin-input" style="max-width:14rem">
+            @foreach (var l in Enum.GetValues<CinemaBooking.Domain.Enums.ShowLanguage>())
+            {
+                <option value="@l" selected="@(l == form.Language)">@l.Label()</option>
+            }
+        </select>
+        <span class="admin-form-hint">Áp cho mọi suất tạo ra; phim tiếng Việt chọn “Bản gốc”. Sửa từng suất sau nếu cần.</span>
+    </div>
+
+    <fieldset class="mb-3">
+        <legend class="admin-label fs-6 fw-semibold">Phim đưa vào lịch <span class="cb-muted fw-normal">(phim càng mới càng được ưu tiên phòng lớn)</span></legend>
+        <span asp-validation-for="Form.MovieIds" class="text-danger small d-block"></span>
+        @if (Model.Movies.Count == 0)
+        {
+            <p class="cb-muted">Chưa có phim nào đang chiếu tại ngày này.</p>
+        }
+        @foreach (var m in Model.Movies)
+        {
+            <label class="form-check">
+                <input type="checkbox" class="form-check-input" name="MovieIds" value="@m.Id" checked="@m.Selected" />
+                <span class="form-check-label">
+                    @m.Title <span class="cb-muted">· @m.DurationMinutes phút · khởi chiếu @m.ReleaseDate.ToString("dd/MM/yyyy")</span>
+                </span>
+            </label>
+        }
+    </fieldset>
+
+    <div class="admin-form-actions">
+        <button type="submit" name="command" value="preview" class="cb-btn cb-btn-outline">Xem trước lịch</button>
+        @if (Model.Proposed is { Count: > 0 })
+        {
+            <button type="submit" name="command" value="apply" class="cb-btn cb-btn-primary"
+                    data-confirm="Tạo @Model.Proposed.Count suất chiếu cho ngày @form.Date?.ToString("dd/MM/yyyy")?">
+                Áp dụng — tạo @Model.Proposed.Count suất
+            </button>
+        }
+    </div>
+</form>
+
+@if (Model.Proposed is not null)
+{
+    if (Model.Proposed.Count == 0)
+    {
+        <div class="cb-card cb-empty">
+            <p class="cb-empty-title">Không xếp thêm được suất nào</p>
+            <p class="cb-muted">Các phòng đã kín lịch trong ngày này, hoặc chưa chọn phim đã khởi chiếu.</p>
+        </div>
+    }
+    else
+    {
+        <div class="cb-card mb-3">
+            <h2 class="section-title">Tóm tắt theo phòng</h2>
+            <ul class="mb-0">
+                @foreach (var r in Model.RoomSummaries)
+                {
+                    <li>@r.Name (@r.Capacity ghế): @r.Shows suất</li>
+                }
+            </ul>
+        </div>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table mb-0">
+                <thead>
+                    <tr><th>Giờ</th><th>Phòng</th><th>Phim</th><th class="text-end">Giá vé</th></tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < Model.Proposed.Count; i++)
+                    {
+                        var p = Model.Proposed[i];
+                        <tr>
+                            <td class="text-nowrap">@p.StartLocal.ToString("HH:mm") – @p.EndLocal.ToString("HH:mm")</td>
+                            <td>@p.RoomName</td>
+                            <td>@p.MovieTitle @if (p.Prime) { <span class="cb-badge cb-badge-accent">Giờ vàng</span> }</td>
+                            <td class="text-end">@Model.Prices![i].Vnd()</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

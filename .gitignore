@@ -60,3 +60,14 @@ config/pricing.json
 .claude/settings.json
 docs/project-state/STATUS.md
 docs/project-state/ISSUE.md
+# Poster admin tải lên lúc chạy
+src/CinemaBooking.Web/wwwroot/img/posters/uploads/
+
+# Công cụ giao việc agent (lane) — chạy cục bộ
+.lane/
+.lane-*.txt
+.build.txt
+.web-run.txt
+lane-briefs/
+lane-contract.md
+lane.json

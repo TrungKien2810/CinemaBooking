@@ -1,46 +1,76 @@
-@model List<Movie>
+@model MoviesIndexViewModel
 @{
     ViewData["Title"] = "Quản lý phim";
-    var activeCount = Model.Count(m => m.IsActive);
 }
 
 <div class="admin-page-head">
-    <div class="admin-page-title-wrap">
+    <div>
         <h1 class="admin-page-title">Phim</h1>
-        <p class="admin-page-subtitle">@activeCount phim đang chiếu · @(Model.Count - activeCount) phim đã ẩn</p>
+        <p class="cb-muted admin-page-subtitle">@Model.ActiveTotal phim đang bật · @(Model.Total - Model.ActiveTotal) phim đã ẩn@(Model.IsFiltered ? " · đang hiện " + Model.Items.Count : "")</p>
     </div>
-    <div class="admin-page-actions">
-        <a asp-action="Create" class="cb-btn cb-btn-primary">
-            <span>+</span> Thêm phim
-        </a>
-    </div>
+    <a asp-action="Create" class="cb-btn cb-btn-primary">Thêm phim</a>
 </div>
 
-@if (Model.Count == 0)
+@if (TempData["Message"] is string message)
 {
-    <div class="cb-empty">
-        <div class="cb-empty-icon" aria-hidden="true">🎬</div>
-        <h3 class="cb-empty-title">Chưa có phim nào</h3>
-        <p class="cb-empty-desc">Thêm phim đầu tiên để bắt đầu cấu hình suất chiếu và bán vé.</p>
-        <a asp-action="Create" class="cb-btn cb-btn-primary">Thêm phim ngay</a>
+    <div class="cb-alert cb-alert-success" role="status">@message</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="cb-alert cb-alert-danger" role="alert">@error</div>
+}
+
+<form method="get" class="cb-card admin-filter" role="search">
+    <input name="q" value="@Model.Query" type="search" class="admin-input" style="max-width:18rem" maxlength="100"
+           placeholder="Tìm tên phim, đạo diễn, diễn viên…" aria-label="Tìm phim" />
+    <select name="status" class="admin-input" style="max-width:12rem" aria-label="Trạng thái">
+        <option value="">Mọi trạng thái</option>
+        <option value="active" selected="@(Model.Status == "active")">Đang chiếu</option>
+        <option value="soon" selected="@(Model.Status == "soon")">Sắp chiếu</option>
+        <option value="hidden" selected="@(Model.Status == "hidden")">Đã ẩn</option>
+    </select>
+    <select name="genre" class="admin-input" style="max-width:12rem" aria-label="Thể loại">
+        <option value="">Mọi thể loại</option>
+        @foreach (var g in Model.Genres)
+        {
+            <option value="@g" selected="@(g == Model.Genre)">@g</option>
+        }
+    </select>
+    <button type="submit" class="cb-btn cb-btn-outline">Lọc</button>
+    @if (Model.IsFiltered) { <a asp-action="Index" class="cb-btn cb-btn-secondary">Xóa lọc</a> }
+</form>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="cb-card cb-empty">
+        @if (Model.IsFiltered)
+        {
+            <p class="cb-empty-title">Không có phim khớp bộ lọc</p>
+            <p class="cb-muted">Thử từ khóa khác (không cần gõ dấu) hoặc <a asp-action="Index">xóa bộ lọc</a>.</p>
+        }
+        else
+        {
+            <p class="cb-empty-title">Chưa có phim nào</p>
+            <p class="cb-muted">Thêm phim đầu tiên để bắt đầu xếp lịch chiếu.</p>
+        }
     </div>
 }
 else
 {
     <div class="admin-table-wrap">
-        <table class="admin-table">
+        <table class="admin-table mb-0">
             <thead>
                 <tr>
                     <th>Phim</th>
                     <th>Thể loại</th>
-                    <th class="cb-num">Thời lượng</th>
+                    <th class="text-end">Thời lượng</th>
                     <th>Khởi chiếu</th>
                     <th>Trạng thái</th>
-                    <th class="admin-actions">Thao tác</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var m in Model)
+                @foreach (var m in Model.Items)
                 {
                     <tr class="@(m.IsActive ? null : "is-inactive")">
                         <td>
@@ -48,30 +78,24 @@ else
                                 <img src="@(string.IsNullOrWhiteSpace(m.PosterUrl) ? MovieCardViewModel.PlaceholderPoster : m.PosterUrl)"
                                      data-poster-fallback="@MovieCardViewModel.PlaceholderPoster"
                                      alt="" class="admin-poster-thumb" loading="lazy" width="36" height="54" />
-                                <span style="font-weight: 600;">@m.Title</span>
+                                <span class="fw-semibold">@m.Title</span>
                             </div>
                         </td>
+                        <td>@(m.Genre ?? "—")</td>
+                        <td class="text-end text-nowrap">@m.DurationMinutes phút</td>
+                        <td class="text-nowrap">@m.ReleaseDate.ToString("dd/MM/yyyy")</td>
                         <td>
-                            <span class="cb-badge cb-badge-surface">@(m.Genre ?? "—")</span>
-                        </td>
-                        <td class="cb-num">@m.DurationMinutes phút</td>
-                        <td class="cb-num" style="text-align: left !important;">@m.ReleaseDate.ToString("dd/MM/yyyy")</td>
-                        <td>
-                            <span class="status-badge @(m.IsActive ? "is-on" : "is-off")">
-                                @(m.IsActive ? "Đang chiếu" : "Đã ẩn")
-                            </span>
+                            <span class="status-badge @(m.IsActive ? "is-on" : "is-off")">@(!m.IsActive ? "Đã ẩn" : m.ReleaseDate > Model.Today ? "Sắp chiếu" : "Đang chiếu")</span>
                         </td>
                         <td class="admin-actions">
-                            <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
-                                <a asp-action="Edit" asp-route-id="@m.Id" class="cb-btn cb-btn-secondary cb-btn-sm">Sửa</a>
-                                @if (m.IsActive)
-                                {
-                                    <form asp-action="Delete" asp-route-id="@m.Id" method="post" style="display: inline;"
-                                          data-confirm="Ẩn phim “@m.Title” khỏi trang khách?">
-                                        <button type="submit" class="cb-btn cb-btn-danger cb-btn-sm">Ẩn</button>
-                                    </form>
-                                }
-                            </div>
+                            <a asp-action="Edit" asp-route-id="@m.Id" class="cb-btn cb-btn-sm cb-btn-secondary">Sửa</a>
+                            @if (m.IsActive)
+                            {
+                                <form asp-action="Delete" asp-route-id="@m.Id" method="post" class="d-inline"
+                                      data-confirm="Ẩn phim “@m.Title” khỏi trang khách?">
+                                    <button type="submit" class="cb-btn cb-btn-sm cb-btn-danger">Ẩn</button>
+                                </form>
+                            }
                         </td>
                     </tr>
                 }

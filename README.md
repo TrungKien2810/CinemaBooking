@@ -140,9 +140,80 @@ Khi còn dùng mật khẩu mặc định, log khởi động sẽ in một dòn
 Dùng hằng số `AppRoles.Admin` / `AppRoles.Customer` trong `[Authorize(Roles = ...)]`, đừng gõ
 chuỗi tay: gõ sai thì build vẫn xanh, lỗi chỉ lộ lúc chạy dưới dạng "bị chặn truy cập".
 
+### Tài khoản quản lý chi nhánh (`BranchAdmin`)
+
+Seed sẵn `branch@cinemabooking.local` / `Branch@12345` cho chi nhánh **CineSmart Cầu Giấy**. Chi nhánh gắn
+trong `ApplicationUser.TheaterId`. Tài khoản `BranchAdmin` **chưa được gán chi nhánh** (hoặc chi nhánh đã bị gỡ)
+KHÔNG phải admin toàn hệ thống: `IBranchScope.TheaterIdAsync` trả `BranchScope.NoBranch` (-1), mọi danh sách rỗng
+và mọi thao tác bị từ chối.
+
 ---
 
-## Thanh toán và hoàn tiền VNPAY (Sandbox)
+## Gửi email thật (SMTP)
+
+Email xác nhận vé đi qua bảng outbox rồi **`CinemaBooking.Worker`** gửi đi — nên cấu hình SMTP phải đặt cho
+**Worker** (và Worker phải đang chạy: `dotnet run --project src/CinemaBooking.Worker`). Chưa có `Email:Smtp:Host`
+thì email chỉ được ghi ra log.
+
+Ví dụ Gmail (bật xác minh 2 bước rồi tạo **App password**, không dùng mật khẩu đăng nhập):
+
+```bash
+dotnet user-secrets init --project src/CinemaBooking.Worker
+dotnet user-secrets set "Email:Smtp:Host" "smtp.gmail.com" --project src/CinemaBooking.Worker
+dotnet user-secrets set "Email:Smtp:Port" "587" --project src/CinemaBooking.Worker
+dotnet user-secrets set "Email:Smtp:UserName" "ban@gmail.com" --project src/CinemaBooking.Worker
+dotnet user-secrets set "Email:Smtp:Password" "app-password-16-ky-tu" --project src/CinemaBooking.Worker
+dotnet user-secrets set "Email:Smtp:From" "ban@gmail.com" --project src/CinemaBooking.Worker
+```
+
+Chạy bằng `dotnet run --project src/CinemaBooking.Worker` (profile trong `launchSettings.json` đặt sẵn
+`DOTNET_ENVIRONMENT=Development`, nhờ vậy user-secrets mới được nạp; chạy kiểu khác thì tự đặt biến này hoặc dùng biến môi trường
+`Email__Smtp__Host`…). Quên mật khẩu trên web cũng chỉ ghi vào outbox nên không cần cấu hình SMTP cho Web.
+
+Dùng Mailtrap/SES thì đổi Host/Port/UserName/Password tương ứng. **Không commit** mật khẩu vào `appsettings.json`.
+Gửi lỗi thì worker tự thử lại tối đa `EmailOutbox:MaxAttempts` lần.
+
+---
+
+## Khuyến mãi, soát vé và xếp lịch tự động
+
+- **Khuyến mãi tự trừ giá:** mỗi khuyến mãi có thể giảm % hoặc đồng giá, giới hạn theo loại ghế, thứ trong tuần và
+  giờ bắt đầu suất. Mỗi ghế chỉ hưởng MỘT khuyến mãi (giá thấp nhất), không cộng dồn. Logic nằm ở một chỗ:
+  `PromotionRules` (sơ đồ ghế, thanh toán và ghi đơn đều gọi vào đây). Giá đã chốt trong `BookingSeat` nên sửa/xóa
+  khuyến mãi sau này **không** đổi vé đã bán.
+- **Soát vé:** `/Admin/CheckIn` (Admin, BranchAdmin đúng chi nhánh). Vé phải đã thanh toán, chỉ vào một lần,
+  cổng mở trước giờ chiếu 60 phút và đóng khi hết suất.
+- **Trang vé công khai** che họ tên/email/SĐT; chủ vé, khách vừa đặt trong phiên, Admin và BranchAdmin đúng chi
+  nhánh thấy đầy đủ.
+- **Ghế đôi** đặt được ở hàng nào cũng được: ghép hai ghế liền kề cùng hàng ở trang "Sửa ghế".
+- **Gợi ý lịch cả ngày** (`/Admin/Showtimes/AutoPlan`): phim khởi chiếu gần nhất → phòng lớn nhất, giờ vàng.
+- **Bảng giá vé (theo loại phòng/ghế, không theo phim):** mỗi chi nhánh có một bảng giá (`TheaterPricing`): giá ghế thường theo
+  loại phòng (2D/3D/IMAX/4DX) + phụ thu ghế (VIP, mỗi nửa ghế đôi) + phụ thu giờ cao điểm + phụ thu cuối tuần. Công thức nằm ở
+  một chỗ (`PricingRules` trong Domain) và được dùng cho trang công khai `/Prices` (khách xem giá + so sánh chi nhánh), sơ đồ ghế,
+  thanh toán, "Gợi ý lịch cả ngày" và dữ liệu demo. Admin/BranchAdmin chỉnh ở `/Admin/Pricing` (gõ theo nghìn đồng) và có nút
+  áp bảng giá cho các suất chưa chiếu (suất đã có vé giữ nguyên). `Showtime.BasePrice` là giá chụp lại của ghế thường.
+- **Mã giảm giá (voucher):** khách nhập ở bước thanh toán. Mã giảm % (có trần) hoặc số tiền cố định, giới hạn chi nhánh, đơn tối
+  thiểu, ngày hiệu lực, tổng số lượt và số lần mỗi khách (theo tài khoản hoặc email). Tính trên tổng tiền SAU khuyến mãi, không bao
+  giờ để đơn dưới 1.000đ, kiểm lại ở server lúc chốt đơn, và được chia vào giá từng ghế để doanh thu vẫn khớp. Đơn hủy/hết hạn
+  trả lại lượt dùng. Quản lý ở `/Admin/Vouchers` (BranchAdmin chỉ mã của chi nhánh mình). Mã demo: `CINE10`, `WELCOME20`,
+  `COUPLE50`, `LONGBIEN15`, `HETHAN` (đã hết hạn, để thử lỗi).
+- **Tài khoản quản trị không mua vé:** Admin/BranchAdmin chỉ xem sơ đồ ghế (không giữ ghế, không thanh toán, không vào được "Vé của tôi");
+  muốn thử mua vé hãy dùng tài khoản khách.
+- **Quản lý tài khoản** (`/Admin/Users`, chỉ Admin): tìm/lọc tài khoản, tạo tài khoản quản lý chi nhánh và gán chi nhánh,
+  khóa/mở khóa, đặt lại mật khẩu. Chi nhánh có thêm điện thoại, email, giờ mở cửa, giới thiệu.
+- **Tìm kiếm và lọc:** Hệ thống rạp (tên/địa chỉ/thành phố, không cần gõ dấu), trang chủ có gợi ý khi gõ, admin có tìm/lọc ở
+  Phim, Chi nhánh, Đơn đặt vé (mã/tên/email/SĐT + khoảng ngày + phân trang), Suất chiếu (theo phim/trạng thái), Tài khoản.
+- **Giá tiền:** hiển thị `90.000 đ`; ô nhập giá gõ theo nghìn đồng (gõ `95` = 95.000đ).
+- **Lối đi dọc** khi tạo phòng chỉ hợp lệ trong khoảng [2, số cột − 3] (mỗi bên ít nhất 2 ghế), phòng cần ≥ 5 cột.
+- **Dữ liệu demo phong phú:** chạy tự động khi `dotnet run` ở Development (9 chi nhánh, 17 phim, ~3.000 suất, hàng chục nghìn đơn).
+  Tắt bằng `Seed:DemoData=false`. Tài khoản mẫu: `khach01@example.com`…`khach20@example.com` / `Khach@12345`;
+  `branch.<tên>@cinemabooking.local` / `Branch@12345`.
+- **Phòng và phim:** phòng có loại (2D/3D/IMAX/4DX), suất có ngôn ngữ (bản gốc/phụ đề/lồng tiếng), phim có độ tuổi,
+  đạo diễn, diễn viên, trailer.
+
+---
+
+## Thanh toán VNPAY (Sandbox) và hủy vé
 
 `Vnpay:TmnCode`, `Vnpay:PaymentUrl`, `Vnpay:ReturnUrl`… nằm trong `appsettings.json`. Riêng
 `Vnpay:HashSecret` **không commit**; đặt bằng user-secrets:
@@ -151,14 +222,18 @@ chuỗi tay: gõ sai thì build vẫn xanh, lỗi chỉ lộ lúc chạy dưới
 dotnet user-secrets set "Vnpay:HashSecret" "..." --project src/CinemaBooking.Web
 ```
 
-- `Vnpay:RefundEnabled=false`: hủy vé sẽ hoàn tiền mô phỏng (chỉ đổi trạng thái), dùng khi
-  merchant sandbox chưa được cấp quyền API hoàn tiền.
-- `Vnpay:RefundEnabled=true`: gọi thật `POST /merchant_webapi/api/transaction`. Nếu VNPAY trả
-  `vnp_ResponseCode=99` (`Unexpected error`), kiểm tra merchant đã bật quyền **Refund/Querydr**
-  và đã whitelist IP máy chủ gửi request chưa. Lỗi này không làm mất vé: đơn vẫn `Confirmed`,
-  ghế vẫn giữ và khách có thể bấm hủy lại.
-- `Vnpay:IpAddr`: IP máy chủ gửi API (không phải IP khách). Khi triển khai thật phải đặt IP
-  công khai của server, không dùng `127.0.0.1`.
+Chưa có `HashSecret` thì môi trường Development mô phỏng thanh toán thành công (`Vnpay:SimulateWhenUnconfigured`).
+
+**Khách không tự hủy được vé đã mua.** Chỉ rạp hủy khi lỗi ở phía rạp:
+
+- Một đơn: `/Admin/Bookings/Details/{id}` → *Hủy vé và hoàn tiền* (Admin hoặc BranchAdmin đúng chi nhánh, bắt buộc nhập lý do).
+- Cả suất: `/Admin/Showtimes/Edit/{id}` → *Hủy suất và toàn bộ vé*, suất được ẩn luôn.
+- Hủy xong: ghế trả lại, lượt voucher trả lại, đơn ra khỏi doanh thu, khách nhận email kèm lý do. Tiền **hoàn thủ công** (không
+  gọi API hoàn tiền của VNPAY); đơn ở trạng thái *Chờ hoàn tiền* cho tới khi bấm *Đánh dấu đã hoàn tiền*.
+- Vé đã soát hoặc suất đã bắt đầu thì không hủy được.
+
+**Vé đã bán được bảo vệ:** suất có vé không đổi được phim, phòng, giờ. Phim và chi nhánh còn vé của suất chưa chiếu không ẩn/đóng
+được. Tạm ẩn một suất chỉ ngừng bán thêm, vé đã bán vẫn có hiệu lực.
 
 ---
 

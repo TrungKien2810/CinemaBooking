@@ -109,6 +109,9 @@ public sealed class SeatLockCleanerTests
                 _group = group;
             }
 
+            public Task SeatFreed(IReadOnlyList<int> seatIds) =>
+                throw new NotSupportedException("Bộ dọn lock không trả ghế đã đặt.");
+
             public Task SeatUnlocked(IReadOnlyList<int> seatIds)
             {
                 _hub.Broadcasts.Add((_group, seatIds));
