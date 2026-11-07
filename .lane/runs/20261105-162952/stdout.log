@@ -1,0 +1,42 @@
+RESULT: done
+
+FILES_CHANGED:
+- src/CinemaBooking.Web/Views/Booking/SeatMap.cshtml
+- src/CinemaBooking.Web/Views/Booking/_BookingSteps.cshtml
+- src/CinemaBooking.Web/Views/Booking/Checkout.cshtml
+- src/CinemaBooking.Web/Views/Booking/_CheckoutForm.cshtml
+- src/CinemaBooking.Web/Views/Booking/Confirmation.cshtml
+- src/CinemaBooking.Web/Views/Booking/_BookingDetails.cshtml
+- src/CinemaBooking.Web/Views/Booking/Lookup.cshtml
+- src/CinemaBooking.Web/Views/Booking/MyBookings.cshtml
+- src/CinemaBooking.Web/Views/Booking/BookingNotFound.cshtml
+- src/CinemaBooking.Web/wwwroot/css/seatmap.css
+- src/CinemaBooking.Web/wwwroot/css/booking.css
+- src/CinemaBooking.Web/wwwroot/js/seat-map.js
+- src/CinemaBooking.Web/wwwroot/js/checkout-timer.js
+
+VERIFY:
+```
+dotnet build src/CinemaBooking.Web
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  CinemaBooking.Domain -> D:\Edu\Project\CinemaBooking\src\CinemaBooking.Domain\bin\Debug\net9.0\CinemaBooking.Domain.dll
+  CinemaBooking.Infrastructure -> D:\Edu\Project\CinemaBooking\src\CinemaBooking.Infrastructure\bin\Debug\net9.0\CinemaBooking.Infrastructure.dll
+  CinemaBooking.Web -> D:\Edu\Project\CinemaBooking\src\CinemaBooking.Web\bin\Debug\net9.0\CinemaBooking.Web.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.90
+```
+
+NOTES:
+- **SeatMap (Cú cược L3)**: Thiết kế khán phòng nhìn từ ghế giữa: màn hình chiếu vòm cong phát sáng xanh lơ (`--cb-beam`) với chùm sáng máy chiếu dập dờn nhẹ; hàng ghế uốn cong hình cung theo hàm parabol (`--seat-curve-y`, `--seat-curve-r`) tính toán trong `seat-map.js`; ghế nhung tím đầu tròn tựa lưng (`--cb-radius-seat`), tay vịn hai bên, VIP viền vàng đồng ánh kim, ghế đôi sofa liền khối 2 cột (`couple`); trạng thái ghế trực quan (trống nhung tím, giữ sọc chéo hồng cánh sen, đặt dấu ✕ mờ, chọn sáng rực hổ phách nảy nhẹ `--cb-ease-snap`); thanh chốt đơn nổi kính mờ ở đáy màn hình (`.seat-summary-dock`); hỗ trợ cuộn ngang chống tràn màn hình 360px.
+- **SignalR Realtime**: Giữ nguyên toàn bộ logic kết nối `/hubs/seat`, snapshot, lock/unlock, reject và đồng hồ đếm ngược 5 phút với nhịp cảnh báo `.is-warning`.
+- **Checkout & Confirmation**: Thiết kế tấm vé giấy (`.cb-ticket`) có đường răng cưa xé vé, hai khấc cắt tròn bán nguyệt mép vé, mã vé chữ lớn tabular-nums, mã vạch trang trí và mã QR quét vé. Hỗ trợ in vé chuyên dụng qua `@media print`.
+- **Form thanh toán**: Form phẳng tương phản cao (`.cb-checkout-form-card`, `.cb-input`, `.cb-payment-option`), hit-target >= 44px, viền focus xanh lơ `--cb-focus-ring`.
+- **Motion**: Tuân thủ luật ui-motion với comment `trigger -> state nó giải thích -> token dur -> token ease` cho toàn bộ hiệu ứng, đầy đủ fallback khi bật `prefers-reduced-motion: reduce`.
+- **Hợp đồng**: Giữ nguyên toàn bộ `id`, `data-*`, `asp-*`, tên class JS và logic Razor của view models.
+
+BLOCKED: none

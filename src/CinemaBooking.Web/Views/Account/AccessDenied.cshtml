@@ -1,15 +1,38 @@
-﻿@{
+@{
     ViewData["Title"] = "Không có quyền truy cập";
 }
 
-<div class="auth-shell">
-    <div class="cb-card auth-card text-center">
-        <div class="auth-icon" aria-hidden="true">🔒</div>
-        <h1 class="auth-title">Không có quyền truy cập</h1>
-        <p class="cb-muted">
-            Tài khoản của bạn không được phép mở trang này. Nếu bạn nghĩ đây là nhầm lẫn,
-            hãy liên hệ quản trị viên.
+@section Styles {
+    <link rel="stylesheet" href="~/css/account.css" asp-append-version="true" />
+}
+
+<div class="denied-stage">
+    <!-- Cánh cửa nhung cấm vào bên trái -->
+    <div class="denied-visual-col">
+        <div class="denied-sign-plate">
+            <span class="denied-restricted-text">KHU VỰC GIỚI HẠN</span>
+        </div>
+    </div>
+
+    <!-- Khối giải thích & hành động bên phải -->
+    <div class="denied-content-col">
+        <span class="cb-badge cb-badge-danger" style="width: fit-content;">Truy cập bị từ chối</span>
+        <h1 class="denied-title">Bạn không có quyền truy cập trang này</h1>
+        <p class="denied-desc">
+            Khu vực bạn đang cố gắng mở chỉ dành riêng cho các tài khoản quản trị hoặc vai trò được phân quyền đặc biệt.
+            Nếu bạn đang đăng nhập sai tài khoản, hãy chuyển sang tài khoản có quyền thích hợp.
         </p>
-        <a class="btn btn-primary" asp-controller="Home" asp-action="Index">Về trang chủ</a>
+
+        <div class="denied-actions">
+            <a class="cb-btn cb-btn-primary" asp-controller="Home" asp-action="Index">
+                Về trang chủ
+            </a>
+            <a class="cb-btn cb-btn-secondary" asp-controller="Booking" asp-action="MyBookings">
+                Vé của tôi
+            </a>
+            <a class="cb-btn cb-btn-outline" asp-controller="Account" asp-action="Login">
+                Đăng nhập tài khoản khác
+            </a>
+        </div>
     </div>
 </div>

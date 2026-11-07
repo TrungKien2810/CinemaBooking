@@ -1,26 +1,23 @@
-﻿@model ErrorViewModel
+@model ErrorViewModel
 @{
     ViewData["Title"] = "Có lỗi xảy ra";
 }
 
-<div class="error-shell">
-    <div class="cb-card error-card">
-        <div class="error-icon" aria-hidden="true">⚠️</div>
-        <h1>Có lỗi xảy ra</h1>
-        <p class="cb-muted">
-            Hệ thống chưa xử lý được yêu cầu này. Bạn thử tải lại trang hoặc quay về trang chủ nhé.
+<div class="cb-empty" style="max-width: 640px; margin: 3rem auto;">
+    <h1 class="cb-empty-title">Có lỗi xảy ra</h1>
+    <p class="cb-empty-desc">
+        Hệ thống chưa xử lý được yêu cầu này. Bạn có thể thử tải lại trang hoặc quay về trang chủ.
+    </p>
+
+    @if (Model.ShowRequestId)
+    {
+        <p class="cb-faint" style="font-size: 0.8125rem; margin-bottom: 1.5rem;">
+            Mã yêu cầu: <code style="color: var(--cb-accent); font-family: var(--cb-font-ticket);">@Model.RequestId</code>
         </p>
+    }
 
-        @if (Model.ShowRequestId)
-        {
-            <p class="cb-muted" style="font-size: 0.8rem">
-                Mã yêu cầu: <code>@Model.RequestId</code>
-            </p>
-        }
-
-        <div class="d-flex gap-2 justify-content-center flex-wrap mt-3">
-            <a class="btn btn-primary" asp-controller="Home" asp-action="Index">Về trang chủ</a>
-            <a class="btn btn-outline-secondary" href="javascript:history.back()">Quay lại</a>
-        </div>
+    <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <a class="cb-btn cb-btn-primary" asp-controller="Home" asp-action="Index">Về trang chủ</a>
+        <a class="cb-btn cb-btn-secondary" href="javascript:history.back()">Quay lại</a>
     </div>
 </div>

@@ -1,0 +1,11 @@
+runs in D:\Edu\Project\CinemaBooking (.lane/runs)
+  20261105-162959  stale  agy  0 files
+  20261105-162955  stale  agy  0 files
+  20261105-162952  stale  agy  0 files
+  20261105-162935  stale  agy  0 files
+  20261105-161754  stale  agy  0 files
+  20261105-155312  running  agy  0 files
+  20261105-155258  dry-run  agy  0 files
+  20261105-155250  dry-run  agy  0 files
+  20261105-154553  running  agy  0 files
+  20261105-153123  done  agy  834s  exit 0  40 files  30 outside allow

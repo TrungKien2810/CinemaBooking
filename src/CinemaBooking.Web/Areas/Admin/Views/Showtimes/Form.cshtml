@@ -5,51 +5,56 @@
 }
 
 <div class="admin-page-head">
-    <div>
-        <a asp-action="Index" class="back-link">← Danh sách suất chiếu</a>
-        <h1 class="page-title">@ViewData["Title"]</h1>
+    <div class="admin-page-title-wrap">
+        <a asp-action="Index" class="admin-back-link">← Danh sách suất chiếu</a>
+        <h1 class="admin-page-title">@ViewData["Title"]</h1>
+        <p class="admin-page-subtitle">Xếp lịch và ấn định giá vé cơ bản cho suất chiếu.</p>
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form admin-form-narrow">
-    <div asp-validation-summary="ModelOnly"></div>
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="admin-form admin-form-narrow">
+    <div asp-validation-summary="ModelOnly" class="cb-alert cb-alert-danger" style="margin-bottom: 1.5rem;"></div>
 
-    <div class="mb-3">
-        <label asp-for="MovieId" class="form-label"></label>
-        <select asp-for="MovieId" asp-items="Model.Movies" class="form-select">
+    <div class="admin-form-group">
+        <label asp-for="MovieId" class="admin-label"></label>
+        <select asp-for="MovieId" asp-items="Model.Movies" class="admin-input">
             <option value="0">— Chọn phim —</option>
         </select>
-        <span asp-validation-for="MovieId" class="text-danger small"></span>
+        <span asp-validation-for="MovieId" class="admin-form-error"></span>
     </div>
-    <div class="mb-3">
-        <label asp-for="RoomId" class="form-label"></label>
-        @* Phòng gom nhóm theo "Thành phố · Chi nhánh" (optgroup) — chọn phòng là chọn luôn chi nhánh. *@
-        <select asp-for="RoomId" asp-items="Model.Rooms" class="form-select">
-            <option value="0">— Chọn phòng —</option>
+
+    <div class="admin-form-group">
+        <label asp-for="RoomId" class="admin-label"></label>
+        <select asp-for="RoomId" asp-items="Model.Rooms" class="admin-input">
+            <option value="0">— Chọn phòng chiếu —</option>
         </select>
-        <span asp-validation-for="RoomId" class="text-danger small"></span>
+        <span asp-validation-for="RoomId" class="admin-form-error"></span>
     </div>
-    <div class="row">
-        <div class="col-sm-7 mb-3">
-            <label asp-for="StartTimeLocal" class="form-label"></label>
-            <input asp-for="StartTimeLocal" type="datetime-local" class="form-control" />
-            <span asp-validation-for="StartTimeLocal" class="text-danger small"></span>
+
+    <div class="admin-form-grid admin-form-grid-2">
+        <div class="admin-form-group">
+            <label asp-for="StartTimeLocal" class="admin-label"></label>
+            <input asp-for="StartTimeLocal" type="datetime-local" class="admin-input" />
+            <span asp-validation-for="StartTimeLocal" class="admin-form-error"></span>
         </div>
-        <div class="col-sm-5 mb-3">
-            <label asp-for="BasePrice" class="form-label"></label>
-            <input asp-for="BasePrice" class="form-control" step="1000" />
-            <span asp-validation-for="BasePrice" class="text-danger small"></span>
+        <div class="admin-form-group">
+            <label asp-for="BasePrice" class="admin-label"></label>
+            <input asp-for="BasePrice" class="admin-input" type="number" step="1000" min="0" placeholder="VNĐ" />
+            <span asp-validation-for="BasePrice" class="admin-form-error"></span>
         </div>
     </div>
-    <ul class="form-text admin-hints">
-        <li>Giờ nhập theo giờ rạp; giờ kết thúc tự tính theo thời lượng phim.</li>
-        <li>Hai suất cùng phòng phải cách nhau ít nhất @CinemaBooking.Web.Areas.Admin.Controllers.ShowtimesController.CleaningBuffer.TotalMinutes phút để dọn phòng.</li>
-        <li>Mỗi chi nhánh xếp lịch và đặt giá riêng.</li>
+
+    <ul class="admin-hints">
+        <li>Giờ nhập theo giờ rạp; giờ kết thúc được hệ thống tự tính dựa trên thời lượng phim.</li>
+        <li>Hai suất chiếu trong cùng một phòng phải cách nhau tối thiểu @CinemaBooking.Web.Areas.Admin.Controllers.ShowtimesController.CleaningBuffer.TotalMinutes phút để dọn dẹp vệ sinh.</li>
+        <li>Giá vé cơ bản là giá cho ghế Thường; ghế VIP và ghế đôi sẽ áp dụng hệ số phụ thu tự động.</li>
     </ul>
 
     <div class="admin-form-actions">
-        <button type="submit" class="btn btn-primary">Lưu</button>
-        <a asp-action="Index" class="btn btn-link">Hủy</a>
+        <button type="submit" class="cb-btn cb-btn-primary">
+            <span>💾</span> Lưu suất chiếu
+        </button>
+        <a asp-action="Index" class="cb-btn cb-btn-ghost">Hủy</a>
     </div>
 </form>
 

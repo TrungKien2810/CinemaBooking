@@ -3,11 +3,14 @@
     ViewData["Title"] = "Không tìm thấy vé";
 }
 
-<div class="error-shell">
-    <div class="cb-card error-card">
-        <div class="error-icon" aria-hidden="true">🎟️</div>
-        <h1>Không tìm thấy vé</h1>
-        <p class="cb-muted">
+@section Styles {
+    <link rel="stylesheet" href="~/css/booking.css" asp-append-version="true" />
+}
+
+<div class="cb-error-container">
+    <div class="cb-empty">
+        <h1 class="cb-empty-title">Không tìm thấy vé</h1>
+        <p class="cb-empty-desc">
             @if (string.IsNullOrWhiteSpace(Model))
             {
                 @:Mã vé không hợp lệ hoặc chưa được nhập.
@@ -17,9 +20,13 @@
                 <text>Không có vé nào khớp với mã <strong>@Model</strong>. Vui lòng kiểm tra lại email xác nhận.</text>
             }
         </p>
-        <div class="d-flex gap-2 justify-content-center flex-wrap mt-3">
-            <a asp-controller="Booking" asp-action="Lookup" class="btn btn-primary">Tra cứu lại</a>
-            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Về trang chủ</a>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem;">
+            <a asp-controller="Booking" asp-action="Lookup" class="cb-btn cb-btn-primary">
+                Tra cứu lại
+            </a>
+            <a asp-controller="Home" asp-action="Index" class="cb-btn cb-btn-outline">
+                Về trang chủ
+            </a>
         </div>
     </div>
 </div>

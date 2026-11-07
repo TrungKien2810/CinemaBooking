@@ -1,63 +1,83 @@
 @model List<TheaterListItem>
 @{
     ViewData["Title"] = "Quản lý chi nhánh";
-    // Controller đã sắp theo City rồi Name, GroupBy giữ nguyên thứ tự đó.
     var byCity = Model.GroupBy(t => t.City).ToList();
 }
 
 <div class="admin-page-head">
-    <div>
-        <h1 class="page-title">Chi nhánh</h1>
-        <p class="cb-muted page-subtitle">@Model.Count chi nhánh · @byCity.Count thành phố · @Model.Sum(t => t.RoomCount) phòng chiếu</p>
+    <div class="admin-page-title-wrap">
+        <h1 class="admin-page-title">Chi nhánh &amp; Rạp</h1>
+        <p class="admin-page-subtitle">@Model.Count chi nhánh · @byCity.Count khu vực / thành phố · @Model.Sum(t => t.RoomCount) phòng chiếu</p>
     </div>
-    <a asp-action="Create" class="btn btn-primary">Thêm chi nhánh</a>
+    <div class="admin-page-actions">
+        <a asp-action="Create" class="cb-btn cb-btn-primary">
+            <span>+</span> Thêm chi nhánh mới
+        </a>
+    </div>
 </div>
 
 @if (Model.Count == 0)
 {
-    <div class="cb-card empty-state">
-        <p class="empty-title">Chưa có chi nhánh nào</p>
-        <p class="cb-muted">Thêm chi nhánh, rồi thêm phòng chiếu cho chi nhánh đó.</p>
+    <div class="cb-empty">
+        <div class="cb-empty-icon" aria-hidden="true">🏢</div>
+        <h3 class="cb-empty-title">Chưa có chi nhánh nào</h3>
+        <p class="cb-empty-desc">Thêm chi nhánh cụm rạp đầu tiên để quản lý các phòng chiếu và lịch chiếu.</p>
+        <a asp-action="Create" class="cb-btn cb-btn-primary">Thêm chi nhánh ngay</a>
     </div>
 }
 else
 {
-    <div class="cb-card admin-table-wrap">
-        <table class="table admin-table align-middle mb-0">
+    <div class="admin-table-wrap">
+        <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Chi nhánh</th>
-                    <th>Địa chỉ</th>
-                    <th class="text-end">Phòng</th>
+                    <th>Tên chi nhánh</th>
+                    <th>Địa chỉ rạp</th>
+                    <th class="cb-num">Phòng chiếu</th>
                     <th>Trạng thái</th>
-                    <th></th>
+                    <th class="admin-actions">Thao tác</th>
                 </tr>
             </thead>
             @foreach (var city in byCity)
             {
                 <tbody>
                     <tr class="admin-group-row">
-                        <th colspan="5" scope="rowgroup">@city.Key <span class="cb-muted fw-normal">· @city.Count() chi nhánh</span></th>
+                        <th colspan="5" scope="rowgroup">
+                            <span>📍 @city.Key</span>
+                            <span style="color: var(--cb-text-muted); font-weight: 500; font-size: 0.75rem;">· @city.Count() chi nhánh</span>
+                        </th>
                     </tr>
                     @foreach (var t in city)
                     {
                         <tr class="@(t.IsActive ? null : "is-inactive")">
-                            <td class="fw-semibold">@t.Name</td>
-                            <td>@(t.Address ?? "—")</td>
-                            <td class="text-end">@t.RoomCount</td>
                             <td>
-                                <span class="status-badge @(t.IsActive ? "is-on" : "is-off")">@(t.IsActive ? "Đang hoạt động" : "Đã đóng")</span>
+                                <div style="font-weight: 600; color: var(--cb-text);">@t.Name</div>
+                            </td>
+                            <td>
+                                <span style="color: var(--cb-text-muted);">@(t.Address ?? "—")</span>
+                            </td>
+                            <td class="cb-num" style="font-weight: 700; color: var(--cb-accent);">@t.RoomCount</td>
+                            <td>
+                                <span class="status-badge @(t.IsActive ? "is-on" : "is-off")">
+                                    @(t.IsActive ? "Đang hoạt động" : "Đã đóng")
+                                </span>
                             </td>
                             <td class="admin-actions">
-                                <a asp-controller="Rooms" asp-action="Index" asp-route-theaterId="@t.Id" class="btn btn-sm btn-outline-primary">Phòng chiếu</a>
-                                <a asp-action="Edit" asp-route-id="@t.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
-                                @if (t.IsActive)
-                                {
-                                    <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline"
-                                          data-confirm="Đóng chi nhánh “@t.Name”? Khách sẽ không thấy suất chiếu của chi nhánh này nữa.">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Đóng</button>
-                                    </form>
-                                }
+                                <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
+                                    <a asp-controller="Rooms" asp-action="Index" asp-route-theaterId="@t.Id" class="cb-btn cb-btn-outline cb-btn-sm" title="Quản lý danh sách phòng chiếu">
+                                        <span>🪑</span> Phòng chiếu
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@t.Id" class="cb-btn cb-btn-secondary cb-btn-sm">
+                                        Sửa
+                                    </a>
+                                    @if (t.IsActive)
+                                    {
+                                        <form asp-action="Delete" asp-route-id="@t.Id" method="post" style="display: inline;"
+                                              data-confirm="Đóng chi nhánh “@t.Name”? Khách sẽ không thấy suất chiếu của chi nhánh này nữa.">
+                                            <button type="submit" class="cb-btn cb-btn-danger cb-btn-sm">Đóng</button>
+                                        </form>
+                                    }
+                                </div>
                             </td>
                         </tr>
                     }

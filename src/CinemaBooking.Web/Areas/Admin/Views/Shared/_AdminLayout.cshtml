@@ -1,54 +1,114 @@
 @{
-    // Lồng trong layout chung: giữ nguyên navbar, footer, css và script của site,
-    // chỉ chia phần thân thành sidebar + nội dung.
-    Layout = "/Views/Shared/_Layout.cshtml";
-
     var current = ViewContext.RouteData.Values["controller"] as string;
 
-    // Phòng chiếu không có mục riêng: phòng luôn đi từ một chi nhánh, nên sáng mục Chi nhánh.
     string ActiveIf(params string[] controllers) =>
         controllers.Contains(current, StringComparer.OrdinalIgnoreCase) ? "active" : string.Empty;
+
+    var displayName = User.Identity?.Name ?? "Admin";
+    var initial = string.IsNullOrWhiteSpace(displayName) ? "A" : displayName.Substring(0, 1).ToUpperInvariant();
+    var roleLabel = User.IsInRole(AppRoles.Admin) ? "Quản trị viên" : "Quản lý chi nhánh";
 }
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · Quản trị CinemaBooking</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Unbounded:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="admin-shell">
+        <aside class="admin-sidebar" aria-label="Menu quản trị">
+            <div class="admin-sidebar-brand">
+                <span class="admin-sidebar-brand-mark" aria-hidden="true">🎬</span>
+                <div class="admin-sidebar-brand-text">
+                    <span class="admin-sidebar-title">CINEMA</span>
+                    <span class="admin-sidebar-tagline">Quản trị hệ thống</span>
+                </div>
+            </div>
 
-<div class="admin-shell">
-    <aside class="admin-sidebar cb-card" aria-label="Menu quản trị">
-        <div class="admin-sidebar-brand">
-            <span class="brand-mark" aria-hidden="true">🎬</span>
-            <span class="admin-sidebar-title">Quản trị</span>
-        </div>
-        <nav class="admin-nav">
-            @if (User.IsInRole(AppRoles.Admin))
-            {
-                <a asp-area="Admin" asp-controller="Movies" asp-action="Index"
-                   class="admin-nav-link @ActiveIf("Movies")" data-icon="🎬">Phim</a>
-                <a asp-area="Admin" asp-controller="Theaters" asp-action="Index"
-                   class="admin-nav-link @ActiveIf("Theaters", "Rooms")" data-icon="🏢">Chi nhánh &amp; phòng</a>
-                <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
-                   class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">Suất chiếu</a>
-                <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
-                   class="admin-nav-link @ActiveIf("Bookings")" data-icon="🎟️">Đặt vé</a>
-                <a asp-area="Admin" asp-controller="Revenue" asp-action="Index"
-                   class="admin-nav-link @ActiveIf("Revenue")" data-icon="📊">Doanh thu</a>
-            }
-            else
-            {
-                @* BranchAdmin: chỉ phòng/ghế và suất chiếu của chi nhánh mình. *@
-                <a asp-area="Admin" asp-controller="Rooms" asp-action="Index"
-                   class="admin-nav-link @ActiveIf("Rooms")" data-icon="🪑">Phòng &amp; ghế</a>
-                <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
-                   class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">Suất chiếu</a>
-            }
-        </nav>
-        <div class="admin-sidebar-foot">
-            <a asp-area="" asp-controller="Home" asp-action="Index" class="admin-nav-link">← Về trang khách</a>
-        </div>
-    </aside>
+            <nav class="admin-nav">
+                @if (User.IsInRole(AppRoles.Admin))
+                {
+                    <div class="admin-nav-section-title">Danh mục</div>
+                    <a asp-area="Admin" asp-controller="Movies" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Movies")" data-icon="🎬">
+                        <span class="admin-nav-icon" aria-hidden="true">🎬</span>
+                        <span>Phim</span>
+                    </a>
+                    <a asp-area="Admin" asp-controller="Theaters" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Theaters", "Rooms")" data-icon="🏢">
+                        <span class="admin-nav-icon" aria-hidden="true">🏢</span>
+                        <span>Chi nhánh &amp; phòng</span>
+                    </a>
+                    <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">
+                        <span class="admin-nav-icon" aria-hidden="true">🕐</span>
+                        <span>Suất chiếu</span>
+                    </a>
+                    <div class="admin-nav-section-title">Kinh doanh</div>
+                    <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Bookings")" data-icon="🎟️">
+                        <span class="admin-nav-icon" aria-hidden="true">🎟️</span>
+                        <span>Đặt vé</span>
+                    </a>
+                    <a asp-area="Admin" asp-controller="Revenue" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Revenue")" data-icon="📊">
+                        <span class="admin-nav-icon" aria-hidden="true">📊</span>
+                        <span>Doanh thu</span>
+                    </a>
+                }
+                else
+                {
+                    <div class="admin-nav-section-title">Quản lý rạp</div>
+                    <a asp-area="Admin" asp-controller="Rooms" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Rooms")" data-icon="🪑">
+                        <span class="admin-nav-icon" aria-hidden="true">🪑</span>
+                        <span>Phòng &amp; ghế</span>
+                    </a>
+                    <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">
+                        <span class="admin-nav-icon" aria-hidden="true">🕐</span>
+                        <span>Suất chiếu</span>
+                    </a>
+                }
+            </nav>
 
-    <section class="admin-content">
-        @RenderBody()
-    </section>
-</div>
+            <div class="admin-sidebar-foot">
+                <div class="admin-user-info">
+                    <div class="admin-user-avatar" aria-hidden="true">@initial</div>
+                    <div class="admin-user-meta">
+                        <div class="admin-user-name" title="@displayName">@displayName</div>
+                        <div class="admin-user-role">@roleLabel</div>
+                    </div>
+                </div>
+                <div class="admin-sidebar-actions">
+                    <a asp-area="" asp-controller="Home" asp-action="Index" class="admin-sidebar-btn" title="Về trang đặt vé của khách">
+                        <span>←</span> Trang khách
+                    </a>
+                    <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" style="display:contents;">
+                        <button type="submit" class="admin-sidebar-btn admin-sidebar-btn-danger" title="Đăng xuất khỏi hệ thống">
+                            <span>🚪</span> Thoát
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </aside>
 
-@section Scripts {
+        <section class="admin-content">
+            @RenderBody()
+        </section>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
-}
+</body>
+</html>

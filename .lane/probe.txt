@@ -1,0 +1,29 @@
+
+motion-probe — 3 page(s)
+
+  http://localhost:5005/
+    [HIGH] MP4 — content left invisible
+        p.cr-film-genre "Khoa học viễn tưởng" (JavaScript off), a "Dune: Part Two" (JavaScript off), p.cr-film-meta "166 phút, khởi chiếu 01/" (JavaScript off), a.cr-chip.cr-chip-go "Chọn suất" (JavaScript off), p.cr-film-genre "Hài" (JavaScript off) (+5)
+        fix: the visible state is the default; the script adds the "before" state only when it is about to animate (a class it sets on <html>, `gsap.from`, Motion `initial`), and the reduced branch shows the end state
+    measured — 60 animation(s): css-animation 6, css-transition 54 · by phase: load 6, hover 49, scroll 5
+               durations: 120, 180, 820ms · easings: cubic-bezier(0.23, 1, 0.32, 1) | linear
+               reduced motion: 37 animation(s) · JavaScript off: 12 hidden text block(s) · gsap: not exposed on window
+               js-driven (style writes): 0 element(s)
+               not composited: ARTICLE class='cr-film' (—: filter may move pixels) · A class='cr-chip' (letter-spacing: unsupported property) · A class='cr-chip' (color: unsupported property) · A class='cr-chip' (border-bottom-color: unsupported property) · A class='cr-chip' (border-left-color: unsupported property) · A class='cr-chip' (border-right-color: unsupported property) · A class='cr-chip' (border-top-color: unsupported property) · BUTTON class='cb-btn cb-btn-primary' (border-top-color: unsupported property) · A class='cr-chip' (background-color: unsupported property)
+
+  http://localhost:5005/Account/Login
+    nothing to report.
+    measured — 30 animation(s): css-transition 30 · by phase: hover 29, scroll 1
+               durations: 120, 180ms · easings: cubic-bezier(0.23, 1, 0.32, 1)
+               reduced motion: 18 animation(s) · JavaScript off: 0 hidden text block(s) · gsap: not exposed on window
+               js-driven (style writes): 0 element(s)
+               not composited: A (—: filter may move pixels) · BUTTON class='cb-btn cb-btn-primary auth-submit-btn' (—: filter may move pixels) · BUTTON class='cb-btn cb-btn-primary auth-submit-btn' (letter-spacing: unsupported property) · A (color: unsupported property) · A (border-bottom-color: unsupported property) · A (border-left-color: unsupported property) · BUTTON class='cb-btn cb-btn-primary auth-submit-btn' (border-right-color: unsupported property) · BUTTON class='cb-btn cb-btn-primary auth-submit-btn' (color: unsupported property) · BUTTON class='cb-btn cb-btn-primary auth-submit-btn' (border-top-color: unsupported property) · BUTTON class='cb-btn cb-btn-primary auth-submit-btn' (background-color: unsupported property)
+
+  http://localhost:5005/Booking/Lookup
+    nothing to report.
+    measured — 30 animation(s): css-animation 2, css-transition 28 · by phase: load 2, hover 27, scroll 1
+               durations: 120, 180, 820ms · easings: cubic-bezier(0.23, 1, 0.32, 1)
+               reduced motion: 20 animation(s) · JavaScript off: 0 hidden text block(s) · gsap: not exposed on window
+               js-driven (style writes): 0 element(s)
+               not composited: A (letter-spacing: unsupported property) · A (color: unsupported property) · A (border-bottom-color: unsupported property) · BUTTON class='cb-btn cb-btn-primary' (border-left-color: unsupported property) · BUTTON class='cb-btn cb-btn-primary' (border-right-color: unsupported property) · BUTTON class='cb-btn cb-btn-primary' (color: unsupported property) · BUTTON class='cb-btn cb-btn-primary' (border-top-color: unsupported property) · A (border-left-color: unsupported property) · BUTTON class='cb-btn cb-btn-primary' (background-color: unsupported property)
+

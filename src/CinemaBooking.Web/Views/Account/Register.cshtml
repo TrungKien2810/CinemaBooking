@@ -1,76 +1,88 @@
-﻿@model RegisterViewModel
+@model RegisterViewModel
 @{
-    ViewData["Title"] = "Đăng ký";
+    ViewData["Title"] = "Đăng ký thành viên";
 }
 
-<div class="auth-shell">
-    <div class="cb-card auth-card">
-        <div class="auth-brand">
-            <span class="brand-mark" aria-hidden="true">🎬</span>
-            <span>CinemaBooking<span class="brand-accent">.Smart</span></span>
+@section Styles {
+    <link rel="stylesheet" href="~/css/account.css" asp-append-version="true" />
+}
+
+<div class="register-layout">
+    <div class="cr-auth-posters" aria-hidden="true">
+        <img src="~/img/posters/dia-dao.jpg" alt="" /><img src="~/img/posters/inside-out-2.jpg" alt="" />
+        <img src="~/img/posters/dune-part-two.jpg" alt="" /><img src="~/img/posters/nha-ba-nu.jpg" alt="" />
+        <img src="~/img/posters/mat-biec.jpg" alt="" /><img src="~/img/posters/dia-dao.jpg" alt="" />
+        <p class="cr-auth-tag">Một tài khoản, mọi suất chiếu.</p>
+    </div>
+
+    <!-- Cột phải: Form phẳng đăng ký -->
+    <div class="register-form-col">
+        <div class="register-form-head">
+            <h1 class="register-form-title">Tạo tài khoản</h1>
+            <p class="register-form-sub">Điền thông tin để đăng ký thành viên CinemaBooking.Smart.</p>
         </div>
 
-        <h1 class="auth-title">Tạo tài khoản</h1>
-        <p class="cb-muted auth-subtitle">Đặt vé nhanh hơn và tra cứu lại vé bất cứ lúc nào.</p>
+        <form asp-action="Register" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" class="auth-form">
+            <div asp-validation-summary="ModelOnly" class="auth-validation-summary"></div>
 
-        <form asp-action="Register" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post">
-            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
-
-            <div class="mb-3">
-                <label asp-for="FullName" class="form-label">Họ và tên</label>
-                <input asp-for="FullName" class="form-control" autocomplete="name" placeholder="Nguyễn Văn A" />
-                <span asp-validation-for="FullName" class="text-danger small"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Email" class="form-label">Email</label>
-                <input asp-for="Email" class="form-control" autocomplete="username" placeholder="ban@example.com" />
-                <span asp-validation-for="Email" class="text-danger small"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Password" class="form-label">Mật khẩu</label>
-                <div class="pwd-field">
-                    <input asp-for="Password" class="form-control" autocomplete="new-password"
-                           data-password-input />
-                    <button type="button" class="pwd-toggle" data-password-toggle="Password"
-                            aria-label="Hiện mật khẩu">👁️</button>
+            <div class="auth-field">
+                <label asp-for="FullName" class="auth-label">Họ và tên</label>
+                <div class="auth-input-wrap">
+                    <input asp-for="FullName" class="auth-input" autocomplete="name" placeholder="Nguyễn Văn A" />
                 </div>
-                <div class="pwd-strength" data-password-strength hidden>
-                    <div class="pwd-strength-track">
-                        <div class="pwd-strength-bar" data-password-bar></div>
+                <span asp-validation-for="FullName" class="auth-field-error"></span>
+            </div>
+
+            <div class="auth-field">
+                <label asp-for="Email" class="auth-label">Email</label>
+                <div class="auth-input-wrap">
+                    <input asp-for="Email" class="auth-input" autocomplete="username" placeholder="ban@example.com" />
+                </div>
+                <span asp-validation-for="Email" class="auth-field-error"></span>
+            </div>
+
+            <div class="auth-field">
+                <label asp-for="Password" class="auth-label">Mật khẩu</label>
+                <div class="auth-input-wrap">
+                    <input asp-for="Password" class="auth-input auth-input-has-toggle" autocomplete="new-password"
+                           placeholder="Tối thiểu 8 ký tự" data-password-input />
+                    <button type="button" class="auth-toggle-pwd" data-password-toggle="Password"
+                            aria-label="Hiện mật khẩu">Hiện</button>
+                </div>
+                <div class="auth-pwd-strength" data-password-strength hidden>
+                    <div class="auth-pwd-track">
+                        <div class="auth-pwd-bar" data-password-bar></div>
                     </div>
-                    <span class="pwd-strength-label" data-password-label></span>
+                    <span class="auth-pwd-label" data-password-label></span>
                 </div>
-                <span asp-validation-for="Password" class="text-danger small"></span>
-                <div class="form-text cb-muted">Tối thiểu 8 ký tự.</div>
+                <span asp-validation-for="Password" class="auth-field-error"></span>
+                <span class="auth-field-hint">Tối thiểu 8 ký tự, kết hợp chữ hoa, chữ thường và chữ số.</span>
             </div>
 
-            <div class="mb-4">
-                <label asp-for="ConfirmPassword" class="form-label">Nhập lại mật khẩu</label>
-                <div class="pwd-field">
-                    <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
-                    <button type="button" class="pwd-toggle" data-password-toggle="ConfirmPassword"
-                            aria-label="Hiện mật khẩu">👁️</button>
+            <div class="auth-field">
+                <label asp-for="ConfirmPassword" class="auth-label">Nhập lại mật khẩu</label>
+                <div class="auth-input-wrap">
+                    <input asp-for="ConfirmPassword" class="auth-input auth-input-has-toggle" autocomplete="new-password"
+                           placeholder="Nhập lại mật khẩu vừa đặt" />
+                    <button type="button" class="auth-toggle-pwd" data-password-toggle="ConfirmPassword"
+                            aria-label="Hiện mật khẩu">Hiện</button>
                 </div>
-                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                <span asp-validation-for="ConfirmPassword" class="auth-field-error"></span>
             </div>
 
-            <div class="terms-check">
-                <input id="terms" type="checkbox" required />
-                <span>
-                    <label for="terms" class="d-inline">Tôi đồng ý với</label>
-                    <a asp-controller="Home" asp-action="Privacy">Chính sách bảo mật</a>
-                    và các điều khoản sử dụng.
-                </span>
+            <div class="register-terms-box">
+                <input id="terms" type="checkbox" class="auth-checkbox" required />
+                <label for="terms" class="auth-terms-text">
+                    Tôi đồng ý với <a asp-controller="Home" asp-action="Privacy">Chính sách bảo mật</a> và các điều khoản dịch vụ của rạp.
+                </label>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100">Đăng ký</button>
+            <button type="submit" class="cb-btn cb-btn-primary auth-submit-btn">Đăng ký thành viên</button>
         </form>
 
-        <p class="auth-switch">
+        <p class="auth-switch-prompt">
             Đã có tài khoản?
-            <a asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]">Đăng nhập</a>
+            <a asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]">Đăng nhập ngay</a>
         </p>
     </div>
 </div>

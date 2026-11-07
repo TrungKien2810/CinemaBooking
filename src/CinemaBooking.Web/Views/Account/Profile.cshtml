@@ -1,46 +1,97 @@
 @model ProfileViewModel
 @{
-    ViewData["Title"] = "Tài khoản";
+    ViewData["Title"] = "Hồ sơ tài khoản";
+    var initial = string.IsNullOrWhiteSpace(Model.FullName)
+        ? (string.IsNullOrWhiteSpace(Model.Email) ? "?" : Model.Email.Substring(0, 1).ToUpperInvariant())
+        : Model.FullName.Substring(0, 1).ToUpperInvariant();
 }
 
-<section class="page-head">
-    <h1 class="page-title">Tài khoản của tôi</h1>
-    <p class="cb-muted page-subtitle">Cập nhật thông tin liên hệ dùng khi đặt vé.</p>
-</section>
-
-@if (TempData["Success"] is string success)
-{
-    <div class="alert alert-success" role="alert">@success</div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/account.css" asp-append-version="true" />
 }
 
-<div class="cb-card account-card">
-    <form asp-action="Profile" method="post">
-        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
-
-        <div class="mb-3">
-            <label asp-for="Email" class="form-label">Email đăng nhập</label>
-            <input asp-for="Email" class="form-control" readonly />
-            <div class="form-text">Email dùng để đăng nhập và không thể đổi tại đây.</div>
+<div class="profile-console">
+    <!-- Cột trái: Thẻ căn cước hội viên -->
+    <aside class="profile-badge-card">
+        <div class="profile-avatar-wrap" aria-hidden="true">
+            @initial
         </div>
 
-        <div class="mb-3">
-            <label asp-for="FullName" class="form-label">Họ và tên</label>
-            <input asp-for="FullName" class="form-control" autocomplete="name" />
-            <span asp-validation-for="FullName" class="text-danger small"></span>
+        <h2 class="profile-name-title">@(string.IsNullOrWhiteSpace(Model.FullName) ? "Khách xem phim" : Model.FullName)</h2>
+        <p class="profile-email-sub">@Model.Email</p>
+
+        <div class="profile-status-badge">
+            <span>★ Thành viên CinemaBooking</span>
         </div>
 
-        <div class="mb-3">
-            <label asp-for="PhoneNumber" class="form-label">Số điện thoại</label>
-            <input asp-for="PhoneNumber" class="form-control" autocomplete="tel" placeholder="0900000000" />
-            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+        <nav class="profile-nav-list" aria-label="Lối tắt tài khoản">
+            <a asp-controller="Booking" asp-action="MyBookings" class="profile-nav-link">
+                <span>Vé của tôi</span>
+            </a>
+            <a asp-action="ChangePassword" class="profile-nav-link">
+                <span>Đổi mật khẩu</span>
+            </a>
+            <a asp-controller="Home" asp-action="Index" class="profile-nav-link">
+                <span>Phim đang chiếu</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Cột phải: Form phẳng chỉnh sửa thông tin -->
+    <main class="profile-form-card">
+        <div class="profile-form-head">
+            <h1 class="profile-form-title">Hồ sơ cá nhân</h1>
+            <p class="profile-form-desc">
+                Thông tin liên hệ của bạn được sử dụng để xuất vé điện tử và hỗ trợ tra cứu tại quầy rạp.
+            </p>
         </div>
 
-        <div class="d-flex gap-2 flex-wrap">
-            <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
-            <a asp-action="ChangePassword" class="btn btn-outline-secondary">Đổi mật khẩu</a>
-            <a asp-controller="Booking" asp-action="MyBookings" class="btn btn-link">Vé của tôi</a>
-        </div>
-    </form>
+        @if (TempData["Success"] is string success)
+        {
+            <div class="auth-alert auth-alert-success" role="status">
+                <span class="auth-alert-icon" aria-hidden="true">✓</span>
+                <div>@success</div>
+            </div>
+        }
+
+        <form asp-action="Profile" method="post" class="auth-form">
+            <div asp-validation-summary="ModelOnly" class="auth-validation-summary"></div>
+
+            <div class="auth-field">
+                <div class="auth-label">
+                    <label asp-for="Email">Email đăng nhập</label>
+                    <span class="auth-label-badge">Định danh duy nhất</span>
+                </div>
+                <div class="auth-input-wrap">
+                    <input asp-for="Email" class="auth-input" readonly />
+                </div>
+                <span class="auth-field-hint">Email là định danh tài khoản và hòm thư nhận vé, không thể sửa đổi tại đây.</span>
+            </div>
+
+            <div class="auth-field">
+                <label asp-for="FullName" class="auth-label">Họ và tên</label>
+                <div class="auth-input-wrap">
+                    <input asp-for="FullName" class="auth-input" autocomplete="name" placeholder="Nguyễn Văn A" />
+                </div>
+                <span asp-validation-for="FullName" class="auth-field-error"></span>
+            </div>
+
+            <div class="auth-field">
+                <label asp-for="PhoneNumber" class="auth-label">Số điện thoại liên hệ</label>
+                <div class="auth-input-wrap">
+                    <input asp-for="PhoneNumber" class="auth-input" autocomplete="tel" placeholder="0900000000" />
+                </div>
+                <span asp-validation-for="PhoneNumber" class="auth-field-error"></span>
+                <span class="auth-field-hint">Dùng để nhân viên rạp đối soát vé khi nhận bắp nước hoặc vào phòng chiếu.</span>
+            </div>
+
+            <div class="profile-actions-bar">
+                <button type="submit" class="cb-btn cb-btn-primary">Lưu thay đổi</button>
+                <a asp-action="ChangePassword" class="cb-btn cb-btn-secondary">Đổi mật khẩu</a>
+                <a asp-controller="Booking" asp-action="MyBookings" class="cb-btn cb-btn-outline">Vé của tôi</a>
+            </div>
+        </form>
+    </main>
 </div>
 
 @section Scripts {

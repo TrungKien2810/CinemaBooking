@@ -1,0 +1,115 @@
+/* ===========================================================================
+   CinemaBooking — "Phòng Chiếu Đêm" design tokens (v2, thay hoàn toàn giao diện cũ)
+   Ý tưởng: nhung tím của khán phòng + ánh sáng đèn chiếu hổ phách + vé giấy xé răng cưa.
+   Nguồn sự thật DUY NHẤT cho màu / chữ / hình khối / chuyển động. Mọi CSS khác chỉ đọc var(--cb-*).
+   Không dùng đỏ-hồng #e11d48 cũ, không nền #0f1115 cũ.
+   =========================================================================== */
+
+:root {
+    /* ---- Màu nền: nhung tím đêm, tách lớp bằng sắc độ chứ không bằng viền xám ---- */
+    --cb-bg:          #0d0716;   /* khán phòng tắt đèn */
+    --cb-bg-elevated: #130b22;
+    --cb-surface:     #1a102c;   /* ghế nhung */
+    --cb-surface-2:   #25173f;
+    --cb-surface-3:   #33205a;
+    --cb-border:      #3b2760;
+    --cb-border-strong: #5a3d91;
+
+    /* ---- Chữ ---- */
+    --cb-text:        #f6eeff;
+    --cb-text-muted:  #b7a6d1;
+    --cb-text-faint:  #7d6ba0;
+    --cb-on-accent:   #1b0f00;   /* chữ trên nền hổ phách — tương phản > 9:1 */
+
+    /* ---- Màu nhấn: 3 vai, không hơn ---- */
+    --cb-accent-rgb:   255, 181, 71;     /* hổ phách đèn chiếu: hành động chính, ghế của bạn */
+    --cb-accent-hover-rgb: 255, 160, 30;
+    --cb-accent:       rgb(var(--cb-accent-rgb));
+    --cb-accent-hover: rgb(var(--cb-accent-hover-rgb));
+    --cb-accent-soft:  rgba(var(--cb-accent-rgb), 0.14);
+    --cb-curtain-rgb:  255, 61, 129;     /* màn nhung hồng cánh sen: ghế đôi, cảnh báo, giờ hết hạn */
+    --cb-curtain:      rgb(var(--cb-curtain-rgb));
+    --cb-beam-rgb:     92, 225, 230;     /* ánh màn hình xanh lơ: thông tin, focus, liên kết */
+    --cb-beam:         rgb(var(--cb-beam-rgb));
+
+    --cb-success: #5df2b0;
+    --cb-success-soft: rgba(93, 242, 176, 0.14);
+    --cb-warning: #ffd166;
+    --cb-danger:  #ff5c8a;
+
+    /* ---- Trạng thái ghế (seat-map.js gắn is-free / is-mine / is-held / is-booked) ---- */
+    --cb-seat-free-bg:      #2a1a47;
+    --cb-seat-free-border:  #6b4fa0;
+    --cb-seat-mine-bg:      var(--cb-accent);
+    --cb-seat-mine-border:  #ffd9a0;
+    --cb-seat-held-bg:      #3a1030;   /* kèm sọc chéo hồng — không chỉ dựa vào màu */
+    --cb-seat-held-border:  var(--cb-curtain);
+    --cb-seat-booked-bg:    #140d20;
+    --cb-seat-booked-border:#2d2140;
+    --cb-seat-standard: #6b4fa0;
+    --cb-seat-vip:      #ffc857;       /* viền vàng đồng */
+    --cb-seat-couple:   var(--cb-curtain);
+
+    /* ---- Chữ: Unbounded (tiêu đề, rộng & lạ) + Be Vietnam Pro (nội dung) — cả hai có dấu tiếng Việt ---- */
+    --cb-font-display: "Unbounded", "Be Vietnam Pro", system-ui, sans-serif;
+    --cb-font-body:    "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --cb-font-ticket:  "Be Vietnam Pro", ui-monospace, monospace;   /* số ghế / mã vé, dùng tabular-nums */
+    --cb-fs-hero:  clamp(2.4rem, 1.2rem + 5vw, 5.2rem);
+    --cb-fs-h1:    clamp(1.8rem, 1.1rem + 2.6vw, 3rem);
+    --cb-fs-h2:    clamp(1.3rem, 1rem + 1.2vw, 1.8rem);
+    --cb-fs-body:  1rem;
+    --cb-fs-small: 0.8125rem;
+    --cb-lh-body:  1.6;
+    --cb-tracking-display: -0.03em;
+
+    /* ---- Hình khối: ghế nhung (đầu tròn, thân vuông), vé có khấc, không "mọi thứ bo 14px" ---- */
+    --cb-radius:      18px;
+    --cb-radius-sm:   8px;
+    --cb-radius-seat: 14px 14px 5px 5px;
+    --cb-radius-pill: 999px;
+    --cb-ticket-notch: 12px;            /* bán kính khấc cắt ở mép vé */
+    --cb-nav-strip-w: 80px;             /* dải vé dọc bên trái */
+    --cb-tab-bar-h:   64px;             /* thanh tab dưới mobile */
+    --cb-gap: 1.25rem;
+    --cb-space-1: 0.25rem; --cb-space-2: 0.5rem; --cb-space-3: 0.75rem;
+    --cb-space-4: 1rem;    --cb-space-6: 1.5rem; --cb-space-8: 2rem; --cb-space-12: 3rem;
+
+    /* ---- Chiều sâu: ánh sáng chứ không phải bóng xám ---- */
+    --cb-shadow:    0 24px 60px rgba(5, 0, 14, 0.6);
+    --cb-shadow-sm: 0 8px 22px rgba(5, 0, 14, 0.45);
+    --cb-glow-accent:  0 0 0 1px rgba(var(--cb-accent-rgb), 0.35), 0 0 28px rgba(var(--cb-accent-rgb), 0.35);
+    --cb-glow-curtain: 0 0 0 1px rgba(var(--cb-curtain-rgb), 0.4), 0 0 26px rgba(var(--cb-curtain-rgb), 0.3);
+    --cb-focus-ring: 0 0 0 3px var(--cb-bg), 0 0 0 5px var(--cb-beam);
+    --cb-grain-opacity: 0.07;           /* hạt phim phủ toàn trang */
+
+    /* ---- Chuyển động (theo skill ui-motion: token, không literal; visible là mặc định) ---- */
+    --cb-dur-press:   120ms;            /* nhấn nút / ghế */
+    --cb-dur-pop:     180ms;            /* menu, tooltip, chọn ghế */
+    --cb-dur-surface: 260ms;            /* modal, sheet, toast, chuyển trang */
+    --cb-dur-exit:    160ms;
+    --cb-dur-signature: 800ms;          /* DUY NHẤT: màn nhung mở, 1 lần mỗi phiên; nội dung vẫn thấy < 1s */
+    --cb-ease-out:    cubic-bezier(0.23, 1, 0.32, 1);     /* vào, phản hồi */
+    --cb-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);    /* di chuyển trên màn hình */
+    --cb-ease-snap:   cubic-bezier(0.34, 1.56, 0.64, 1);  /* nảy: CHỈ cho thứ người dùng vừa bật (chọn ghế) */
+    --cb-stagger:     24ms;             /* tổng stagger <= 600ms; opacity/màu không overshoot */
+    --cb-beam-sweep:  3.2s;             /* chùm sáng quét 2 lượt rồi dừng (autoplay < 5s) */
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        /* Giữ opacity/màu, bỏ dịch chuyển/scale/stagger/autoplay. */
+        --cb-dur-press: 0.01ms; --cb-dur-pop: 0.01ms; --cb-dur-surface: 0.01ms;
+        --cb-dur-exit: 0.01ms; --cb-dur-signature: 0.01ms; --cb-stagger: 0ms;
+        --cb-grain-opacity: 0;
+    }
+}
+
+/* Cầu nối sang Bootstrap để các component có sẵn tự ăn token mới. */
+:root {
+    --bs-body-bg: var(--cb-bg);
+    --bs-body-color: var(--cb-text);
+    --bs-body-font-family: var(--cb-font-body);
+    --bs-border-color: var(--cb-border);
+    --bs-link-color-rgb: var(--cb-beam-rgb);
+    --bs-link-hover-color-rgb: var(--cb-accent-rgb);
+}

@@ -1,4 +1,3 @@
-@using CinemaBooking.Domain.Enums
 @model SeatPreviewModel
 
 @{
@@ -31,6 +30,6 @@
         <li><span class="seat-dot seat-standard"></span> Thường · @Model.Count(SeatType.Standard)</li>
         <li><span class="seat-dot seat-vip"></span> VIP · @Model.Count(SeatType.Vip)</li>
         <li><span class="seat-dot seat-couple"></span> Ghế đôi · @Model.Count(SeatType.Couple)</li>
-        <li class="cb-muted">Tổng @(Model.Rows * Model.Columns) ghế</li>
+        <li style="color: var(--cb-text-faint);">Tổng @(Model.Rows * Model.Columns) ghế</li>
     </ul>
 </div>

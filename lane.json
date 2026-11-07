@@ -1,0 +1,12 @@
+{
+  "lane": "codex",
+  "contract": "lane-contract.md",
+  "allow": [
+    "src/CinemaBooking.Web/wwwroot/css/**",
+    "src/CinemaBooking.Web/wwwroot/js/**",
+    "src/CinemaBooking.Web/Views/**",
+    "src/CinemaBooking.Web/Areas/Admin/Views/**"
+  ],
+  "runDir": ".lane/runs",
+  "timeoutSec": 1800
+}

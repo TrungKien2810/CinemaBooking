@@ -4,60 +4,83 @@
 }
 
 <div class="admin-page-head">
-    <div>
+    <div class="admin-page-title-wrap">
         @if (User.IsInRole(AppRoles.Admin))
         {
-            <a asp-controller="Theaters" asp-action="Index" class="back-link">← Danh sách chi nhánh</a>
+            <a asp-controller="Theaters" asp-action="Index" class="admin-back-link">← Danh sách chi nhánh</a>
         }
-        <h1 class="page-title">Phòng chiếu · @Model.TheaterName</h1>
-        <p class="cb-muted page-subtitle">@Model.Rooms.Count phòng · @Model.Rooms.Sum(r => r.SeatCount) ghế</p>
+        <h1 class="admin-page-title">Phòng chiếu · @Model.TheaterName</h1>
+        <p class="admin-page-subtitle">@Model.Rooms.Count phòng · @Model.Rooms.Sum(r => r.SeatCount) ghế hoạt động</p>
     </div>
-    <a asp-action="Create" asp-route-theaterId="@Model.TheaterId" class="btn btn-primary">Thêm phòng</a>
+    <div class="admin-page-actions">
+        <a asp-action="Create" asp-route-theaterId="@Model.TheaterId" class="cb-btn cb-btn-primary">
+            <span>+</span> Thêm phòng chiếu
+        </a>
+    </div>
 </div>
 
 @if (TempData["Error"] is string error)
 {
-    <div class="alert alert-danger">@error</div>
+    <div class="cb-alert cb-alert-danger">
+        <span>⚠️</span>
+        <span>@error</span>
+    </div>
 }
 
 @if (Model.Rooms.Count == 0)
 {
-    <div class="cb-card empty-state">
-        <p class="empty-title">Chi nhánh chưa có phòng chiếu</p>
-        <p class="cb-muted">Thêm phòng và nhập số hàng × số ghế — sơ đồ ghế được sinh tự động.</p>
+    <div class="cb-empty">
+        <div class="cb-empty-icon" aria-hidden="true">🏢</div>
+        <h3 class="cb-empty-title">Chi nhánh chưa có phòng chiếu</h3>
+        <p class="cb-empty-desc">Thêm phòng mới và nhập số hàng × số cột — sơ đồ ghế sẽ được tạo tự động.</p>
+        <a asp-action="Create" asp-route-theaterId="@Model.TheaterId" class="cb-btn cb-btn-primary">Thêm phòng ngay</a>
     </div>
 }
 else
 {
-    <div class="cb-card admin-table-wrap">
-        <table class="table admin-table align-middle mb-0">
+    <div class="admin-table-wrap">
+        <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Phòng</th>
-                    <th>Sơ đồ</th>
-                    <th class="text-end">Số ghế</th>
-                    <th class="text-end">Suất chiếu</th>
-                    <th></th>
+                    <th>Tên phòng</th>
+                    <th>Quy cách sơ đồ</th>
+                    <th class="cb-num">Tổng số ghế</th>
+                    <th class="cb-num">Suất chiếu đã xếp</th>
+                    <th class="admin-actions">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var r in Model.Rooms)
                 {
                     <tr>
-                        <td class="fw-semibold">@r.RoomName</td>
-                        <td class="text-nowrap">@r.TotalRows hàng × @r.TotalColumns ghế</td>
-                        <td class="text-end">@r.SeatCount</td>
-                        <td class="text-end">@r.ShowtimeCount</td>
+                        <td>
+                            <div style="font-weight: 600; font-size: 0.9375rem; color: var(--cb-text);">
+                                @r.RoomName
+                            </div>
+                        </td>
+                        <td>
+                            <span class="cb-badge cb-badge-surface" style="font-family: var(--cb-font-ticket);">
+                                @r.TotalRows hàng × @r.TotalColumns ghế
+                            </span>
+                        </td>
+                        <td class="cb-num" style="font-weight: 700; color: var(--cb-accent);">@r.SeatCount</td>
+                        <td class="cb-num">@r.ShowtimeCount</td>
                         <td class="admin-actions">
-                            <a asp-action="Seats" asp-route-id="@r.Id" class="btn btn-sm btn-outline-primary">Sửa ghế</a>
-                            <a asp-action="Edit" asp-route-id="@r.Id" class="btn btn-sm btn-outline-secondary">Sửa phòng</a>
-                            @if (r.ShowtimeCount == 0)
-                            {
-                                <form asp-action="Delete" asp-route-id="@r.Id" method="post" class="d-inline"
-                                      data-confirm="Xóa phòng “@r.RoomName” và toàn bộ ghế?">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
-                                </form>
-                            }
+                            <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
+                                <a asp-action="Seats" asp-route-id="@r.Id" class="cb-btn cb-btn-outline cb-btn-sm" title="Chỉnh sửa loại ghế Thường/VIP">
+                                    <span>🪑</span> Sửa ghế
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@r.Id" class="cb-btn cb-btn-secondary cb-btn-sm">
+                                    Sửa tên &amp; cỡ
+                                </a>
+                                @if (r.ShowtimeCount == 0)
+                                {
+                                    <form asp-action="Delete" asp-route-id="@r.Id" method="post" style="display: inline;"
+                                          data-confirm="Xóa phòng “@r.RoomName” và toàn bộ ghế?">
+                                        <button type="submit" class="cb-btn cb-btn-danger cb-btn-sm">Xóa</button>
+                                    </form>
+                                }
+                            </div>
                         </td>
                     </tr>
                 }

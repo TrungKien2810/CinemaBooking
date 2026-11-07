@@ -1,35 +1,51 @@
-﻿@{
+@{
     ViewData["Title"] = "Chính sách riêng tư";
 }
 
-<section class="page-head">
-    <h1 class="page-title">@ViewData["Title"]</h1>
-    <p class="cb-muted page-subtitle">Đây là đồ án môn học, không phải dịch vụ thương mại.</p>
-</section>
+<div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--cb-space-6);">
+    <section>
+        <h1>@ViewData["Title"]</h1>
+        <p class="cb-muted">Đây là đồ án môn học PRN222, không phải dịch vụ thương mại.</p>
+    </section>
 
-<div class="cb-card prose-card">
-    <h2 class="prose-heading">Dữ liệu hệ thống lưu</h2>
-    <p>
-        Khi bạn tạo tài khoản, hệ thống lưu họ tên, email và mật khẩu đã được băm.
-        Khi bạn đặt vé, hệ thống lưu thêm tên, email, số điện thoại liên hệ và các ghế đã chọn —
-        đủ để gửi mã vé và để rạp đối chiếu lúc bạn tới xem.
-    </p>
+    <div class="cb-card" style="display: flex; flex-direction: column; gap: var(--cb-space-4);">
+        <section>
+            <h2 style="font-size: 1.2rem; color: var(--cb-accent); margin-bottom: 0.5rem;">Dữ liệu hệ thống lưu</h2>
+            <p class="cb-muted" style="line-height: 1.7;">
+                Khi bạn tạo tài khoản, hệ thống lưu họ tên, email và mật khẩu đã được băm an toàn bằng PBKDF2/Identity.
+                Khi bạn đặt vé, hệ thống lưu thêm tên, email, số điện thoại liên hệ và các ghế đã chọn —
+                đủ để gửi mã vé điện tử và để nhân viên rạp đối chiếu lúc bạn tới xem phim.
+            </p>
+        </section>
 
-    <h2 class="prose-heading">Dữ liệu được dùng để làm gì</h2>
-    <p>
-        Chỉ dùng cho việc đặt vé và gửi email xác nhận. Không chia sẻ cho bên thứ ba,
-        không dùng để quảng cáo.
-    </p>
+        <div style="height: 1px; background: var(--cb-border);"></div>
 
-    <h2 class="prose-heading">Cookie</h2>
-    <p>
-        Hệ thống dùng cookie để giữ phiên đăng nhập và giữ danh sách ghế bạn đang chọn
-        giữa trang sơ đồ ghế và trang thanh toán. Không có cookie theo dõi.
-    </p>
+        <section>
+            <h2 style="font-size: 1.2rem; color: var(--cb-accent); margin-bottom: 0.5rem;">Dữ liệu được dùng để làm gì</h2>
+            <p class="cb-muted" style="line-height: 1.7;">
+                Chỉ dùng duy nhất cho việc thực hiện quy trình đặt vé, giữ ghế qua SignalR và gửi email xác nhận.
+                Hoàn toàn không chia sẻ cho bất kỳ bên thứ ba nào và không phục vụ mục đích quảng cáo thương mại.
+            </p>
+        </section>
 
-    <h2 class="prose-heading">Xóa dữ liệu</h2>
-    <p>
-        Đây là môi trường học tập, database có thể bị tạo lại bất cứ lúc nào.
-        Đừng dùng mật khẩu thật mà bạn đang dùng ở nơi khác.
-    </p>
+        <div style="height: 1px; background: var(--cb-border);"></div>
+
+        <section>
+            <h2 style="font-size: 1.2rem; color: var(--cb-accent); margin-bottom: 0.5rem;">Cookie &amp; Bộ nhớ tạm</h2>
+            <p class="cb-muted" style="line-height: 1.7;">
+                Hệ thống dùng cookie xác thực phiên đăng nhập và sessionStorage để lưu trạng thái màn nhung mở một lần mỗi phiên.
+                Không sử dụng bất kỳ cookie theo dõi người dùng nào.
+            </p>
+        </section>
+
+        <div style="height: 1px; background: var(--cb-border);"></div>
+
+        <section>
+            <h2 style="font-size: 1.2rem; color: var(--cb-accent); margin-bottom: 0.5rem;">Xóa dữ liệu</h2>
+            <p class="cb-muted" style="line-height: 1.7;">
+                Đây là môi trường học tập, cơ sở dữ liệu có thể được đặt lại trong quá trình thử nghiệm.
+                Vui lòng không sử dụng mật khẩu thật mà bạn đang dùng ở các dịch vụ quan trọng khác.
+            </p>
+        </section>
+    </div>
 </div>

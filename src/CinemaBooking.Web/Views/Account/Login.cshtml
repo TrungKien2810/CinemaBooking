@@ -1,56 +1,69 @@
-﻿@model LoginViewModel
+@model LoginViewModel
 @{
     ViewData["Title"] = "Đăng nhập";
 }
 
-<div class="auth-shell">
-    <div class="cb-card auth-card">
-        <div class="auth-brand">
-            <span class="brand-mark" aria-hidden="true">🎬</span>
-            <span>CinemaBooking<span class="brand-accent">.Smart</span></span>
-        </div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/account.css" asp-append-version="true" />
+}
 
-        <h1 class="auth-title">Đăng nhập</h1>
-        <p class="cb-muted auth-subtitle">Đăng nhập để xem lại vé đã đặt của bạn.</p>
+<div class="login-split">
+    <div class="cr-auth-posters" aria-hidden="true">
+        <img src="~/img/posters/dia-dao.jpg" alt="" /><img src="~/img/posters/inside-out-2.jpg" alt="" />
+        <img src="~/img/posters/dune-part-two.jpg" alt="" /><img src="~/img/posters/nha-ba-nu.jpg" alt="" />
+        <img src="~/img/posters/mat-biec.jpg" alt="" /><img src="~/img/posters/dia-dao.jpg" alt="" />
+        <p class="cr-auth-tag">Đăng nhập để giữ ghế và xem lại vé của bạn.</p>
+    </div>
+
+    <!-- Cột phải: Form phẳng đăng nhập -->
+    <div class="login-form-col">
+        <div class="login-form-head">
+            <h2 class="login-form-title">Đăng nhập</h2>
+            <p class="login-form-sub">Nhập thông tin tài khoản của bạn để vào rạp.</p>
+        </div>
 
         @if (TempData["Success"] is string success)
         {
-            <div class="alert alert-success" role="status">@success</div>
+            <div class="auth-alert auth-alert-success" role="status">
+                
+                <div>@success</div>
+            </div>
         }
 
-        <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post">
-            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+        <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" class="auth-form">
+            <div asp-validation-summary="ModelOnly" class="auth-validation-summary"></div>
 
-            <div class="mb-3">
-                <label asp-for="Email" class="form-label">Email</label>
-                <input asp-for="Email" class="form-control" autocomplete="username" placeholder="ban@example.com" />
-                <span asp-validation-for="Email" class="text-danger small"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Password" class="form-label">Mật khẩu</label>
-                <div class="pwd-field">
-                    <input asp-for="Password" class="form-control" autocomplete="current-password" />
-                    <button type="button" class="pwd-toggle" data-password-toggle="Password"
-                            aria-label="Hiện mật khẩu">👁️</button>
+            <div class="auth-field">
+                <label asp-for="Email" class="auth-label">Email</label>
+                <div class="auth-input-wrap">
+                    <input asp-for="Email" class="auth-input" autocomplete="username" placeholder="ban@example.com" />
                 </div>
-                <span asp-validation-for="Password" class="text-danger small"></span>
-                <div class="text-end">
-                    <a asp-action="ForgotPassword" class="small">Quên mật khẩu?</a>
+                <span asp-validation-for="Email" class="auth-field-error"></span>
+            </div>
+
+            <div class="auth-field">
+                <label asp-for="Password" class="auth-label">Mật khẩu</label>
+                <div class="auth-input-wrap">
+                    <input asp-for="Password" class="auth-input auth-input-has-toggle" autocomplete="current-password" placeholder="Nhập mật khẩu" />
+                    <button type="button" class="auth-toggle-pwd" data-password-toggle="Password" aria-label="Hiện mật khẩu">Hiện</button>
                 </div>
+                <span asp-validation-for="Password" class="auth-field-error"></span>
             </div>
 
-            <div class="form-check mb-4">
-                <input asp-for="RememberMe" class="form-check-input" />
-                <label asp-for="RememberMe" class="form-check-label">Ghi nhớ đăng nhập</label>
+            <div class="auth-check-row">
+                <label class="auth-checkbox-label">
+                    <input asp-for="RememberMe" class="auth-checkbox" />
+                    <span>Ghi nhớ đăng nhập</span>
+                </label>
+                <a asp-action="ForgotPassword" class="login-forgot-link">Quên mật khẩu?</a>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
+            <button type="submit" class="cb-btn cb-btn-primary auth-submit-btn">Đăng nhập</button>
         </form>
 
-        <p class="auth-switch">
+        <p class="auth-switch-prompt">
             Chưa có tài khoản?
-            <a asp-action="Register" asp-route-returnUrl="@ViewData["ReturnUrl"]">Đăng ký ngay</a>
+            <a asp-action="Register" asp-route-returnUrl="@ViewData["ReturnUrl"]">Đăng ký thành viên ngay</a>
         </p>
     </div>
 </div>

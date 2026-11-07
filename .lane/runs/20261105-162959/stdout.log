@@ -1,0 +1,48 @@
+Đang chạy bộ kiểm thử toàn diện `dotnet test` để xác minh hệ thống trước khi báo cáo kết quả cuối cùng.
+RESULT: done
+
+FILES_CHANGED:
+- [src/CinemaBooking.Web/wwwroot/css/admin.css](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/wwwroot/css/admin.css)
+- [src/CinemaBooking.Web/Areas/Admin/Views/_ViewImports.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/_ViewImports.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Shared/_AdminLayout.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Shared/_AdminLayout.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Bookings/Index.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Bookings/Index.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Bookings/Details.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Bookings/Details.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Movies/Index.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Movies/Index.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Movies/Form.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Movies/Form.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Revenue/Index.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Revenue/Index.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Revenue/Breakdown.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Revenue/Breakdown.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Rooms/Index.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Rooms/Index.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Rooms/Form.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Rooms/Form.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Rooms/Seats.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Rooms/Seats.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Rooms/_SeatPreview.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Rooms/_SeatPreview.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Showtimes/Index.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Showtimes/Index.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Showtimes/Form.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Showtimes/Form.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Theaters/Index.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Theaters/Index.cshtml)
+- [src/CinemaBooking.Web/Areas/Admin/Views/Theaters/Form.cshtml](file:///D:/Edu/Project/CinemaBooking/src/CinemaBooking.Web/Areas/Admin/Views/Theaters/Form.cshtml)
+
+VERIFY:
+```
+dotnet build src/CinemaBooking.Web
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  CinemaBooking.Domain -> D:\Edu\Project\CinemaBooking\src\CinemaBooking.Domain\bin\Debug\net9.0\CinemaBooking.Domain.dll
+  CinemaBooking.Infrastructure -> D:\Edu\Project\CinemaBooking\src\CinemaBooking.Infrastructure\bin\Debug\net9.0\CinemaBooking.Infrastructure.dll
+  CinemaBooking.Web -> D:\Edu\Project\CinemaBooking\src\CinemaBooking.Web\bin\Debug\net9.0\CinemaBooking.Web.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.95
+
+dotnet test
+Passed!  - Failed:     0, Passed:   188, Skipped:     0, Total:   188, Duration: 3 s - CinemaBooking.Tests.dll (net9.0)
+```
+
+NOTES:
+- Tách `_AdminLayout.cshtml` thành shell quản trị độc lập (không lồng trong layout chung của khách), gồm sidebar trái cố định với thương hiệu, các mục điều hướng phân quyền (Admin vs BranchAdmin), thông tin người dùng và nút về trang khách.
+- Xây dựng `wwwroot/css/admin.css` theo concept "Phòng Chiếu Đêm" và tokens hệ thống (`--cb-*`): bảng mật độ cao với số liệu `tabular-nums` căn phải, thanh lọc nhỏ gọn, form phẳng với lưới responsive, trạng thái và huy hiệu rõ ràng.
+- Triển khai biểu đồ doanh thu theo ngày bằng SVG thuần (gradient hổ phách `var(--cb-accent)`, tooltip hiển thị doanh thu & số vé, lưới tọa độ động) và thanh so sánh tỷ trọng chi nhánh / tỷ lệ lấp đầy suất chiếu bằng CSS/SVG không phụ thuộc bất kỳ thư viện ngoài nào.
+- Giữ nguyên toàn bộ hợp đồng tương tác dữ liệu và JS: các thuộc tính `data-poster-input`, `data-poster-preview`, `data-poster-fallback`, `data-seat-preview`, các id và class của trình chỉnh sửa ghế (`.seat-editable`, `#seat-types`, `#count-standard`, `#count-vip`), cùng `data-confirm` xác nhận xóa/ẩn/đóng.
+
+BLOCKED: none

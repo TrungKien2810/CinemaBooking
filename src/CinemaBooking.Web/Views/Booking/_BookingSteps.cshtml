@@ -1,10 +1,20 @@
 @model int
 @{
     string StepClass(int step) =>
-        Model == step ? "is-current" : Model > step ? "is-done" : "";
+        Model == step ? "cb-step is-active" : Model > step ? "cb-step is-done" : "cb-step";
 }
-<ol class="booking-steps" aria-label="Tiến trình đặt vé">
-    <li class="@StepClass(1)"><span class="booking-step-label">Chọn ghế</span></li>
-    <li class="@StepClass(2)"><span class="booking-step-label">Thanh toán</span></li>
-    <li class="@StepClass(3)"><span class="booking-step-label">Hoàn tất</span></li>
-</ol>
+
+<nav class="cb-steps" aria-label="Tiến trình đặt vé">
+    <div class="@StepClass(1)">
+        <span class="cb-step-num" aria-hidden="true">@(Model > 1 ? "✓" : "1")</span>
+        <span class="cb-step-label">Chọn ghế</span>
+    </div>
+    <div class="@StepClass(2)">
+        <span class="cb-step-num" aria-hidden="true">@(Model > 2 ? "✓" : "2")</span>
+        <span class="cb-step-label">Thanh toán</span>
+    </div>
+    <div class="@StepClass(3)">
+        <span class="cb-step-num" aria-hidden="true">3</span>
+        <span class="cb-step-label">Nhận vé</span>
+    </div>
+</nav>

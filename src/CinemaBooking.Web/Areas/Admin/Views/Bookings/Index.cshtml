@@ -1,80 +1,117 @@
-@using CinemaBooking.Domain.Enums
 @model BookingsIndexViewModel
 @{
     ViewData["Title"] = "Quản lý đơn đặt vé";
+
+    static string StatusBadgeClass(BookingStatus status) => status switch
+    {
+        BookingStatus.Confirmed => "is-confirmed",
+        BookingStatus.Pending => "is-pending",
+        BookingStatus.Cancelled => "is-cancelled",
+        _ => "is-secondary"
+    };
+
+    static string StatusLabel(BookingStatus status) => status switch
+    {
+        BookingStatus.Confirmed => "Đã xác nhận",
+        BookingStatus.Pending => "Chờ thanh toán",
+        BookingStatus.Cancelled => "Đã hủy",
+        BookingStatus.Expired => "Hết hạn",
+        _ => status.ToString()
+    };
 }
 
 <div class="admin-page-head">
-    <div>
-        <h1 class="page-title">Đơn đặt vé</h1>
-        <p class="cb-muted page-subtitle">Tra cứu và lọc đơn theo mã, chi nhánh hoặc trạng thái.</p>
+    <div class="admin-page-title-wrap">
+        <h1 class="admin-page-title">Đơn đặt vé</h1>
+        <p class="admin-page-subtitle">Tra cứu và lọc đơn theo mã, chi nhánh hoặc trạng thái.</p>
     </div>
 </div>
 
-<form method="get" class="row g-2 align-items-end mb-3">
-    <div class="col-auto">
-        <label for="code" class="form-label">Mã đơn</label>
-        <input id="code" name="code" value="@Model.Code" class="form-control" placeholder="CB-..." />
+<form method="get" class="admin-filter-bar">
+    <div class="admin-filter-item">
+        <label for="code" class="admin-filter-label">Mã đơn</label>
+        <input id="code" name="code" value="@Model.Code" class="admin-filter-input" placeholder="CB-..." />
     </div>
-    <div class="col-auto">
-        <label for="theaterId" class="form-label">Chi nhánh</label>
-        <select id="theaterId" name="theaterId" class="form-select"
+    <div class="admin-filter-item">
+        <label for="theaterId" class="admin-filter-label">Chi nhánh</label>
+        <select id="theaterId" name="theaterId" class="admin-filter-input"
                 asp-items="@(new SelectList(Model.Theaters, "Value", "Text", Model.TheaterId))">
             <option value="">Tất cả chi nhánh</option>
         </select>
     </div>
-    <div class="col-auto">
-        <label for="status" class="form-label">Trạng thái</label>
-        <select id="status" name="status" class="form-select">
+    <div class="admin-filter-item">
+        <label for="status" class="admin-filter-label">Trạng thái</label>
+        <select id="status" name="status" class="admin-filter-input">
             <option value="">Mọi trạng thái</option>
             @foreach (var s in Enum.GetValues<BookingStatus>())
             {
-                <option value="@s" selected="@(s == Model.Status)">@s</option>
+                <option value="@s" selected="@(s == Model.Status)">@StatusLabel(s)</option>
             }
         </select>
     </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-outline-primary">Lọc</button>
+    <div class="admin-filter-item" style="align-self: flex-end;">
+        <button type="submit" class="cb-btn cb-btn-primary cb-btn-sm">
+            <span>🔍</span> Lọc
+        </button>
     </div>
 </form>
 
-<div class="table-responsive"><table class="table table-sm align-middle">
-    <thead>
-        <tr>
-            <th>Mã đơn</th>
-            <th>Khách hàng</th>
-            <th>Phim</th>
-            <th>Chi nhánh</th>
-            <th>Suất chiếu</th>
-            <th>Đặt lúc</th>
-            <th class="text-end">Số ghế</th>
-            <th class="text-end">Tổng tiền</th>
-            <th>Trạng thái</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var b in Model.Items)
-        {
-            <tr>
-                <td><a asp-action="Details" asp-route-id="@b.Id">@b.BookingCode</a></td>
-                <td>@b.CustomerName</td>
-                <td>@b.MovieTitle</td>
-                <td>@b.TheaterName</td>
-                <td>@b.ShowtimeStartLocal.ToString("dd/MM HH:mm")</td>
-                <td>@b.BookedLocal.ToString("dd/MM HH:mm")</td>
-                <td class="text-end">@b.SeatCount</td>
-                <td class="text-end">@b.TotalAmount.ToString("N0")</td>
-                <td>@b.Status</td>
-            </tr>
-        }
-        @if (Model.Items.Count == 0)
-        {
-            <tr><td colspan="9" class="text-center text-muted">Không có đơn nào khớp bộ lọc.</td></tr>
-        }
-    </tbody>
-</table></div>
-
-@if (Model.Items.Count == Model.MaxItems)
+@if (Model.Items.Count == 0)
 {
-    <p class="text-muted small">Chỉ hiện @Model.MaxItems đơn mới nhất — lọc theo mã hoặc chi nhánh để thu hẹp.</p>
+    <div class="cb-empty">
+        <div class="cb-empty-icon" aria-hidden="true">🎟️</div>
+        <h3 class="cb-empty-title">Không tìm thấy đơn vé nào</h3>
+        <p class="cb-empty-desc">Không có đơn vé nào khớp với tiêu chí tìm kiếm hoặc bộ lọc hiện tại.</p>
+    </div>
+}
+else
+{
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Khách hàng</th>
+                    <th>Phim</th>
+                    <th>Chi nhánh</th>
+                    <th>Suất chiếu</th>
+                    <th>Đặt lúc</th>
+                    <th class="cb-num">Số ghế</th>
+                    <th class="cb-num">Tổng tiền</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@b.Id" class="cb-btn-outline cb-btn-sm" style="font-family: var(--cb-font-ticket); font-weight: 700;">
+                                @b.BookingCode
+                            </a>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600;">@b.CustomerName</div>
+                        </td>
+                        <td>@b.MovieTitle</td>
+                        <td>@b.TheaterName</td>
+                        <td class="cb-num" style="text-align: left !important;">@b.ShowtimeStartLocal.ToString("dd/MM HH:mm")</td>
+                        <td class="cb-num" style="text-align: left !important; color: var(--cb-text-muted);">@b.BookedLocal.ToString("dd/MM HH:mm")</td>
+                        <td class="cb-num">@b.SeatCount</td>
+                        <td class="cb-num" style="color: var(--cb-accent); font-weight: 700;">@b.TotalAmount.ToString("N0") ₫</td>
+                        <td>
+                            <span class="status-badge @StatusBadgeClass(b.Status)">@StatusLabel(b.Status)</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.Items.Count == Model.MaxItems)
+    {
+        <p class="admin-form-hint">
+            ℹ️ Chỉ hiển thị @Model.MaxItems đơn mới nhất — lọc theo mã hoặc chi nhánh để thu hẹp kết quả.
+        </p>
+    }
 }

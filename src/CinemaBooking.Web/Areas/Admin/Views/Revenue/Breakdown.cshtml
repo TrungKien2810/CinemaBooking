@@ -1,88 +1,150 @@
 @model RevenueBreakdownViewModel
 @{
     ViewData["Title"] = "Doanh thu theo phim & suất chiếu";
+    var totalMovieRevenue = Model.ByMovie.Sum(m => m.Revenue);
 }
 
 <div class="admin-page-head">
-    <div>
-        <h1 class="page-title">Doanh thu theo phim &amp; suất chiếu</h1>
-        <p class="cb-muted page-subtitle">So sánh doanh thu và tỷ lệ lấp đầy giữa các phim, suất chiếu.</p>
+    <div class="admin-page-title-wrap">
+        <a asp-action="Index" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")" class="admin-back-link">
+            ← Về tổng quan doanh thu
+        </a>
+        <h1 class="admin-page-title">Doanh thu theo phim &amp; suất chiếu</h1>
+        <p class="admin-page-subtitle">So sánh hiệu quả khai thác, doanh số và tỷ lệ lấp đầy ghế giữa các phim và suất chiếu.</p>
     </div>
-    <a asp-action="Index" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")"
-       class="btn btn-outline-secondary">Về tổng quan</a>
+    <div class="admin-page-actions">
+        <a asp-action="Index" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")"
+           class="cb-btn cb-btn-secondary cb-btn-sm">Về tổng quan</a>
+    </div>
 </div>
 
-<form method="get" class="row g-2 align-items-end mb-3">
-    <div class="col-auto">
-        <label for="from" class="form-label">Từ ngày</label>
-        <input id="from" name="from" type="date" value="@Model.From.ToString("yyyy-MM-dd")" class="form-control" />
+<form method="get" class="admin-filter-bar">
+    <div class="admin-filter-item">
+        <label for="from" class="admin-filter-label">Từ ngày</label>
+        <input id="from" name="from" type="date" value="@Model.From.ToString("yyyy-MM-dd")" class="admin-filter-input" />
     </div>
-    <div class="col-auto">
-        <label for="to" class="form-label">Đến ngày</label>
-        <input id="to" name="to" type="date" value="@Model.To.ToString("yyyy-MM-dd")" class="form-control" />
+    <div class="admin-filter-item">
+        <label for="to" class="admin-filter-label">Đến ngày</label>
+        <input id="to" name="to" type="date" value="@Model.To.ToString("yyyy-MM-dd")" class="admin-filter-input" />
     </div>
-    <div class="col-auto">
-        <label for="theaterId" class="form-label">Chi nhánh</label>
-        <select id="theaterId" name="theaterId" class="form-select"
+    <div class="admin-filter-item">
+        <label for="theaterId" class="admin-filter-label">Chi nhánh</label>
+        <select id="theaterId" name="theaterId" class="admin-filter-input"
                 asp-items="@(new SelectList(Model.Theaters, "Value", "Text", Model.TheaterId))">
             <option value="">Tất cả chi nhánh</option>
         </select>
     </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-outline-primary">Xem</button>
+    <div class="admin-filter-item" style="align-self: flex-end;">
+        <button type="submit" class="cb-btn cb-btn-primary cb-btn-sm">
+            <span>🔍</span> Lọc dữ liệu
+        </button>
     </div>
 </form>
 
-<h2 class="h5">Theo phim</h2>
-<div class="table-responsive"><table class="table table-sm align-middle mb-4">
-    <thead>
-        <tr>
-            <th>Phim</th>
-            <th class="text-end">Vé</th>
-            <th class="text-end">Doanh thu</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var m in Model.ByMovie)
-        {
-            <tr>
-                <td>@m.MovieTitle</td>
-                <td class="text-end">@m.Tickets</td>
-                <td class="text-end">@m.Revenue.ToString("N0")</td>
-            </tr>
-        }
-        @if (Model.ByMovie.Count == 0)
-        {
-            <tr><td colspan="3" class="text-center text-muted">Chưa có vé nào được bán trong khoảng này.</td></tr>
-        }
-    </tbody>
-</table></div>
+<div class="admin-chart-head">
+    <div>
+        <h2 class="admin-chart-title">Hiệu quả theo phim</h2>
+        <p class="admin-form-hint">Tổng cộng @Model.ByMovie.Count phim có doanh số trong khoảng thời gian này.</p>
+    </div>
+</div>
 
-<h2 class="h5">Theo suất chiếu</h2>
-<div class="table-responsive"><table class="table table-sm align-middle">
-    <thead>
-        <tr>
-            <th>Suất</th>
-            <th>Phim</th>
-            <th>Chi nhánh</th>
-            <th>Phòng</th>
-            <th class="text-end">Vé / ghế</th>
-            <th class="text-end">Lấp đầy</th>
-            <th class="text-end">Doanh thu</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var s in Model.ByShowtime)
-        {
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead>
             <tr>
-                <td>@s.StartLocal.ToString("dd/MM HH:mm")</td>
-                <td>@s.MovieTitle</td>
-                <td>@s.TheaterName</td>
-                <td>@s.RoomName</td>
-                <td class="text-end">@s.Tickets / @s.Capacity</td>
-                <td class="text-end">@s.Occupancy.ToString("P0")</td>
-                <td class="text-end">@s.Revenue.ToString("N0")</td>
+                <th>Phim</th>
+                <th class="cb-num">Vé đã bán</th>
+                <th class="cb-num">Doanh thu</th>
+                <th style="width: 25%;">Tỷ trọng doanh số</th>
             </tr>
-        }
-    </tbody>
-</table></div>
+        </thead>
+        <tbody>
+            @foreach (var m in Model.ByMovie)
+            {
+                var share = totalMovieRevenue > 0 ? (double)(m.Revenue / totalMovieRevenue) : 0;
+                <tr>
+                    <td style="font-weight: 600;">@m.MovieTitle</td>
+                    <td class="cb-num">@m.Tickets</td>
+                    <td class="cb-num" style="color: var(--cb-accent); font-weight: 700;">@m.Revenue.ToString("N0") ₫</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div class="admin-occupancy-bar" style="height: 6px;">
+                                <div class="admin-occupancy-fill" style="width: @((share * 100).ToString("0.#"))%;"></div>
+                            </div>
+                            <span class="cb-num" style="font-size: 0.75rem; color: var(--cb-text-muted); min-width: 38px;">
+                                @share.ToString("P0")
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (Model.ByMovie.Count == 0)
+            {
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--cb-text-muted); padding: 2rem;">
+                        Chưa có vé nào được bán trong khoảng thời gian này.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="admin-chart-head" style="margin-top: var(--cb-space-6);">
+    <div>
+        <h2 class="admin-chart-title">Hiệu quả theo từng suất chiếu</h2>
+        <p class="admin-form-hint">Theo dõi tỷ lệ lấp đầy ghế của từng phòng chiếu để tối ưu lịch chiếu.</p>
+    </div>
+</div>
+
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Suất chiếu</th>
+                <th>Phim</th>
+                <th>Chi nhánh</th>
+                <th>Phòng</th>
+                <th class="cb-num">Vé / Ghế</th>
+                <th style="width: 140px;">Tỷ lệ lấp đầy</th>
+                <th class="cb-num">Doanh thu</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var s in Model.ByShowtime)
+            {
+                <tr>
+                    <td class="cb-num" style="text-align: left !important; font-weight: 600;">
+                        @s.StartLocal.ToString("dd/MM HH:mm")
+                    </td>
+                    <td>@s.MovieTitle</td>
+                    <td>@s.TheaterName</td>
+                    <td>@s.RoomName</td>
+                    <td class="cb-num">@s.Tickets / @s.Capacity</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div class="admin-occupancy-bar">
+                                <div class="admin-occupancy-fill @(s.Occupancy >= 0.75 ? "is-high" : "")"
+                                     style="width: @((Math.Min(s.Occupancy, 1.0) * 100).ToString("0.#"))%;"></div>
+                            </div>
+                            <span class="cb-num" style="font-size: 0.75rem; font-weight: 700; min-width: 36px; color: @(s.Occupancy >= 0.75 ? "var(--cb-accent)" : "var(--cb-text-muted)");">
+                                @s.Occupancy.ToString("P0")
+                            </span>
+                        </div>
+                    </td>
+                    <td class="cb-num" style="color: var(--cb-accent); font-weight: 700;">
+                        @s.Revenue.ToString("N0") ₫
+                    </td>
+                </tr>
+            }
+            @if (Model.ByShowtime.Count == 0)
+            {
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--cb-text-muted); padding: 2rem;">
+                        Không có suất chiếu nào phát sinh doanh thu trong khoảng này.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

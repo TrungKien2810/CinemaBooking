@@ -5,84 +5,119 @@
     var confirmed = Model.Status == BookingStatus.Confirmed;
 }
 
-<section class="page-head">
-    <h1 class="page-title">@(confirmed ? "Đặt vé thành công 🎉" : "Thanh toán chưa hoàn tất")</h1>
-    <p class="cb-muted page-subtitle">
+@section Styles {
+    <link rel="stylesheet" href="~/css/booking.css" asp-append-version="true" />
+}
+
+<div class="cb-page-header" style="text-align: center; align-items: center;">
+    <h1 class="cb-page-title">@(confirmed ? "Đặt vé thành công " : "Thanh toán chưa hoàn tất")</h1>
+    <p class="cb-page-subtitle" style="max-width: 600px;">
         @if (confirmed)
         {
-            <text>Cảm ơn @Model.CustomerName! Vé đã được xác nhận và email sẽ được gửi tới @Model.CustomerEmail.</text>
+            <text>Cảm ơn <strong>@Model.CustomerName</strong>! Vé đã được xác nhận và email thông báo đã được gửi tới <strong>@Model.CustomerEmail</strong>.</text>
         }
         else
         {
             <text>
-                Giao dịch chưa thành công nên vé @Model.BookingCode chưa được xác nhận.
-                Ghế của đơn này đã được trả lại — bạn có thể chọn lại ghế và thanh toán lại.
+                Giao dịch chưa hoàn tất nên vé <strong>@Model.BookingCode</strong> chưa được xác nhận.
+                Ghế của đơn này đã được trả lại — bạn có thể quay lại chọn ghế và thanh toán lại.
             </text>
         }
     </p>
-</section>
+</div>
 
 @if (TempData["Error"] is string error)
 {
-    <div class="alert alert-danger" role="alert">@error</div>
+    <div class="cb-alert cb-alert-danger" role="alert" style="max-width: 760px; margin: 0 auto 1.5rem;">
+        <span aria-hidden="true">✕</span>
+        <span>@error</span>
+    </div>
 }
 
 @if (TempData["Success"] is string success)
 {
-    <div class="alert alert-success" role="alert">@success</div>
+    <div class="cb-alert cb-alert-success" role="alert" style="max-width: 760px; margin: 0 auto 1.5rem;">
+        <span aria-hidden="true">✓</span>
+        <span>@success</span>
+    </div>
 }
 
 <partial name="_BookingSteps" model="3" />
 
-<div class="cb-card booking-confirmation">
-    <div class="booking-code-block">
-        <span class="cb-muted">Mã vé</span>
-        <strong class="booking-code">@Model.BookingCode</strong>
-        <span class="ticket-barcode" aria-hidden="true"></span>
+<div class="cb-ticket cb-confirmation-card">
+    <div class="cb-ticket-head">
+        <div class="cb-ticket-brand">
+            CINEMABOOKING.SMART
+        </div>
+        <span class="cb-badge @(confirmed ? "cb-badge-success" : "cb-badge-danger")">
+            @Model.StatusLabel
+        </span>
+    </div>
+
+    <div class="cb-ticket-code-header">
+        <span class="cb-ticket-code-label">MÃ ĐẶT VÉ ĐIỆN TỬ</span>
+        <strong class="cb-ticket-code-val">@Model.BookingCode</strong>
+        <div class="cb-ticket-barcode" aria-hidden="true"></div>
     </div>
 
     @if (confirmed)
     {
-        <div class="ticket-qr">
-            <img src="@Url.Action("Qr", "Booking", new { code = Model.BookingCode })"
+        <div class="cb-ticket-qr-block" style="margin: 0.5rem var(--cb-space-6);">
+            <img class="cb-ticket-qr-img"
+                 src="@Url.Action("Qr", "Booking", new { code = Model.BookingCode })"
                  alt="Mã QR của vé @Model.BookingCode" width="148" height="148" />
-            <span class="cb-muted">Quét mã QR để mở lại vé</span>
+            <span class="cb-ticket-qr-caption">Quét mã QR để mở lại vé trên điện thoại</span>
         </div>
     }
 
-    <partial name="_BookingDetails" model="Model" />
+    <div class="cb-ticket-perforation"></div>
+
+    <div style="padding: 0 var(--cb-space-6);">
+        <partial name="_BookingDetails" model="Model" />
+    </div>
 
     @if (confirmed)
     {
-        <p class="ticket-note">
-            <span aria-hidden="true">📧</span>
-            Vui lòng đưa mã vé cho nhân viên khi tới rạp. Bạn có thể tra cứu lại vé bất cứ lúc nào.
-        </p>
+        <div style="padding: 0 var(--cb-space-6);">
+            <p class="cb-ticket-note">
+                <span>Vui lòng đưa mã vé cho nhân viên soát vé khi tới rạp. Bạn có thể tra cứu lại vé bất cứ lúc nào bằng mã này.</span>
+            </p>
+        </div>
     }
 
-    <div class="booking-actions">
-        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Về trang chủ</a>
-        <a asp-controller="Booking" asp-action="Lookup" class="btn btn-outline-secondary">Tra cứu vé khác</a>
+    <div class="cb-booking-actions">
+        <a asp-controller="Home" asp-action="Index" class="cb-btn cb-btn-primary">
+            Về trang chủ
+        </a>
+        <a asp-controller="Booking" asp-action="Lookup" class="cb-btn cb-btn-outline">
+            Tra cứu vé khác
+        </a>
         @if (User.Identity?.IsAuthenticated == true)
         {
-            <a asp-controller="Booking" asp-action="MyBookings" class="btn btn-link">Vé của tôi</a>
+            <a asp-controller="Booking" asp-action="MyBookings" class="cb-btn cb-btn-ghost">
+                Vé của tôi
+            </a>
         }
         @if (confirmed)
         {
-            <button type="button" class="btn btn-outline-secondary" onclick="window.print()">In vé</button>
+            <button type="button" class="cb-btn cb-btn-secondary" onclick="window.print()">
+                In vé
+            </button>
         }
     </div>
 
     @if (confirmed)
     {
-        <form asp-controller="Booking" asp-action="ResendEmail" method="post" class="resend-email-form mt-3">
+        <form asp-controller="Booking" asp-action="ResendEmail" method="post" class="cb-resend-form">
             <input type="hidden" name="code" value="@Model.BookingCode" />
             @if (User.Identity?.IsAuthenticated != true)
             {
-                <input type="email" name="email" class="form-control form-control-sm"
+                <input type="email" name="email" class="cb-input cb-input-sm" style="max-width: 240px;"
                        placeholder="Email đặt vé" required />
             }
-            <button type="submit" class="btn btn-outline-secondary btn-sm">Gửi lại email xác nhận</button>
+            <button type="submit" class="cb-btn cb-btn-outline cb-btn-sm">
+                Gửi lại email xác nhận
+            </button>
         </form>
     }
 </div>

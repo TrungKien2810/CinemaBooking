@@ -1,38 +1,40 @@
-// Tương tác nhỏ cho trang đăng nhập / đăng ký:
-// - Ẩn/hiện mật khẩu.
-// - Thanh đo độ mạnh mật khẩu (chỉ có ở trang đăng ký).
+// ===========================================================================
+// CinemaBooking v3 — auth-ui.js
+// Tương tác giao diện cho các trang tài khoản & xác thực:
+// - Ẩn / hiện mật khẩu (data-password-toggle="<inputId>")
+// - Thanh đo độ mạnh mật khẩu (data-password-input + data-password-strength)
+// ===========================================================================
 (function () {
     'use strict';
 
+    // 1. Ẩn / hiện mật khẩu
     document.querySelectorAll('[data-password-toggle]').forEach(function (btn) {
-        var input = document.getElementById(btn.getAttribute('data-password-toggle'));
+        var inputId = btn.getAttribute('data-password-toggle');
+        var input = document.getElementById(inputId);
         if (!input) return;
 
         btn.addEventListener('click', function () {
             var show = input.type === 'password';
             input.type = show ? 'text' : 'password';
-            btn.textContent = show ? '🙈' : '👁️';
+            btn.textContent = show ? 'Ẩn' : 'Hiện';
             btn.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
             input.focus();
         });
     });
 
-    var password = document.querySelector('[data-password-input]');
-    var strength = document.querySelector('[data-password-strength]');
-    if (!password || !strength) return;
-
-    var bar = strength.querySelector('[data-password-bar]');
-    var label = strength.querySelector('[data-password-label]');
+    // 2. Đo độ mạnh mật khẩu (hỗ trợ nhiều form / scoped)
+    var passwordInputs = document.querySelectorAll('[data-password-input]');
+    if (!passwordInputs.length) return;
 
     var levels = [
-        { text: 'Rất yếu', color: '#fb7185', width: '20%' },
-        { text: 'Yếu', color: '#f59e0b', width: '40%' },
-        { text: 'Trung bình', color: '#eab308', width: '60%' },
-        { text: 'Mạnh', color: '#34d399', width: '80%' },
-        { text: 'Rất mạnh', color: '#10b981', width: '100%' }
+        { text: 'Rất yếu', color: '#ff5c8a', width: '20%' },
+        { text: 'Yếu', color: '#ff85a8', width: '40%' },
+        { text: 'Trung bình', color: '#ffd166', width: '60%' },
+        { text: 'Mạnh', color: '#5ce1e6', width: '80%' },
+        { text: 'Rất mạnh', color: '#5df2b0', width: '100%' }
     ];
 
-    function score(value) {
+    function calculateScore(value) {
         var points = 0;
         if (value.length >= 8) points++;
         if (/[A-Z]/.test(value)) points++;
@@ -41,20 +43,30 @@
         return Math.min(points, 4);
     }
 
-    password.addEventListener('input', function () {
-        var value = password.value;
-        if (!value) {
-            strength.hidden = true;
-            bar.style.width = '0%';
-            label.textContent = '';
-            return;
-        }
+    passwordInputs.forEach(function (password) {
+        var form = password.closest('form') || document;
+        var strength = form.querySelector('[data-password-strength]');
+        if (!strength) return;
 
-        strength.hidden = false;
-        var level = levels[score(value)];
-        bar.style.width = level.width;
-        bar.style.background = level.color;
-        label.textContent = 'Độ mạnh: ' + level.text;
-        label.style.color = level.color;
+        var bar = strength.querySelector('[data-password-bar]');
+        var label = strength.querySelector('[data-password-label]');
+        if (!bar || !label) return;
+
+        password.addEventListener('input', function () {
+            var value = password.value;
+            if (!value) {
+                strength.hidden = true;
+                bar.style.width = '0%';
+                label.textContent = '';
+                return;
+            }
+
+            strength.hidden = false;
+            var level = levels[calculateScore(value)];
+            bar.style.width = level.width;
+            bar.style.background = level.color;
+            label.textContent = 'Độ mạnh: ' + level.text;
+            label.style.color = level.color;
+        });
     });
 })();

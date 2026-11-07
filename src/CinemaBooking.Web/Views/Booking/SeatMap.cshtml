@@ -3,119 +3,135 @@
     ViewData["Title"] = $"Chọn ghế — {Model.MovieTitle}";
     var seatColumns = Model.TotalColumns;
 
-    // Ghế VIP / đôi có icon và viền riêng để khách nhận ra loại ghế trên sơ đồ,
-    // không chỉ dựa vào màu trạng thái (trống / đang giữ / đã đặt).
     string TypeClass(SeatType type) => type switch
     {
-        SeatType.Vip => "seat-vip",
-        SeatType.Couple => "seat-couple",
+        SeatType.Vip => "vip seat-vip",
+        SeatType.Couple => "couple seat-couple",
         _ => "seat-standard",
     };
 }
 
-<div class="page-head">
-    <h1 class="page-title">@Model.MovieTitle</h1>
-    <p class="page-subtitle cb-muted">
-        @Model.TheaterName (@Model.City) · @Model.RoomName · @Model.StartLocal.ToString("HH:mm dd/MM/yyyy")
-    </p>
-</div>
+<div class="seatmap-page">
+    <header class="cr-card seatmap-header">
+        <small>@Model.TheaterName · @Model.City · @Model.RoomName</small>
+        <h1 class="cb-page-title seatmap-title">@Model.MovieTitle</h1>
+        <p class="seatmap-when">Suất @Model.StartLocal.ToString("HH:mm · dd/MM/yyyy")</p>
+    </header>
 
-<partial name="_BookingSteps" model="1" />
+    <partial name="_BookingSteps" model="1" />
 
-<div class="seat-map-shell cb-card" id="seat-map"
-     data-showtime-id="@Model.ShowtimeId"
-     data-hold-seconds="@Model.HoldSeconds"
-     aria-describedby="seat-map-legend">
-    <div class="seat-map-screen" aria-hidden="true"><span>Màn hình</span></div>
+    @if (TempData["Error"] is string error)
+    {
+        <div class="cb-alert cb-alert-danger" role="alert">
+            <span aria-hidden="true">✕</span>
+            <span>@error</span>
+        </div>
+    }
 
-    <div class="seat-rows" style="--seat-cols: @seatColumns">
-        <div class="seat-row seat-row-head" aria-hidden="true">
-            <span class="seat-map-row-label"></span>
-            @for (var col = 1; col <= seatColumns; col++)
-            {
-                <span class="seat-col-label">@col</span>
-            }
+    <div class="seat-map-shell" id="seat-map"
+         data-showtime-id="@Model.ShowtimeId"
+         data-hold-seconds="@Model.HoldSeconds"
+         aria-describedby="seat-map-legend">
+
+        <div class="seat-map-screen-wrap" aria-hidden="true">
+            <div class="seat-map-beam"></div>
+            <div class="seat-map-screen">
+                <span>MÀN HÌNH CHIẾU</span>
+            </div>
         </div>
 
-        @foreach (var row in Model.Rows)
-        {
-            <div class="seat-row">
-                <span class="seat-map-row-label" aria-hidden="true">@row.Label</span>
-                @foreach (var seat in row.Seats)
+        <div class="seat-map-viewport">
+            <div class="seat-rows" style="--seat-cols: @seatColumns">
+                <div class="seat-row seat-row-head" aria-hidden="true">
+                    <span class="seat-map-row-label"></span>
+                    @for (var col = 1; col <= seatColumns; col++)
+                    {
+                        <span class="seat-col-label">@col</span>
+                    }
+                    <span class="seat-map-row-label"></span>
+                </div>
+
+                @foreach (var row in Model.Rows)
                 {
-                    if (seat is null)
-                    {
-                        <span class="seat seat-gap" aria-hidden="true"></span>
-                        continue;
-                    }
+                    <div class="seat-row">
+                        <span class="seat-map-row-label" aria-hidden="true">@row.Label</span>
+                        @foreach (var seat in row.Seats)
+                        {
+                            if (seat is null)
+                            {
+                                <span class="seat seat-gap" aria-hidden="true"></span>
+                                continue;
+                            }
 
-                    // Nửa phải của ghế đôi đã được vẽ chung trong khối của nửa trái.
-                    if (seat.IsCoveredByPair) { continue; }
+                            // Nửa phải của ghế đôi đã được vẽ chung trong khối của nửa trái.
+                            if (seat.IsCoveredByPair) { continue; }
 
-                    // Ghế đôi lẻ loi: không có cặp thì không bán, nhưng vẫn hiện để khách thấy
-                    // sơ đồ không bị thiếu ô.
-                    if (seat.IsOrphan)
-                    {
-                        <span class="seat seat-couple seat-orphan"
-                              title="Ghế đôi @seat.Label không có cặp — không bán"
-                              aria-label="Ghế đôi @seat.Label không có cặp, không bán được">@seat.Label</span>
-                        continue;
-                    }
+                            // Ghế đôi lẻ loi: không có cặp thì không bán, nhưng vẫn hiện để khách thấy sơ đồ đầy đủ.
+                            if (seat.IsOrphan)
+                            {
+                                <span class="seat couple seat-couple seat-orphan"
+                                      title="Ghế đôi @seat.Label không có cặp — không bán"
+                                      aria-label="Ghế đôi @seat.Label không có cặp, không bán được">@seat.Label</span>
+                                continue;
+                            }
 
-                    var seatKind = seat.IsPair ? "Ghế đôi" : "Ghế";
-                    <button type="button"
-                            class="seat @TypeClass(seat.Type) @(seat.IsPair ? "seat-pair" : null) @(seat.IsBooked ? "is-booked" : "is-free")"
-                            data-seat-ids="@string.Join(",", seat.SeatIds)"
-                            data-seat-label="@seat.Label"
-                            data-seat-price="@seat.Price.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
-                            data-seat-type="@seat.Type"
-                            aria-pressed="@(seat.IsBooked ? "true" : "false")"
-                            aria-label="@seatKind @seat.Label, @seat.Type, @seat.Price.ToString("N0") đ@(seat.IsBooked ? ", đã được đặt" : "")"
-                            title="@seatKind @seat.Label · @seat.Type · @seat.Price.ToString("N0") đ"
-                            disabled="@seat.IsBooked">
-                        <span class="seat-label">@seat.Label</span>
-                    </button>
+                            var seatKind = seat.IsPair ? "Ghế đôi" : "Ghế";
+                            <button type="button"
+                                    class="seat @TypeClass(seat.Type) @(seat.IsPair ? "couple seat-couple seat-pair" : null) @(seat.IsBooked ? "is-booked" : "is-free")"
+                                    data-seat-ids="@string.Join(",", seat.SeatIds)"
+                                    data-seat-label="@seat.Label"
+                                    data-seat-price="@seat.Price.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                                    data-seat-type="@seat.Type"
+                                    aria-pressed="@(seat.IsBooked ? "true" : "false")"
+                                    aria-label="@seatKind @seat.Label, @seat.Type, @seat.Price.ToString("N0") đ@(seat.IsBooked ? ", đã được đặt" : "")"
+                                    title="@seatKind @seat.Label · @seat.Type · @seat.Price.ToString("N0") đ"
+                                    disabled="@seat.IsBooked">
+                                <span class="seat-label">@seat.Label</span>
+                            </button>
+                        }
+                        <span class="seat-map-row-label" aria-hidden="true">@row.Label</span>
+                    </div>
                 }
             </div>
-        }
-    </div>
+        </div>
 
-    <ul class="seat-map-legend" id="seat-map-legend" aria-label="Chú thích trạng thái và loại ghế">
-        <li><span class="seat-swatch is-free" aria-hidden="true"></span>Trống</li>
-        <li><span class="seat-swatch is-mine" aria-hidden="true"></span>Bạn đang giữ</li>
-        <li><span class="seat-swatch is-held" aria-hidden="true"></span>Người khác đang giữ</li>
-        <li><span class="seat-swatch is-booked" aria-hidden="true"></span>Đã đặt</li>
-        <li><span class="seat-swatch is-vip" aria-hidden="true">★</span>Ghế VIP</li>
-        <li><span class="seat-swatch is-couple" aria-hidden="true">♥</span>Ghế đôi</li>
-    </ul>
+        <p class="seat-map-hint" aria-hidden="true">↔ Kéo ngang để xem toàn bộ sơ đồ khán phòng.</p>
+
+        <ul class="seat-map-legend" id="seat-map-legend" aria-label="Chú thích trạng thái và loại ghế">
+            <li><span class="seat-swatch is-free" aria-hidden="true"></span>Trống</li>
+            <li><span class="seat-swatch is-mine" aria-hidden="true"></span>Bạn đang giữ</li>
+            <li><span class="seat-swatch is-held" aria-hidden="true"></span>Người khác đang giữ</li>
+            <li><span class="seat-swatch is-booked" aria-hidden="true">✕</span>Đã đặt</li>
+            <li><span class="seat-swatch is-vip" aria-hidden="true">★</span>Ghế VIP</li>
+            <li><span class="seat-swatch is-couple" aria-hidden="true">♥</span>Ghế đôi</li>
+        </ul>
+    </div>
 </div>
 
-<p class="seat-map-hint cb-muted" aria-hidden="true">Kéo ngang để xem toàn bộ sơ đồ.</p>
+<div class="seat-summary-dock" id="seat-summary" aria-live="polite">
+    <div class="seat-summary-dock-inner">
+        <div class="seat-summary-left">
+            <div id="seat-selected-list" class="seat-selected-list cb-muted">Chưa chọn ghế nào</div>
+            <span id="seat-hold-timer" class="seat-timer" hidden></span>
+        </div>
 
-<div class="seat-summary" id="seat-summary" aria-live="polite">
-    <div class="seat-summary-info">
-        <span id="seat-selected-list" class="cb-muted">Chưa chọn ghế nào</span>
-        <span id="seat-hold-timer" class="seat-timer" hidden></span>
+        <div class="seat-summary-right">
+            <div class="seat-total-block">
+                <span class="seat-total-label">Tổng tiền</span>
+                <strong class="seat-total-val" id="seat-total">0 ₫</strong>
+            </div>
+
+            <form asp-action="SelectSeats" method="post" id="seat-selection-form">
+                <input type="hidden" name="showtimeId" value="@Model.ShowtimeId" />
+                <input type="hidden" name="connectionId" id="seat-connection-id" />
+                <div id="seat-selected-inputs"></div>
+                <button type="submit" class="cb-btn cb-btn-primary cb-btn-lg seat-continue-btn" id="seat-continue" disabled>
+                    Tiếp tục thanh toán
+                </button>
+            </form>
+        </div>
     </div>
-    <div class="seat-total">Tổng: <strong id="seat-total">0 ₫</strong></div>
 </div>
-
-@if (TempData["Error"] is string error)
-{
-    <div class="alert alert-danger mt-3">@error</div>
-}
-
-@*
-    Contract cho JS: ghi connection id vào input connectionId và thêm một
-    <input type="hidden" name="seatIds" value="{seatId}"> cho mỗi ghế đang giữ.
-    Server kiểm tra lại toàn bộ bằng SeatLockManager trước khi lưu Session.
-*@
-<form asp-action="SelectSeats" method="post" id="seat-selection-form" class="mt-3">
-    <input type="hidden" name="showtimeId" value="@Model.ShowtimeId" />
-    <input type="hidden" name="connectionId" id="seat-connection-id" />
-    <div id="seat-selected-inputs"></div>
-    <button type="submit" class="btn btn-primary" id="seat-continue" disabled>Tiếp tục thanh toán</button>
-</form>
 
 <div id="seat-toasts" class="seat-toasts" aria-live="polite" aria-atomic="true"></div>
 

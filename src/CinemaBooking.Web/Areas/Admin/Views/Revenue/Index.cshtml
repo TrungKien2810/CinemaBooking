@@ -1,90 +1,220 @@
 @model RevenueDashboardViewModel
 @{
-    ViewData["Title"] = "Doanh thu";
+    ViewData["Title"] = "Báo cáo doanh thu";
+
+    var dailyAgg = Model.ByDay
+        .GroupBy(r => r.Day)
+        .Select(g => new { Day = g.Key, Revenue = g.Sum(x => x.Revenue), Tickets = g.Sum(x => x.Tickets) })
+        .OrderBy(x => x.Day)
+        .ToList();
+
+    var maxRevenue = dailyAgg.Count > 0 ? dailyAgg.Max(x => x.Revenue) : 0m;
+    if (maxRevenue <= 0) maxRevenue = 100000m;
 }
 
 <div class="admin-page-head">
-    <div>
-        <h1 class="page-title">Doanh thu</h1>
-        <p class="cb-muted page-subtitle">Chỉ tính đơn đã xác nhận, theo ngày đặt vé (giờ rạp).</p>
+    <div class="admin-page-title-wrap">
+        <h1 class="admin-page-title">Doanh thu</h1>
+        <p class="admin-page-subtitle">Chỉ tính đơn đã xác nhận thanh toán thành công, theo ngày đặt vé (giờ rạp).</p>
     </div>
-    <a asp-action="Breakdown" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")"
-       class="btn btn-outline-secondary">Theo phim &amp; suất chiếu</a>
+    <div class="admin-page-actions">
+        <a asp-action="Breakdown" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")"
+           class="cb-btn cb-btn-secondary cb-btn-sm">
+            <span>🎬</span> Phân tích theo phim &amp; suất
+        </a>
+    </div>
 </div>
 
-<form method="get" class="row g-2 align-items-end mb-3">
-    <div class="col-auto">
-        <label for="from" class="form-label">Từ ngày</label>
-        <input id="from" name="from" type="date" value="@Model.From.ToString("yyyy-MM-dd")" class="form-control" />
+<form method="get" class="admin-filter-bar">
+    <div class="admin-filter-item">
+        <label for="from" class="admin-filter-label">Từ ngày</label>
+        <input id="from" name="from" type="date" value="@Model.From.ToString("yyyy-MM-dd")" class="admin-filter-input" />
     </div>
-    <div class="col-auto">
-        <label for="to" class="form-label">Đến ngày</label>
-        <input id="to" name="to" type="date" value="@Model.To.ToString("yyyy-MM-dd")" class="form-control" />
+    <div class="admin-filter-item">
+        <label for="to" class="admin-filter-label">Đến ngày</label>
+        <input id="to" name="to" type="date" value="@Model.To.ToString("yyyy-MM-dd")" class="admin-filter-input" />
     </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-outline-primary">Xem</button>
+    <div class="admin-filter-item" style="align-self: flex-end;">
+        <button type="submit" class="cb-btn cb-btn-primary cb-btn-sm">
+            <span>🔍</span> Lọc dữ liệu
+        </button>
     </div>
 </form>
 
 <div class="admin-stat-grid">
-    <div class="admin-stat">
+    <div class="admin-stat-card">
         <span class="admin-stat-label">Tổng doanh thu</span>
         <strong class="admin-stat-value is-accent">@Model.TotalRevenue.ToString("N0") ₫</strong>
     </div>
-    <div class="admin-stat">
+    <div class="admin-stat-card">
         <span class="admin-stat-label">Vé đã bán</span>
         <strong class="admin-stat-value">@Model.TotalTickets</strong>
     </div>
-    <div class="admin-stat">
-        <span class="admin-stat-label">Chi nhánh có doanh thu</span>
+    <div class="admin-stat-card">
+        <span class="admin-stat-label">Chi nhánh phát sinh doanh thu</span>
         <strong class="admin-stat-value">@Model.ByTheater.Count</strong>
     </div>
 </div>
 
-<h2 class="h5">Theo chi nhánh</h2>
-<div class="table-responsive"><table class="table table-sm align-middle mb-4">
-    <thead>
-        <tr>
-            <th>Chi nhánh</th>
-            <th class="text-end">Vé</th>
-            <th class="text-end">Doanh thu</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var t in Model.ByTheater)
-        {
-            <tr>
-                <td>@t.TheaterName</td>
-                <td class="text-end">@t.Tickets</td>
-                <td class="text-end">@t.Revenue.ToString("N0")</td>
-            </tr>
-        }
-        @if (Model.ByTheater.Count == 0)
-        {
-            <tr><td colspan="3" class="text-center text-muted">Chưa có vé nào được bán trong khoảng này.</td></tr>
-        }
-    </tbody>
-</table></div>
+<!-- BIỂU ĐỒ DOANH THU SVG THUẦN (KHÔNG THƯ VIỆN BÊN NGOÀI) -->
+<div class="admin-chart-card">
+    <div class="admin-chart-head">
+        <div>
+            <h2 class="admin-chart-title">Biểu đồ doanh thu theo ngày</h2>
+            <p class="admin-form-hint">Di chuột vào từng cột để xem chi tiết doanh thu và số lượng vé.</p>
+        </div>
+        <div class="admin-chart-legend">
+            <div class="admin-chart-legend-item">
+                <span class="admin-chart-legend-color" style="background: var(--cb-accent);"></span>
+                <span>Doanh thu (VNĐ)</span>
+            </div>
+        </div>
+    </div>
 
-<h2 class="h5">Theo ngày</h2>
-<div class="table-responsive"><table class="table table-sm align-middle">
-    <thead>
-        <tr>
-            <th>Ngày</th>
-            <th>Chi nhánh</th>
-            <th class="text-end">Vé</th>
-            <th class="text-end">Doanh thu</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var r in Model.ByDay)
-        {
+    @if (dailyAgg.Count == 0 || Model.TotalRevenue == 0)
+    {
+        <div style="text-align: center; padding: 3rem 1rem; color: var(--cb-text-muted);">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;" aria-hidden="true">📊</div>
+            <p>Chưa có dữ liệu doanh thu trong khoảng thời gian đã chọn.</p>
+        </div>
+    }
+    else
+    {
+        var chartWidth = Math.Max(700, dailyAgg.Count * 60 + 100);
+        var chartHeight = 260;
+        var paddingLeft = 70;
+        var paddingBottom = 40;
+        var paddingTop = 30;
+        var plotWidth = chartWidth - paddingLeft - 30;
+        var plotHeight = chartHeight - paddingTop - paddingBottom;
+        var barStep = (double)plotWidth / dailyAgg.Count;
+        var barWidth = Math.Min(40.0, barStep * 0.65);
+
+        <div class="admin-chart-wrapper">
+            <svg class="admin-svg-chart" viewBox="0 0 @chartWidth @chartHeight" role="img" aria-label="Biểu đồ doanh thu theo ngày">
+                <defs>
+                    <linearGradient id="revenueBarGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="var(--cb-accent)" />
+                        <stop offset="100%" stop-color="rgba(var(--cb-accent-rgb), 0.35)" />
+                    </linearGradient>
+                </defs>
+
+                <!-- Grid lines & Y-axis labels -->
+                <g class="chart-grid">
+                    @for (int step = 0; step <= 4; step++)
+                    {
+                        var yVal = maxRevenue * step / 4;
+                        var yPos = paddingTop + plotHeight - (plotHeight * step / 4);
+                        <line x1="@paddingLeft" y1="@yPos" x2="@(chartWidth - 20)" y2="@yPos" />
+                        @Html.Raw($"<text x=\"{paddingLeft - 8}\" y=\"{yPos + 4}\" text-anchor=\"end\">{yVal:N0}</text>")
+                    }
+                </g>
+
+                <!-- X-axis line -->
+                <line x1="@paddingLeft" y1="@(paddingTop + plotHeight)" x2="@(chartWidth - 20)" y2="@(paddingTop + plotHeight)" stroke="var(--cb-border-strong)" stroke-width="1.5" />
+
+                <!-- Bars & X-axis labels -->
+                @for (int i = 0; i < dailyAgg.Count; i++)
+                {
+                    var item = dailyAgg[i];
+                    var xCenter = paddingLeft + (i + 0.5) * barStep;
+                    var xLeft = xCenter - (barWidth / 2);
+                    var bHeight = (double)(item.Revenue / maxRevenue) * plotHeight;
+                    if (bHeight < 2 && item.Revenue > 0) bHeight = 2;
+                    var yTop = paddingTop + plotHeight - bHeight;
+
+                    <g class="chart-bar" tabindex="0">
+                        <title>Ngày @item.Day.ToString("dd/MM/yyyy"): @item.Revenue.ToString("N0") ₫ (@item.Tickets vé)</title>
+                        <rect x="@xLeft" y="@yTop" width="@barWidth" height="@bHeight" rx="4" ry="4" fill="url(#revenueBarGrad)" />
+                        @if (dailyAgg.Count <= 12 && item.Revenue > 0)
+                        {
+                            var textVal = item.Revenue >= 1000000 ? (item.Revenue / 1000000m).ToString("0.#") + "M" : (item.Revenue / 1000m).ToString("0") + "k";
+                            @Html.Raw($"<text x=\"{xCenter}\" y=\"{yTop - 6}\" text-anchor=\"middle\" font-size=\"10\" font-weight=\"700\" fill=\"var(--cb-accent)\">{textVal}</text>")
+                        }
+                        @Html.Raw($"<text x=\"{xCenter}\" y=\"{paddingTop + plotHeight + 18}\" text-anchor=\"middle\">{item.Day:dd/MM}</text>")
+                    </g>
+                }
+            </svg>
+        </div>
+    }
+</div>
+
+<div class="admin-chart-head">
+    <h2 class="admin-chart-title">Theo chi nhánh</h2>
+</div>
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead>
             <tr>
-                <td>@r.Day.ToString("dd/MM/yyyy")</td>
-                <td>@r.TheaterName</td>
-                <td class="text-end">@r.Tickets</td>
-                <td class="text-end">@r.Revenue.ToString("N0")</td>
+                <th>Chi nhánh</th>
+                <th class="cb-num">Vé đã bán</th>
+                <th class="cb-num">Doanh thu</th>
+                <th style="width: 25%;">Tỷ trọng</th>
             </tr>
-        }
-    </tbody>
-</table></div>
+        </thead>
+        <tbody>
+            @foreach (var t in Model.ByTheater)
+            {
+                var share = Model.TotalRevenue > 0 ? (double)(t.Revenue / Model.TotalRevenue) : 0;
+                <tr>
+                    <td style="font-weight: 600;">@t.TheaterName</td>
+                    <td class="cb-num">@t.Tickets</td>
+                    <td class="cb-num" style="color: var(--cb-accent); font-weight: 700;">@t.Revenue.ToString("N0") ₫</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div class="admin-occupancy-bar" style="height: 6px;">
+                                <div class="admin-occupancy-fill" style="width: @((share * 100).ToString("0.#"))%;"></div>
+                            </div>
+                            <span class="cb-num" style="font-size: 0.75rem; color: var(--cb-text-muted); min-width: 38px;">
+                                @share.ToString("P0")
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (Model.ByTheater.Count == 0)
+            {
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--cb-text-muted); padding: 2rem;">
+                        Chưa có vé nào được bán trong khoảng thời gian này.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="admin-chart-head" style="margin-top: var(--cb-space-6);">
+    <h2 class="admin-chart-title">Chi tiết theo ngày và chi nhánh</h2>
+</div>
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Ngày</th>
+                <th>Chi nhánh</th>
+                <th class="cb-num">Vé đã bán</th>
+                <th class="cb-num">Doanh thu</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.ByDay)
+            {
+                <tr>
+                    <td class="cb-num" style="text-align: left !important; font-weight: 600;">@r.Day.ToString("dd/MM/yyyy")</td>
+                    <td>@r.TheaterName</td>
+                    <td class="cb-num">@r.Tickets</td>
+                    <td class="cb-num" style="color: var(--cb-accent); font-weight: 700;">@r.Revenue.ToString("N0") ₫</td>
+                </tr>
+            }
+            @if (Model.ByDay.Count == 0)
+            {
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--cb-text-muted); padding: 2rem;">
+                        Không có dữ liệu trong khoảng thời gian đã chọn.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

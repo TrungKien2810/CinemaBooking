@@ -1,61 +1,70 @@
 @model BookingTicketViewModel
+@using CinemaBooking.Domain.Enums
 
-<div class="booking-details">
-    <div class="row g-4">
-        <div class="col-md-7">
-            <h2 class="booking-movie">@Model.MovieTitle</h2>
-            <p class="cb-muted mb-1">@Model.TheaterName (@Model.City) · @Model.RoomName</p>
-            <p class="booking-time">@Model.StartLocal.ToString("HH:mm · dd/MM/yyyy")</p>
-
-            <div class="table-responsive">
-                <table class="table table-sm">
-                    <thead>
-                        <tr><th>Ghế</th><th>Loại</th><th class="text-end">Giá</th></tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var seat in Model.Seats)
-                        {
-                            <tr>
-                                <td>@seat.Label</td>
-                                <td>@seat.Type</td>
-                                <td class="text-end">@seat.Price.ToString("N0") ₫</td>
-                            </tr>
-                        }
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th colspan="2">Tổng cộng</th>
-                            <th class="text-end">@Model.TotalAmount.ToString("N0") ₫</th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+<div class="cb-booking-details-grid">
+    <div>
+        <h2 class="cb-ticket-movie-title">@Model.MovieTitle</h2>
+        <div class="cb-ticket-theater" style="margin-top: 0.35rem; margin-bottom: 1rem;">
+            <span>@Model.TheaterName (@Model.City) · @Model.RoomName</span>
+            <span class="cb-muted">@Model.StartLocal.ToString("HH:mm · dd/MM/yyyy")</span>
         </div>
 
-        <div class="col-md-5">
-            <dl class="booking-meta">
-                <dt>Mã vé</dt>
-                <dd><strong>@Model.BookingCode</strong></dd>
-                <dt>Trạng thái</dt>
-                <dd>
-                    <span class="badge @(Model.Status == BookingStatus.Confirmed ? "text-bg-success" : "text-bg-secondary")">
-                        @Model.StatusLabel
-                    </span>
-                </dd>
-                <dt>Thanh toán</dt>
-                <dd>@Model.PaymentMethod · @Model.PaymentStateLabel</dd>
-                <dt>Khách hàng</dt>
-                <dd>@Model.CustomerName</dd>
-                <dt>Email</dt>
-                <dd class="booking-meta-email">@Model.CustomerEmail</dd>
-                @if (!string.IsNullOrWhiteSpace(Model.CustomerPhone))
+        <table class="cb-ticket-table">
+            <thead>
+                <tr>
+                    <th>Ghế</th>
+                    <th>Loại</th>
+                    <th class="cb-num">Giá</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var seat in Model.Seats)
                 {
-                    <dt>Điện thoại</dt>
-                    <dd>@Model.CustomerPhone</dd>
+                    <tr>
+                        <td><strong>@seat.Label</strong></td>
+                        <td><span class="cb-badge cb-badge-surface">@seat.Type</span></td>
+                        <td class="cb-num">@seat.Price.ToString("N0") ₫</td>
+                    </tr>
                 }
-                <dt>Đặt lúc</dt>
-                <dd>@Model.BookingTimeLocal.ToString("HH:mm dd/MM/yyyy")</dd>
-            </dl>
-        </div>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="2">Tổng cộng</th>
+                    <td class="cb-num cb-ticket-total-val">@Model.TotalAmount.ToString("N0") ₫</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div>
+        <dl class="cb-booking-meta-dl">
+            <dt>Mã vé</dt>
+            <dd><strong style="color: var(--cb-accent); font-family: var(--cb-font-ticket);">@Model.BookingCode</strong></dd>
+
+            <dt>Trạng thái</dt>
+            <dd>
+                <span class="cb-badge @(Model.Status == BookingStatus.Confirmed ? "cb-badge-success" : "cb-badge-surface")">
+                    @Model.StatusLabel
+                </span>
+            </dd>
+
+            <dt>Thanh toán</dt>
+            <dd>@Model.PaymentMethod · @Model.PaymentStateLabel</dd>
+
+            <dt>Khách hàng</dt>
+            <dd>@Model.CustomerName</dd>
+
+            <dt>Email</dt>
+            <dd>@Model.CustomerEmail</dd>
+
+            @if (!string.IsNullOrWhiteSpace(Model.CustomerPhone))
+            {
+                <dt>Điện thoại</dt>
+                <dd>@Model.CustomerPhone</dd>
+            }
+
+            <dt>Đặt lúc</dt>
+            <dd>@Model.BookingTimeLocal.ToString("HH:mm dd/MM/yyyy")</dd>
+        </dl>
     </div>
 </div>
