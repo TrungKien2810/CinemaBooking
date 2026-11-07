@@ -50,3 +50,13 @@ config/
 .opencode/
 AGENTS.md
 CLAUDE.md
+
+# governance (OptimizedToken) — runtime + generated files
+config/governance.json
+config/pricing.json
+.codex/hooks.json
+.agents/hooks.json
+.opencode/plugins/governance.js
+.claude/settings.json
+docs/project-state/STATUS.md
+docs/project-state/ISSUE.md

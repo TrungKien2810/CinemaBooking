@@ -1,0 +1,1105 @@
+/* ===========================================================================
+   CinemaBooking v3 "Phòng Chiếu Đêm" — admin.css
+   Dành riêng cho khu vực Quản trị (Lane D: Admin).
+   Nguyên tắc: Bảng mật độ cao, sidebar trái, bộ lọc gọn, form phẳng,
+   biểu đồ doanh thu SVG thuần, không trò chơi, đọc nhanh.
+   Nguồn token DUY NHẤT: tokens.css.
+   =========================================================================== */
+
+/* --- 1. KHUNG GIAO DIỆN (ADMIN SHELL) --- */
+.admin-shell {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    background-color: var(--cb-bg);
+    color: var(--cb-text);
+}
+
+/* Sidebar trái cố định */
+.admin-sidebar {
+    width: 260px;
+    min-width: 260px;
+    background-color: var(--cb-bg-elevated);
+    border-right: 1px solid var(--cb-border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    z-index: 100;
+    padding: var(--cb-space-4);
+    box-shadow: 4px 0 24px rgba(5, 0, 14, 0.4);
+    overflow-y: auto;
+}
+
+.admin-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: var(--cb-space-2) var(--cb-space-2) var(--cb-space-4);
+    margin-bottom: var(--cb-space-3);
+    border-bottom: 1px solid var(--cb-border);
+}
+
+.admin-sidebar-brand-mark {
+    font-size: 1.5rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 10px rgba(var(--cb-accent-rgb), 0.5));
+}
+
+.admin-sidebar-brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-sidebar-title {
+    font-family: var(--cb-font-display);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--cb-text);
+    line-height: 1.2;
+}
+
+.admin-sidebar-tagline {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cb-accent);
+}
+
+/* Navigation items */
+.admin-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3125rem;
+    flex: 1;
+}
+
+.admin-nav-section-title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cb-text-faint);
+    padding: var(--cb-space-3) var(--cb-space-2) var(--cb-space-1);
+}
+
+.admin-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: var(--cb-radius-sm);
+    color: var(--cb-text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: background-color var(--cb-dur-press) var(--cb-ease-out),
+                color var(--cb-dur-press) var(--cb-ease-out),
+                border-color var(--cb-dur-press) var(--cb-ease-out);
+}
+
+.admin-nav-link:hover {
+    background-color: var(--cb-surface-2);
+    color: var(--cb-text);
+    border-color: var(--cb-border);
+}
+
+.admin-nav-link.active,
+.admin-nav-link[aria-current="page"] {
+    background-color: var(--cb-surface-3);
+    color: var(--cb-accent);
+    font-weight: 600;
+    border-color: rgba(var(--cb-accent-rgb), 0.35);
+    border-left: 3px solid var(--cb-accent);
+    box-shadow: inset 0 0 16px rgba(var(--cb-accent-rgb), 0.06);
+}
+
+.admin-nav-icon {
+    font-size: 1.125rem;
+    line-height: 1;
+    opacity: 0.9;
+}
+
+/* Sidebar footer */
+.admin-sidebar-foot {
+    margin-top: auto;
+    padding-top: var(--cb-space-3);
+    border-top: 1px solid var(--cb-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--cb-space-2);
+}
+
+.admin-user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: var(--cb-space-2);
+    border-radius: var(--cb-radius-sm);
+    background-color: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+}
+
+.admin-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cb-surface-3), var(--cb-surface-2));
+    border: 1px solid var(--cb-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--cb-accent);
+}
+
+.admin-user-meta {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-user-name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--cb-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-user-role {
+    font-size: 0.6875rem;
+    color: var(--cb-text-muted);
+}
+
+.admin-sidebar-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.admin-sidebar-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--cb-radius-sm);
+    text-decoration: none;
+    border: 1px solid var(--cb-border);
+    background-color: var(--cb-surface);
+    color: var(--cb-text-muted);
+    cursor: pointer;
+    transition: background-color var(--cb-dur-press) var(--cb-ease-out),
+                color var(--cb-dur-press) var(--cb-ease-out);
+}
+
+.admin-sidebar-btn:hover {
+    background-color: var(--cb-surface-2);
+    color: var(--cb-text);
+}
+
+.admin-sidebar-btn-danger:hover {
+    color: var(--cb-danger);
+    border-color: rgba(255, 92, 138, 0.4);
+    background-color: rgba(255, 92, 138, 0.08);
+}
+
+/* Khu vực nội dung quản trị */
+.admin-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--cb-space-6) var(--cb-space-8);
+    background-color: var(--cb-bg);
+}
+
+/* --- 2. ĐẦU TRANG & TIÊU ĐỀ (PAGE HEAD) --- */
+.admin-page-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--cb-space-4);
+    margin-bottom: var(--cb-space-6);
+    flex-wrap: wrap;
+}
+
+.admin-page-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.admin-back-link,
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--cb-beam);
+    text-decoration: none;
+    margin-bottom: 0.25rem;
+    transition: color var(--cb-dur-press) var(--cb-ease-out);
+}
+
+.admin-back-link:hover,
+.back-link:hover {
+    color: var(--cb-accent);
+    text-decoration: underline;
+}
+
+.admin-page-title,
+.page-title {
+    font-family: var(--cb-font-display);
+    font-size: 1.625rem;
+    font-weight: 700;
+    color: var(--cb-text);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    flex-wrap: wrap;
+}
+
+.admin-page-subtitle,
+.page-subtitle {
+    font-size: 0.875rem;
+    color: var(--cb-text-muted);
+}
+
+.admin-page-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    flex-wrap: wrap;
+}
+
+/* --- 3. BỘ LỌC GỌN (COMPACT FILTER BARS) --- */
+.admin-filter-bar,
+.admin-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius-sm);
+    margin-bottom: var(--cb-space-4);
+    flex-wrap: wrap;
+}
+
+.admin-filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.admin-filter-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cb-text-muted);
+}
+
+.admin-filter-input,
+.admin-filter select,
+.admin-filter input {
+    height: 38px;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    background-color: var(--cb-surface-2);
+    border: 1px solid var(--cb-border-strong);
+    border-radius: var(--cb-radius-sm);
+    color: var(--cb-text);
+    transition: border-color var(--cb-dur-press) var(--cb-ease-out),
+                box-shadow var(--cb-dur-press) var(--cb-ease-out);
+}
+
+.admin-filter-input:focus,
+.admin-filter select:focus,
+.admin-filter input:focus {
+    outline: none;
+    border-color: var(--cb-beam);
+    box-shadow: 0 0 0 2px rgba(var(--cb-beam-rgb), 0.25);
+}
+
+.admin-date-stepper {
+    display: inline-flex;
+    border: 1px solid var(--cb-border-strong);
+    border-radius: var(--cb-radius-sm);
+    overflow: hidden;
+    height: 38px;
+}
+
+.admin-date-btn {
+    background-color: var(--cb-surface-2);
+    color: var(--cb-text);
+    border: none;
+    border-right: 1px solid var(--cb-border);
+    padding: 0 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--cb-dur-press) var(--cb-ease-out);
+}
+
+.admin-date-btn:last-child {
+    border-right: none;
+}
+
+.admin-date-btn:hover {
+    background-color: var(--cb-surface-3);
+    color: var(--cb-accent);
+}
+
+/* --- 4. BẢNG MẬT ĐỘ CAO (HIGH-DENSITY TABLES) --- */
+.admin-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    background-color: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius-sm);
+    box-shadow: var(--cb-shadow-sm);
+    margin-bottom: var(--cb-space-4);
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    text-align: left;
+    color: var(--cb-text);
+}
+
+.admin-table thead th {
+    background-color: var(--cb-surface-2);
+    color: var(--cb-text-muted);
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.625rem 0.875rem;
+    border-bottom: 2px solid var(--cb-border-strong);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.admin-table tbody td {
+    padding: 0.5rem 0.875rem;
+    border-bottom: 1px solid var(--cb-border);
+    vertical-align: middle;
+    line-height: 1.4;
+}
+
+.admin-table tbody tr {
+    transition: background-color var(--cb-dur-press) var(--cb-ease-out);
+}
+
+.admin-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.035);
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tbody tr.is-inactive {
+    opacity: 0.55;
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+.admin-table-group-header,
+.admin-group-row th {
+    background-color: var(--cb-surface-3) !important;
+    color: var(--cb-accent) !important;
+    font-family: var(--cb-font-display);
+    font-size: 0.8125rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em;
+    padding: 0.5rem 0.875rem !important;
+    border-top: 1px solid var(--cb-border-strong);
+    border-bottom: 1px solid var(--cb-border-strong) !important;
+}
+
+.admin-table tfoot th,
+.admin-table tfoot td {
+    background-color: var(--cb-surface-2);
+    color: var(--cb-text);
+    font-weight: 700;
+    padding: 0.625rem 0.875rem;
+    border-top: 2px solid var(--cb-border-strong);
+}
+
+/* Căn phải cho số liệu và định dạng font vé */
+.admin-num,
+.cb-num {
+    text-align: right !important;
+    font-family: var(--cb-font-ticket);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Cột poster thumbnail */
+.admin-movie-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.admin-poster-thumb {
+    width: 32px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 4px;
+    background-color: var(--cb-surface-3);
+    border: 1px solid var(--cb-border);
+    flex-shrink: 0;
+}
+
+/* Cột hành động thao tác trong bảng */
+.admin-actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.admin-actions .cb-btn,
+.admin-actions .btn {
+    min-height: 28px;
+    padding: 0.2rem 0.625rem;
+    font-size: 0.75rem;
+}
+
+/* --- 5. HUY HIỆU TRẠNG THÁI (STATUS BADGES) --- */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--cb-radius-pill);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    line-height: 1;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.status-badge.is-on,
+.status-badge.is-confirmed,
+.status-badge.is-success {
+    background-color: var(--cb-success-soft);
+    color: var(--cb-success);
+    border-color: rgba(93, 242, 176, 0.35);
+}
+
+.status-badge.is-off,
+.status-badge.is-inactive,
+.status-badge.is-secondary {
+    background-color: var(--cb-surface-3);
+    color: var(--cb-text-muted);
+    border-color: var(--cb-border);
+}
+
+.status-badge.is-pending,
+.status-badge.is-warning {
+    background-color: rgba(255, 209, 102, 0.16);
+    color: var(--cb-warning);
+    border-color: rgba(255, 209, 102, 0.35);
+}
+
+.status-badge.is-danger,
+.status-badge.is-cancelled {
+    background-color: rgba(255, 92, 138, 0.16);
+    color: var(--cb-danger);
+    border-color: rgba(255, 92, 138, 0.35);
+}
+
+/* --- 6. KHỐI THỐNG KÊ (STAT CARDS & GRIDS) --- */
+.admin-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--cb-space-4);
+    margin-bottom: var(--cb-space-6);
+}
+
+.admin-stat,
+.admin-stat-card {
+    background-color: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius-sm);
+    padding: var(--cb-space-4);
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform var(--cb-dur-pop) var(--cb-ease-out),
+                border-color var(--cb-dur-pop) var(--cb-ease-out);
+}
+
+.admin-stat:hover,
+.admin-stat-card:hover {
+    border-color: var(--cb-border-strong);
+    transform: translateY(-2px);
+}
+
+.admin-stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cb-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.admin-stat-value {
+    font-family: var(--cb-font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--cb-text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+}
+
+.admin-stat-value.is-accent {
+    color: var(--cb-accent);
+    text-shadow: 0 0 20px rgba(var(--cb-accent-rgb), 0.35);
+}
+
+/* --- 7. BIỂU ĐỒ DOANH THU SVG THUẦN (PURE SVG CHARTS) --- */
+.admin-chart-card {
+    background-color: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius);
+    padding: var(--cb-space-5);
+    margin-bottom: var(--cb-space-6);
+    box-shadow: var(--cb-shadow-sm);
+}
+
+.admin-chart-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--cb-space-4);
+    gap: 1rem;
+}
+
+.admin-chart-title {
+    font-family: var(--cb-font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--cb-text);
+}
+
+.admin-chart-legend {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: var(--cb-text-muted);
+}
+
+.admin-chart-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.admin-chart-legend-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+.admin-chart-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.admin-svg-chart {
+    width: 100%;
+    height: auto;
+    min-width: 600px;
+    display: block;
+}
+
+.admin-svg-chart text {
+    font-family: var(--cb-font-body);
+    font-size: 11px;
+    fill: var(--cb-text-muted);
+}
+
+.admin-svg-chart .chart-grid line {
+    stroke: var(--cb-border);
+    stroke-dasharray: 3 3;
+    stroke-opacity: 0.7;
+}
+
+.admin-svg-chart .chart-bar {
+    transition: opacity var(--cb-dur-press) var(--cb-ease-out),
+                transform var(--cb-dur-press) var(--cb-ease-out);
+    cursor: pointer;
+}
+
+.admin-svg-chart .chart-bar:hover {
+    opacity: 0.85;
+    filter: brightness(1.15);
+}
+
+/* Thanh tiến độ lấp đầy (Occupancy bar) */
+.admin-occupancy-bar {
+    width: 100%;
+    min-width: 80px;
+    height: 8px;
+    background-color: var(--cb-surface-3);
+    border-radius: var(--cb-radius-pill);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--cb-border);
+}
+
+.admin-occupancy-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cb-beam), var(--cb-accent));
+    border-radius: var(--cb-radius-pill);
+}
+
+.admin-occupancy-fill.is-high {
+    background: linear-gradient(90deg, var(--cb-accent), var(--cb-curtain));
+}
+
+/* --- 8. FORM PHẲNG (FLAT ADMIN FORMS) --- */
+.admin-form {
+    background-color: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius);
+    padding: var(--cb-space-6);
+    box-shadow: var(--cb-shadow-sm);
+    margin-bottom: var(--cb-space-6);
+}
+
+.admin-form-narrow {
+    max-width: 680px;
+}
+
+.admin-form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--cb-space-4);
+}
+
+@media (min-width: 768px) {
+    .admin-form-grid-2 {
+        grid-template-columns: 1fr 1fr;
+    }
+    .admin-form-grid-3 {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+.admin-form-layout-poster {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--cb-space-6);
+}
+
+@media (min-width: 900px) {
+    .admin-form-layout-poster {
+        grid-template-columns: 1fr 280px;
+    }
+}
+
+.admin-form-layout-room {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--cb-space-6);
+}
+
+@media (min-width: 900px) {
+    .admin-form-layout-room {
+        grid-template-columns: 340px 1fr;
+    }
+}
+
+.admin-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: var(--cb-space-4);
+}
+
+.admin-label,
+.form-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--cb-text);
+}
+
+.admin-input,
+.admin-form .form-control,
+.admin-form .form-select {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9375rem;
+    background-color: var(--cb-surface-2);
+    border: 1px solid var(--cb-border-strong);
+    border-radius: var(--cb-radius-sm);
+    color: var(--cb-text);
+    transition: border-color var(--cb-dur-press) var(--cb-ease-out),
+                box-shadow var(--cb-dur-press) var(--cb-ease-out);
+}
+
+.admin-input:focus,
+.admin-form .form-control:focus,
+.admin-form .form-select:focus {
+    outline: none;
+    border-color: var(--cb-beam);
+    box-shadow: 0 0 0 3px rgba(var(--cb-beam-rgb), 0.25);
+    background-color: var(--cb-surface);
+}
+
+.admin-form textarea.form-control {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.admin-form-check,
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.5rem 0;
+    cursor: pointer;
+}
+
+.admin-form-check input[type="checkbox"],
+.form-check-input {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid var(--cb-border-strong);
+    background-color: var(--cb-surface-2);
+    accent-color: var(--cb-accent);
+    cursor: pointer;
+}
+
+.admin-form-hint,
+.form-text {
+    font-size: 0.75rem;
+    color: var(--cb-text-muted);
+    line-height: 1.4;
+}
+
+.admin-hints {
+    margin-top: 0.5rem;
+    padding-left: 1.25rem;
+    font-size: 0.8125rem;
+    color: var(--cb-text-muted);
+    line-height: 1.6;
+}
+
+.admin-form-error,
+.text-danger {
+    font-size: 0.75rem;
+    color: var(--cb-danger);
+    font-weight: 500;
+}
+
+.admin-form-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: var(--cb-space-6);
+    padding-top: var(--cb-space-4);
+    border-top: 1px solid var(--cb-border);
+}
+
+/* Xem trước poster */
+.admin-poster-preview-card {
+    background-color: var(--cb-surface-2);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius-sm);
+    padding: var(--cb-space-3);
+    text-align: center;
+}
+
+.admin-poster-preview {
+    width: 100%;
+    max-width: 220px;
+    aspect-ratio: 2/3;
+    border-radius: var(--cb-radius-sm);
+    overflow: hidden;
+    background-color: var(--cb-surface-3);
+    border: 1px solid var(--cb-border-strong);
+    margin: 0 auto;
+}
+
+.admin-poster-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* --- 9. SƠ ĐỒ GHẾ QUẢN TRỊ (SEAT PREVIEW & EDITOR) --- */
+.seat-preview {
+    background-color: var(--cb-surface-2);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius-sm);
+    padding: var(--cb-space-4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--cb-space-3);
+    width: 100%;
+    overflow: hidden;
+}
+
+.seat-screen {
+    width: 80%;
+    max-width: 360px;
+    height: 24px;
+    border-top: 3px solid var(--cb-beam);
+    border-radius: 50% 50% 0 0 / 12px 12px 0 0;
+    text-align: center;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--cb-beam);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 -8px 24px -4px rgba(var(--cb-beam-rgb), 0.35);
+    margin-bottom: 0.5rem;
+}
+
+.seat-preview-scroll {
+    width: 100%;
+    overflow-x: auto;
+    padding: 0.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.seat-preview-grid {
+    display: grid;
+    grid-template-columns: auto repeat(var(--seat-cols, 10), 24px);
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+}
+
+.seat-row-label {
+    font-family: var(--cb-font-ticket);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--cb-text-faint);
+    text-align: right;
+    padding-right: 6px;
+    user-select: none;
+}
+
+.seat-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px 6px 3px 3px;
+    border: 1px solid transparent;
+    cursor: default;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 0;
+    background: transparent;
+}
+
+.seat-dot.seat-standard {
+    background-color: var(--cb-seat-free-bg);
+    border-color: var(--cb-seat-free-border);
+}
+
+.seat-dot.seat-vip {
+    background-color: rgba(255, 200, 87, 0.2);
+    border-color: var(--cb-seat-vip);
+}
+
+.seat-dot.seat-couple {
+    background-color: rgba(var(--cb-curtain-rgb), 0.2);
+    border-color: var(--cb-seat-couple);
+}
+
+.seat-dot.seat-locked {
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.seat-dot.seat-editable {
+    cursor: pointer;
+    transition: transform var(--cb-dur-pop) var(--cb-ease-snap),
+                box-shadow var(--cb-dur-press) var(--cb-ease-out);
+}
+
+.seat-dot.seat-editable:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 8px rgba(var(--cb-accent-rgb), 0.5);
+}
+
+.seat-legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--cb-text-muted);
+    flex-wrap: wrap;
+}
+
+.seat-legend li {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.seat-legend .seat-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+}
+
+/* --- 10. CHI TIẾT ĐƠN VÉ (DETAILS GRID) --- */
+.admin-details-card {
+    background-color: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius);
+    padding: var(--cb-space-6);
+    margin-bottom: var(--cb-space-6);
+    box-shadow: var(--cb-shadow-sm);
+}
+
+.admin-details-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--cb-space-4);
+}
+
+@media (min-width: 640px) {
+    .admin-details-grid {
+        grid-template-columns: 160px 1fr;
+        align-items: baseline;
+    }
+}
+
+.admin-details-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--cb-text-muted);
+}
+
+.admin-details-value {
+    font-size: 0.9375rem;
+    color: var(--cb-text);
+}
+
+/* --- 11. RESPONSIVE MEDIA QUERIES --- */
+@media (max-width: 991px) {
+    .admin-shell {
+        flex-direction: column;
+    }
+
+    .admin-sidebar {
+        width: 100%;
+        min-width: 100%;
+        height: auto;
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid var(--cb-border);
+    }
+
+    .admin-content {
+        padding: var(--cb-space-4);
+    }
+
+    .admin-nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .admin-nav-link {
+        flex: 1 1 auto;
+    }
+
+    .admin-nav-section-title {
+        display: none;
+    }
+}
+
+/* ===========================================================================
+   Lớp motion Admin: phản hồi tương tác (bảng, menu, nút)
+   =========================================================================== */
+
+/* hover hàng bảng: trigger=hover · chuyển màu nền/chữ · var(--cb-dur-press) · ease-out */
+.admin-table tbody tr {
+    transition: background-color var(--cb-dur-press) var(--cb-ease-out),
+                color var(--cb-dur-press) var(--cb-ease-out);
+}
+.admin-table tbody tr:hover {
+    background-color: var(--cb-surface-2);
+}
+
+/* link sidebar: trigger=hover/focus-visible · chuyển màu nền/chữ/viền · var(--cb-dur-press) · ease-out */
+.admin-nav-link {
+    transition: background-color var(--cb-dur-press) var(--cb-ease-out),
+                color var(--cb-dur-press) var(--cb-ease-out),
+                border-color var(--cb-dur-press) var(--cb-ease-out);
+}
+.admin-nav-link:hover {
+    background-color: var(--cb-surface-2);
+    color: var(--cb-text);
+}
+
+/* nút admin: trigger=hover/focus · chuyển màu nền/chữ/viền, nhấn lún nhẹ · var(--cb-dur-press) · ease-out */
+.admin-sidebar-btn,
+.admin-date-btn,
+.cb-btn {
+    transition: background-color var(--cb-dur-press) var(--cb-ease-out),
+                color var(--cb-dur-press) var(--cb-ease-out),
+                border-color var(--cb-dur-press) var(--cb-ease-out),
+                transform var(--cb-dur-press) var(--cb-ease-out);
+}
+
+/* nút admin: trigger=active (không disabled) · scale(0.97) · var(--cb-dur-press) · ease-out */
+.admin-sidebar-btn:active:not(:disabled),
+.admin-date-btn:active:not(:disabled),
+.cb-btn:active:not(:disabled),
+button:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+/* giảm chuyển động admin: tắt scale, giữ chuyển màu */
+@media (prefers-reduced-motion: reduce) {
+    .admin-sidebar-btn:active:not(:disabled),
+    .admin-date-btn:active:not(:disabled),
+    .cb-btn:active:not(:disabled),
+    button:active:not(:disabled) {
+        transform: none;
+    }
+}
+

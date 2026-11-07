@@ -4,79 +4,61 @@
     ViewData["Title"] = "Vé của tôi";
 
     string TabClass(string tab) =>
-        string.Equals(Model.Tab, tab, StringComparison.OrdinalIgnoreCase)
-            ? "nav-link active"
-            : "nav-link";
+        string.Equals(Model.Tab, tab, StringComparison.OrdinalIgnoreCase) ? "cr-chip is-active" : "cr-chip";
+    string Current(string tab) =>
+        string.Equals(Model.Tab, tab, StringComparison.OrdinalIgnoreCase) ? "true" : null!;
 }
 
-<section class="page-head">
-    <h1 class="page-title">Vé của tôi</h1>
-    <p class="cb-muted page-subtitle">Các đơn đã đặt bằng tài khoản này.</p>
+<section class="cr-card">
+    <small>Lịch sử đặt vé</small>
+    <h1 class="cb-page-title">Vé của tôi</h1>
 </section>
 
 @if (TempData["Success"] is string success)
 {
-    <div class="alert alert-success" role="alert">@success</div>
+    <div class="cb-alert cb-alert-success" role="status"><span>@success</span></div>
 }
 @if (TempData["Error"] is string error)
 {
-    <div class="alert alert-danger" role="alert">@error</div>
+    <div class="cb-alert cb-alert-danger" role="alert"><span>@error</span></div>
 }
 
-<ul class="nav nav-tabs booking-tabs">
-    <li class="nav-item">
-        <a class="@TabClass("all")" asp-action="MyBookings" asp-route-tab="all">
-            Tất cả <span class="badge text-bg-secondary">@(Model.UpcomingCount + Model.HistoryCount)</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="@TabClass("upcoming")" asp-action="MyBookings" asp-route-tab="upcoming">
-            Sắp chiếu <span class="badge text-bg-secondary">@Model.UpcomingCount</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="@TabClass("history")" asp-action="MyBookings" asp-route-tab="history">
-            Đã xem <span class="badge text-bg-secondary">@Model.HistoryCount</span>
-        </a>
-    </li>
-</ul>
+<nav class="cr-chips" aria-label="Bộ lọc vé">
+    <a class="@TabClass("all")" asp-action="MyBookings" asp-route-tab="all" aria-current="@Current("all")">Tất cả (@(Model.UpcomingCount + Model.HistoryCount))</a>
+    <a class="@TabClass("upcoming")" asp-action="MyBookings" asp-route-tab="upcoming" aria-current="@Current("upcoming")">Sắp chiếu (@Model.UpcomingCount)</a>
+    <a class="@TabClass("history")" asp-action="MyBookings" asp-route-tab="history" aria-current="@Current("history")">Đã xem (@Model.HistoryCount)</a>
+</nav>
 
 @if (Model.Bookings.Count == 0)
 {
-    <div class="cb-card empty-state">
-        <div class="error-icon" aria-hidden="true">🎟️</div>
-        <div class="empty-title">Không có vé trong mục này</div>
-        <p class="cb-muted">Chọn một phim và giữ ghế để đơn đầu tiên xuất hiện ở đây.</p>
-        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Xem phim đang chiếu</a>
+    <div class="cr-empty">
+        <p class="cr-empty-title">Không có vé trong mục này</p>
+        <p>Chọn một phim đang chiếu và giữ ghế để đơn đặt vé xuất hiện ở đây.</p>
+        <a asp-controller="Home" asp-action="Index" class="cb-btn cb-btn-primary">Xem phim đang chiếu</a>
     </div>
 }
 else
 {
-    <div class="booking-list">
+    <div class="cr-stubs">
         @foreach (var booking in Model.Bookings)
         {
-            var badgeClass = booking.Status switch
-            {
-                BookingStatus.Confirmed => "text-bg-success",
-                BookingStatus.Pending => "text-bg-warning",
-                _ => "text-bg-secondary",
-            };
-            <article class="cb-card booking-list-item">
-                <div class="booking-list-main">
-                    <div class="booking-list-code">@booking.BookingCode</div>
-                    <h2 class="booking-list-title">@booking.MovieTitle</h2>
-                    <p class="cb-muted mb-1">@booking.TheaterName · @booking.RoomName</p>
-                    <p class="cb-muted mb-1">@booking.StartLocal.ToString("HH:mm dd/MM/yyyy")</p>
-                    <p class="cb-muted mb-0">Ghế: @string.Join(", ", booking.Seats.Select(s => s.Label))</p>
+            <article class="cr-stub">
+                <div class="cr-stub-when">
+                    <span class="cr-stub-day">@booking.StartLocal.ToString("dd/MM")</span>
+                    <span class="cr-stub-time">@booking.StartLocal.ToString("HH:mm")</span>
+                    <span class="cr-stub-year">@booking.StartLocal.ToString("yyyy")</span>
                 </div>
-                <div class="booking-list-side">
-                    <span class="badge @badgeClass">@booking.StatusLabel</span>
-                    <div class="booking-list-total">@booking.TotalAmount.ToString("N0") ₫</div>
-                    <div class="booking-list-payment">@booking.PaymentStateLabel</div>
-                    <div class="d-flex gap-2 mt-2">
-                        <a asp-controller="Booking" asp-action="Confirmation" asp-route-code="@booking.BookingCode"
-                           class="btn btn-outline-secondary btn-sm">Xem chi tiết</a>
-                    </div>
+                <div class="cr-stub-main">
+                    <h2 class="cr-stub-title">
+                        <a asp-controller="Booking" asp-action="Confirmation" asp-route-code="@booking.BookingCode">@booking.MovieTitle</a>
+                    </h2>
+                    <p class="cr-stub-line">@booking.TheaterName, @booking.RoomName</p>
+                    <p class="cr-stub-line">Ghế @string.Join(", ", booking.Seats.Select(s => s.Label))</p>
+                </div>
+                <div class="cr-stub-side">
+                    <span class="cr-stub-code">@booking.BookingCode</span>
+                    <span class="cr-stub-total">@booking.TotalAmount.ToString("N0") ₫</span>
+                    <span class="cr-stub-status @(booking.Status == BookingStatus.Confirmed ? "is-ok" : null)">@booking.StatusLabel · @booking.PaymentStateLabel</span>
                 </div>
             </article>
         }

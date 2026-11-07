@@ -1,0 +1,302 @@
+/* ===========================================================================
+   CinemaBooking v3 "Phòng Chiếu Đêm" — movie.css
+   Chi tiết phim: Poster dính (sticky) bên trái + Bảng giờ chiếu kiểu bảng chuyến bay bên phải
+   Nguồn token DUY NHẤT: tokens.css.
+   =========================================================================== */
+
+/* Nút quay lại */
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--cb-beam);
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: var(--cb-space-6);
+    text-decoration: none;
+    /* hover back -> đổi màu nhấn liên kết -> var(--cb-dur-press) -> var(--cb-ease-out) */
+    transition: color var(--cb-dur-press) var(--cb-ease-out),
+                transform var(--cb-dur-press) var(--cb-ease-out);
+}
+.back-link:hover {
+    color: var(--cb-accent);
+    transform: translateX(-3px);
+}
+
+/* ===========================================================================
+   BỐ CỤC 2 CỘT: POSTER DÍNH BÊN TRÁI + BẢNG GIỜ CHIẾU BÊN PHẢI
+   =========================================================================== */
+
+.movie-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: var(--cb-space-8);
+    align-items: start;
+    width: 100%;
+}
+
+/* Cột trái: Poster dính sticky và thông tin phim */
+.movie-sticky-pane {
+    position: sticky;
+    top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--cb-space-4);
+    background-color: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius);
+    padding: var(--cb-space-6);
+    box-shadow: var(--cb-shadow-sm);
+}
+
+.movie-poster-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    border-radius: var(--cb-radius-sm);
+    overflow: hidden;
+    background-color: var(--cb-bg);
+    border: 1px solid var(--cb-border-strong);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+}
+
+.movie-poster-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.movie-details-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.movie-details-title {
+    font-family: var(--cb-font-display);
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--cb-text);
+    margin: 0;
+}
+
+.movie-details-meta {
+    font-size: 0.875rem;
+    color: var(--cb-text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+    margin: 0;
+}
+
+.movie-details-desc {
+    font-size: 0.9375rem;
+    color: var(--cb-text-muted);
+    line-height: 1.6;
+    margin-top: 0.5rem;
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.movie-hero-cta {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+/* ===========================================================================
+   CỘT PHẢI: BẢNG GIỜ CHIẾU KIỂU BẢNG CHUYẾN BAY (FLIGHT BOARD SHOWTIMES)
+   =========================================================================== */
+
+.movie-schedule-pane {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cb-space-6);
+}
+
+.schedule-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    border-bottom: 2px solid var(--cb-border-strong);
+    padding-bottom: 0.75rem;
+}
+
+.schedule-title {
+    font-family: var(--cb-font-display);
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--cb-text);
+    margin: 0;
+    letter-spacing: var(--cb-tracking-display);
+}
+
+.schedule-sub {
+    font-size: 0.8125rem;
+    color: var(--cb-text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* Thanh tab ngày chiếu */
+.date-tabs {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+}
+
+.date-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 1.15rem;
+    min-height: 44px;
+    border-radius: var(--cb-radius-sm);
+    background-color: var(--cb-surface-2);
+    border: 1px solid var(--cb-border);
+    color: var(--cb-text-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+    /* hover date-tab -> sáng viền và nền -> var(--cb-dur-press) -> var(--cb-ease-out) */
+    transition: background-color var(--cb-dur-press) var(--cb-ease-out),
+                border-color var(--cb-dur-press) var(--cb-ease-out),
+                color var(--cb-dur-press) var(--cb-ease-out);
+}
+
+.date-tab:hover {
+    color: var(--cb-text);
+    border-color: var(--cb-border-strong);
+    background-color: var(--cb-surface-3);
+}
+
+.date-tab.active,
+.date-tab[aria-current="date"] {
+    background-color: var(--cb-accent);
+    color: var(--cb-on-accent);
+    border-color: var(--cb-accent);
+    font-weight: 700;
+    box-shadow: var(--cb-glow-accent);
+}
+
+/* Bảng giờ chiếu theo từng chi nhánh */
+.branch-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cb-space-6);
+}
+
+.branch-showtimes {
+    background-color: var(--cb-surface-2);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius);
+    padding: var(--cb-space-6);
+    box-shadow: var(--cb-shadow-sm);
+    position: relative;
+}
+
+.branch-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--cb-border);
+    padding-bottom: var(--cb-space-3);
+    margin-bottom: var(--cb-space-4);
+}
+
+.branch-name {
+    font-family: var(--cb-font-display);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--cb-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.branch-city {
+    font-size: 0.75rem;
+    color: var(--cb-accent);
+    background-color: var(--cb-accent-soft);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--cb-radius-pill);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Lưới ô giờ chiếu kiểu bảng chuyến bay (Flight-board slots) */
+.showtime-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.75rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.showtime-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 0.85rem;
+    min-height: 60px;
+    background-color: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius-sm);
+    text-decoration: none;
+    text-align: center;
+    /* hover showtime slot -> nâng nhẹ và viền hổ phách -> var(--cb-dur-press) -> var(--cb-ease-out) */
+    transition: transform var(--cb-dur-press) var(--cb-ease-out),
+                border-color var(--cb-dur-press) var(--cb-ease-out),
+                box-shadow var(--cb-dur-press) var(--cb-ease-out),
+                background-color var(--cb-dur-press) var(--cb-ease-out);
+}
+
+.showtime-slot:hover {
+    transform: translateY(-2px);
+    border-color: var(--cb-accent);
+    background-color: var(--cb-surface-3);
+    box-shadow: 0 4px 16px rgba(var(--cb-accent-rgb), 0.25);
+}
+
+.showtime-time {
+    font-family: var(--cb-font-ticket);
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--cb-accent);
+    line-height: 1.1;
+}
+
+.showtime-meta {
+    font-size: 0.75rem;
+    color: var(--cb-text-muted);
+    margin-top: 0.25rem;
+}
+
+/* ===========================================================================
+   RESPONSIVE MOBILE
+   =========================================================================== */
+
+@media (max-width: 879px) {
+    .movie-layout {
+        grid-template-columns: 1fr;
+        gap: var(--cb-space-6);
+    }
+    .movie-sticky-pane {
+        position: static;
+        max-width: 380px;
+        margin: 0 auto;
+        width: 100%;
+    }
+    .showtime-slots {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    }
+}

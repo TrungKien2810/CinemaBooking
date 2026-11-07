@@ -1,41 +1,47 @@
 @model CheckoutFormModel
 
-<form asp-controller="Booking" asp-action="Checkout" method="post" class="checkout-form">
-    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<form asp-controller="Booking" asp-action="Checkout" method="post" class="cb-form">
+    <div asp-validation-summary="ModelOnly" class="cb-alert cb-alert-danger" role="alert"></div>
 
-    <div class="mb-3">
-        <label asp-for="CustomerName" class="form-label"></label>
-        <input asp-for="CustomerName" class="form-control" autocomplete="name" placeholder="Nguyễn Văn A" />
-        <span asp-validation-for="CustomerName" class="text-danger"></span>
+    <div class="cb-form-group">
+        <label asp-for="CustomerName" class="cb-label"></label>
+        <input asp-for="CustomerName" class="cb-input" autocomplete="name" placeholder="Nguyễn Văn A" />
+        <span asp-validation-for="CustomerName" class="cb-form-error"></span>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="CustomerEmail" class="form-label"></label>
-        <input asp-for="CustomerEmail" class="form-control" autocomplete="email" placeholder="ban@example.com" />
-        <span asp-validation-for="CustomerEmail" class="text-danger"></span>
+    <div class="cb-form-group">
+        <label asp-for="CustomerEmail" class="cb-label"></label>
+        <input asp-for="CustomerEmail" class="cb-input" autocomplete="email" placeholder="ban@example.com" />
+        <span asp-validation-for="CustomerEmail" class="cb-form-error"></span>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="CustomerPhone" class="form-label"></label>
-        <input asp-for="CustomerPhone" class="form-control" autocomplete="tel" placeholder="09xx xxx xxx" />
-        <span asp-validation-for="CustomerPhone" class="text-danger"></span>
+    <div class="cb-form-group">
+        <label asp-for="CustomerPhone" class="cb-label"></label>
+        <input asp-for="CustomerPhone" class="cb-input" autocomplete="tel" placeholder="09xx xxx xxx" />
+        <span asp-validation-for="CustomerPhone" class="cb-form-error"></span>
     </div>
 
-    <div class="checkout-payment">
-        <div class="checkout-payment-title">Phương thức thanh toán</div>
-        <div class="checkout-payment-option">
-            <span class="checkout-radio" aria-hidden="true"></span>
+    <div class="cb-payment-section">
+        <div class="cb-label" style="margin-bottom: 0.5rem;">Phương thức thanh toán</div>
+        <div class="cb-payment-option is-selected">
+            <input type="radio" checked class="cb-radio" id="payment-vnpay" name="PaymentMethod" value="VNPAY" aria-label="Cổng thanh toán VNPAY" />
             <div>
-                <strong>VNPAY</strong>
-                <div class="cb-muted">Cổng thanh toán VNPAY — môi trường Sandbox (sandbox.vnpayment.vn).</div>
+                <div class="cb-payment-title">
+                    <span>VNPAY</span>
+                    <span class="cb-payment-badge">SANDBOX</span>
+                </div>
+                <div class="cb-payment-desc">
+                    Thanh toán an toàn qua cổng VNPAY (sandbox.vnpayment.vn) bằng thẻ ATM nội địa, QR Code hoặc thẻ quốc tế.
+                </div>
             </div>
         </div>
     </div>
 
-    <p class="checkout-secure">
-        <span aria-hidden="true">🔒</span>
-        Thông tin liên hệ chỉ dùng để gửi vé và đối chiếu tại rạp.
+    <p class="cb-secure-note">
+        <span>Thông tin liên hệ chỉ dùng để gửi vé điện tử và đối chiếu tại quầy rạp.</span>
     </p>
 
-    <button type="submit" id="checkout-submit" class="btn btn-primary w-100 mt-3">Xác nhận và thanh toán</button>
+    <button type="submit" id="checkout-submit" class="cb-btn cb-btn-primary cb-btn-lg" style="width: 100%;">
+        Xác nhận và thanh toán
+    </button>
 </form>

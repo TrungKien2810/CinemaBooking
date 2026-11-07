@@ -1,8 +1,7 @@
-// Đồng hồ giữ ghế ở trang thanh toán.
+// Đồng hồ giữ ghế ở trang thanh toán (v3 "Phòng Chiếu Đêm").
 //
 // Ghế chỉ được giữ SeatHold:DurationMinutes (mặc định 5 phút) kể từ lúc bấm "Tiếp tục thanh toán".
-// Trước đây khách không thấy gì nên gõ xong form mới bị báo "ghế đã hết hạn". Đồng hồ này đếm ngược
-// theo đúng mốc server đã tính, hết giờ thì chặn gửi form và đưa về sơ đồ ghế.
+// Đồng hồ này đếm ngược theo đúng mốc server đã tính, hết giờ thì chặn gửi form và đưa về sơ đồ ghế.
 (function () {
     'use strict';
 
@@ -16,7 +15,7 @@
 
     function paint() {
         if (remaining <= 0) {
-            timerEl.textContent = 'Đã hết thời gian giữ ghế';
+            timerEl.textContent = '⚠️ Đã hết thời gian giữ ghế';
             timerEl.classList.add('is-warning');
 
             if (submitBtn) {
@@ -34,7 +33,7 @@
 
         var minutes = Math.floor(remaining / 60);
         var seconds = remaining % 60;
-        timerEl.textContent = 'Giữ ghế còn ' + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+        timerEl.textContent = '⏱ Giữ ghế còn ' + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
         timerEl.classList.toggle('is-warning', remaining <= 60);
         remaining--;
     }

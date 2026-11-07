@@ -4,38 +4,36 @@
     ViewData["Title"] = "Hệ thống rạp";
 }
 
-<section class="page-head">
-    <h1 class="page-title">Hệ thống rạp</h1>
-    <p class="cb-muted page-subtitle">
-        @Model.Sum(g => g.Count()) chi nhánh ở @Model.Count thành phố. Chọn phim ở trang chủ để xem suất chiếu theo chi nhánh.
-    </p>
+<section class="cr-card">
+    <small>@Model.Sum(g => g.Count()) chi nhánh · @Model.Count thành phố</small>
+    <h1 class="cb-page-title">Hệ thống rạp</h1>
+    <p class="cr-desc">Chọn phim ở trang chủ để xem lịch chiếu theo từng chi nhánh.</p>
 </section>
 
 @if (Model.Count == 0)
 {
-    <div class="cb-card empty-state">
-        <p class="empty-title">Chưa có chi nhánh nào mở cửa</p>
-        <p class="cb-muted">Quay lại sau nhé.</p>
+    <div class="cr-empty">
+        <p class="cr-empty-title">Chưa có chi nhánh nào mở cửa</p>
+        <p>Vui lòng quay lại sau nhé.</p>
     </div>
 }
 else
 {
     @foreach (var city in Model)
     {
-        <section class="city-group" aria-labelledby="city-@city.First().Id">
-            <h2 class="section-title" id="city-@city.First().Id">
-                @city.Key <span class="branch-city">@city.Count() chi nhánh</span>
-            </h2>
-            <ul class="branch-grid">
-                @foreach (var b in city)
-                {
-                    <li class="cb-card branch-card">
-                        <h3 class="branch-name">🏢 @b.Name</h3>
-                        <p class="cb-muted mb-2">📍 @(b.Address ?? "Đang cập nhật địa chỉ")</p>
-                        <p class="branch-rooms">🎬 @b.RoomCount phòng chiếu</p>
-                    </li>
-                }
-            </ul>
+        <section aria-labelledby="city-@city.First().Id">
+            <h2 id="city-@city.First().Id" class="cr-role">@city.Key</h2>
+            @foreach (var b in city)
+            {
+                <article class="cr-credit cr-branch">
+                    <h3 class="cr-credit-title">@b.Name</h3>
+                    <div class="cr-credit-side cr-branch-info">
+                        <p>@(b.Address ?? "Đang cập nhật địa chỉ")</p>
+                        <p class="cb-muted">@b.RoomCount phòng chiếu</p>
+                    </div>
+                </article>
+            }
         </section>
     }
+    <p class="cr-note"><a asp-controller="Home" asp-action="Index">Xem phim đang chiếu</a></p>
 }

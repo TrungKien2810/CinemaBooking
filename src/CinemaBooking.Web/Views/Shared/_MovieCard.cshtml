@@ -1,30 +1,29 @@
-﻿@model MovieCardViewModel
+@model MovieCardViewModel
 
-@*
-    Thẻ phim dùng lại ở trang chủ; Sprint 2 dùng tiếp cho kết quả tìm kiếm và lọc thể loại.
-    data-poster-fallback: nếu file poster không tải được thì site.js đổi sang ảnh mặc định.
-*@
-
-<article class="cb-card movie-card position-relative">
+<article class="movie-card">
     <div class="movie-poster">
         <span class="movie-badge">Đang chiếu</span>
         <img src="@Model.PosterOrPlaceholder"
              data-poster-fallback="@MovieCardViewModel.PlaceholderPoster"
              alt="Poster phim @Model.Title"
              loading="lazy" width="200" height="300" />
-        <span class="movie-overlay" aria-hidden="true">Xem chi tiết →</span>
+        <a asp-controller="Movies" asp-action="Details" asp-route-id="@Model.Id"
+           class="movie-overlay" aria-hidden="true" tabindex="-1">
+            Xem chi tiết →
+        </a>
     </div>
     <div class="movie-card-body">
-        @* stretched-link: cả thẻ bấm được, nhưng trình đọc màn hình chỉ đọc một link là tên phim. *@
-        <h2 class="movie-title">
-            <a asp-controller="Movies" asp-action="Details" asp-route-id="@Model.Id" class="stretched-link">@Model.Title</a>
-        </h2>
+        <h3 class="movie-title">
+            <a asp-controller="Movies" asp-action="Details" asp-route-id="@Model.Id" class="movie-title-link">
+                @Model.Title
+            </a>
+        </h3>
         <p class="cb-muted movie-meta">
             <span class="movie-genre">@Model.GenreOrDefault</span>
             <span aria-hidden="true">·</span>
             <span>@Model.DurationMinutes phút</span>
         </p>
-        <p class="cb-muted movie-release">
+        <p class="movie-release">
             Khởi chiếu @Model.ReleaseDate.ToString("dd/MM/yyyy")
         </p>
     </div>

@@ -1,0 +1,12 @@
+{
+  "lane": "agy",
+  "brief": "docs/project-state/ui-v3/brief-ui-motion-feedback.md",
+  "allow": [
+    "src/CinemaBooking.Web/wwwroot/css/credits.css"
+  ],
+  "runDir": ".lane/runs/20261106-095345",
+  "prompt": "D:\\Edu\\Project\\CinemaBooking\\.lane\\runs\\20261106-095345\\prompt.md",
+  "promptBytes": 5673,
+  "command": "C:\\Users\\tinyg\\AppData\\Local\\agy\\bin\\agy.exe --print Doc toan bo file sau day - do la brief va contract day du cua ban, khong co chi thi nao khac ngoai no:\nD:\\Edu\\Project\\CinemaBooking\\.lane\\runs\\20261106-095345\\prompt.md\nDoc het file TRUOC khi lam bat cu viec gi, roi thuc hien dung theo no. --add-dir D:\\Edu\\Project\\CinemaBooking --dangerously-skip-permissions --print-timeout 1800s --output-format text",
+  "status": "dry-run"
+}

@@ -1,4 +1,4 @@
-﻿@inject SignInManager<ApplicationUser> SignInManager
+@inject SignInManager<ApplicationUser> SignInManager
 
 @{
     var displayName = User.Identity?.Name ?? "";
@@ -7,58 +7,78 @@
         : displayName.Substring(0, 1).ToUpperInvariant();
 }
 
-@*
-    Hiển thị tên đăng nhập lấy từ cookie (User.Identity.Name), KHÔNG gọi
-    UserManager.GetUserAsync — partial này nằm trong layout nên chạy ở mọi trang,
-    một lần query DB ở đây là một lần query thừa trên toàn site.
-*@
+<div class="cb-account-dropdown">
+    <button type="button" class="cb-account-trigger" data-account-trigger
+            aria-expanded="false" aria-haspopup="true" aria-label="Menu tài khoản">
+        <span class="cb-account-avatar" aria-hidden="true">@initial</span>
+        <span class="cb-strip-label">Tài khoản</span>
+    </button>
 
-<ul class="navbar-nav account-nav">
-    @if (SignInManager.IsSignedIn(User))
-    {
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle account-name" href="#" role="button"
-               data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="account-avatar" aria-hidden="true">@initial</span>
-                <span class="account-email">@displayName</span>
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end">
+    <div class="cb-account-menu" data-account-menu hidden role="menu">
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <div class="cb-account-header">
+                <div class="cb-account-user-name" title="@displayName">@displayName</div>
                 @if (User.IsInRole(AppRoles.Admin))
                 {
-                    @* Role nằm sẵn trong claim của cookie — kiểm tra không tốn query. *@
-                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Movies" asp-action="Index">Trang quản trị</a></li>
-                    <li><hr class="dropdown-divider" /></li>
+                    <span class="cb-account-badge">Quản trị viên</span>
                 }
                 else if (User.IsInRole(AppRoles.BranchAdmin))
                 {
-                    @* BranchAdmin chỉ vào được phòng/ghế và suất chiếu của chi nhánh mình. *@
-                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Rooms" asp-action="Index">Quản lý chi nhánh</a></li>
-                    <li><hr class="dropdown-divider" /></li>
+                    <span class="cb-account-badge">Quản lý chi nhánh</span>
                 }
-                <li>
-                    <a class="dropdown-item" asp-controller="Booking" asp-action="MyBookings">Vé của tôi</a>
-                </li>
-                <li>
-                    <a class="dropdown-item" asp-controller="Account" asp-action="Profile">Tài khoản</a>
-                </li>
-                <li>
-                    <a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">Đổi mật khẩu</a>
-                </li>
-                <li>
-                    <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
-                        <button type="submit" class="dropdown-item">Đăng xuất</button>
-                    </form>
-                </li>
-            </ul>
-        </li>
-    }
-    else
-    {
-        <li class="nav-item">
-            <a class="nav-link" asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a>
-        </li>
-        <li class="nav-item">
-            <a class="btn btn-primary btn-sm nav-cta" asp-area="" asp-controller="Account" asp-action="Register">Đăng ký</a>
-        </li>
-    }
-</ul>
+                else
+                {
+                    <span class="cb-account-badge">Thành viên</span>
+                }
+            </div>
+
+            @if (User.IsInRole(AppRoles.Admin))
+            {
+                <a class="cb-account-item" asp-area="Admin" asp-controller="Movies" asp-action="Index" role="menuitem">
+                    Trang quản trị
+                </a>
+                <div class="cb-account-divider"></div>
+            }
+            else if (User.IsInRole(AppRoles.BranchAdmin))
+            {
+                <a class="cb-account-item" asp-area="Admin" asp-controller="Rooms" asp-action="Index" role="menuitem">
+                    Quản lý chi nhánh
+                </a>
+                <div class="cb-account-divider"></div>
+            }
+
+            <a class="cb-account-item" asp-area="" asp-controller="Booking" asp-action="MyBookings" role="menuitem">
+                Vé của tôi
+            </a>
+            <a class="cb-account-item" asp-area="" asp-controller="Account" asp-action="Profile" role="menuitem">
+                Hồ sơ cá nhân
+            </a>
+            <a class="cb-account-item" asp-area="" asp-controller="Account" asp-action="ChangePassword" role="menuitem">
+                Đổi mật khẩu
+            </a>
+
+            <div class="cb-account-divider"></div>
+
+            <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                <button type="submit" class="cb-account-item cb-account-logout" style="width: 100%;" role="menuitem">
+                    Đăng xuất
+                </button>
+            </form>
+        }
+        else
+        {
+            <div class="cb-account-header">
+                <div class="cb-account-user-name">Khách xem phim</div>
+                <span class="cb-account-badge">Chưa đăng nhập</span>
+            </div>
+
+            <a class="cb-account-item" asp-area="" asp-controller="Account" asp-action="Login" role="menuitem">
+                Đăng nhập
+            </a>
+            <a class="cb-account-item cb-account-cta" asp-area="" asp-controller="Account" asp-action="Register" role="menuitem">
+                Đăng ký thành viên
+            </a>
+        }
+    </div>
+</div>

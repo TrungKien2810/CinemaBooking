@@ -1,0 +1,501 @@
+/* ===========================================================================
+   CinemaBooking v3 "Phòng Chiếu Đêm" — home.css
+   Trang chủ: Hero poster khổng lồ + Cuộn ngang kiểu cuộn phim (scroll-snap, lỗ răng cưa)
+   Nguồn token DUY NHẤT: tokens.css.
+   =========================================================================== */
+
+/* ===========================================================================
+   1. HERO BANNER KHỔNG LỒ (GRAND HERO)
+   Khán phòng đêm, chữ Unbounded lớn, poster khổng lồ dạng carousel.
+   =========================================================================== */
+
+.home-hero {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: var(--cb-space-8);
+    align-items: center;
+    padding: var(--cb-space-8) 0 var(--cb-space-12) 0;
+    position: relative;
+    border-bottom: 1px solid var(--cb-border);
+    margin-bottom: var(--cb-space-8);
+}
+
+.home-hero-copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cb-space-4);
+    z-index: 2;
+}
+
+.hero-title {
+    font-family: var(--cb-font-display);
+    font-size: var(--cb-fs-hero);
+    line-height: 1.08;
+    letter-spacing: var(--cb-tracking-display);
+    color: var(--cb-text);
+    margin: 0;
+}
+.hero-title span {
+    color: var(--cb-accent);
+    display: block;
+    text-shadow: 0 0 30px rgba(var(--cb-accent-rgb), 0.35);
+}
+
+.hero-sub {
+    font-size: 1.0625rem;
+    color: var(--cb-text-muted);
+    max-width: 540px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    margin-top: 0.5rem;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--cb-radius-pill);
+    background: var(--cb-surface-2);
+    border: 1px solid var(--cb-border);
+    color: var(--cb-text);
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+/* Khung trình chiếu poster Hero */
+.home-hero-art {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.hero-carousel {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    aspect-ratio: 2 / 3;
+    border-radius: var(--cb-radius);
+    overflow: hidden;
+    background: var(--cb-surface);
+    border: 1px solid var(--cb-border-strong);
+    box-shadow: var(--cb-shadow), 0 0 40px rgba(var(--cb-accent-rgb), 0.15);
+}
+
+.hero-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.97);
+    /* slide switch -> hiện slide được kích hoạt -> var(--cb-dur-surface) -> var(--cb-ease-out) */
+    transition: opacity var(--cb-dur-surface) var(--cb-ease-out),
+                transform var(--cb-dur-surface) var(--cb-ease-out);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    text-decoration: none;
+    color: var(--cb-text);
+}
+
+.hero-slide.is-active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+    z-index: 2;
+}
+
+.hero-slide img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+.hero-slide-caption {
+    position: relative;
+    z-index: 2;
+    padding: var(--cb-space-6) var(--cb-space-4) var(--cb-space-4) var(--cb-space-4);
+    background: linear-gradient(to top, rgba(13, 7, 22, 0.95) 0%, rgba(13, 7, 22, 0.7) 60%, transparent 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.hero-slide-caption strong {
+    font-family: var(--cb-font-display);
+    font-size: 1.15rem;
+    color: #ffffff;
+}
+
+.hero-slide-caption small {
+    font-size: 0.8125rem;
+    color: var(--cb-accent);
+    font-weight: 600;
+}
+
+/* Nút điều hướng Carousel */
+.hero-dots {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(13, 7, 22, 0.75);
+    backdrop-filter: blur(8px);
+    padding: 0.35rem 0.65rem;
+    border-radius: var(--cb-radius-pill);
+    border: 1px solid var(--cb-border);
+}
+
+.hero-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    /* click dot -> chuyển trạng thái nút chọn slide -> var(--cb-dur-press) -> var(--cb-ease-out) */
+    transition: background-color var(--cb-dur-press) var(--cb-ease-out),
+                transform var(--cb-dur-press) var(--cb-ease-out);
+}
+
+.hero-dot.is-active,
+.hero-dot[aria-current="true"] {
+    background: var(--cb-accent);
+    transform: scale(1.3);
+    box-shadow: 0 0 8px var(--cb-accent);
+}
+
+.hero-pause-btn {
+    background: transparent;
+    border: none;
+    color: var(--cb-text-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    margin-left: 0.25rem;
+    /* hover pause -> đổi màu nút tạm dừng -> var(--cb-dur-press) -> var(--cb-ease-out) */
+    transition: color var(--cb-dur-press) var(--cb-ease-out);
+}
+.hero-pause-btn:hover {
+    color: var(--cb-text);
+}
+
+/* Fallback khi không có phim */
+.hero-poster-stack {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    font-size: 3rem;
+    padding: 4rem;
+}
+
+/* ===========================================================================
+   2. THANH CÔNG CỤ TÌM KIẾM & BỘ LỌC (TOOLBAR)
+   =========================================================================== */
+
+.home-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: var(--cb-space-8);
+    background-color: var(--cb-surface-2);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius);
+    padding: var(--cb-space-4) var(--cb-space-6);
+}
+
+.movie-search {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+}
+.movie-search input {
+    flex: 1;
+}
+
+.genre-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.search-summary {
+    font-size: 0.9375rem;
+    margin-bottom: 1.25rem;
+}
+.search-summary a {
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+.section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: var(--cb-space-4);
+}
+.section-title {
+    font-family: var(--cb-font-display);
+    font-size: var(--cb-fs-h2);
+    color: var(--cb-text);
+    margin: 0;
+}
+
+/* ===========================================================================
+   3. CUỘN PHIM CUỘN NGANG (FILM REEL HORIZONTAL SCROLL)
+   Scroll-snap, lỗ răng cưa hai mép trên và dưới kiểu cuộn phim 35mm.
+   KHÔNG PHẢI LƯỚI THẺ ĐỒNG DẠNG.
+   =========================================================================== */
+
+.home-film-reel {
+    position: relative;
+    width: 100%;
+    background-color: #080310;
+    border: 1px solid var(--cb-border-strong);
+    border-radius: var(--cb-radius);
+    overflow: hidden;
+    box-shadow: var(--cb-shadow);
+    margin-bottom: var(--cb-space-12);
+}
+
+/* Lỗ răng cưa (film sprocket holes) mép trên và mép dưới cuộn phim */
+.home-film-reel::before,
+.home-film-reel::after {
+    content: "";
+    display: block;
+    height: 18px;
+    width: 100%;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent 14px,
+        var(--cb-bg) 14px,
+        var(--cb-bg) 30px,
+        transparent 30px,
+        transparent 44px
+    );
+    border-top: 1px solid var(--cb-border);
+    border-bottom: 1px solid var(--cb-border);
+    z-index: 3;
+    position: relative;
+}
+.home-film-reel::before {
+    margin-bottom: 0.5rem;
+}
+.home-film-reel::after {
+    margin-top: 0.5rem;
+}
+
+/* Đường ray cuộn phim */
+.film-reel-track,
+.movie-list {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 0.75rem 1.5rem;
+    margin: 0;
+    list-style: none;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cb-accent) var(--cb-surface);
+}
+
+.film-reel-track::-webkit-scrollbar,
+.movie-list::-webkit-scrollbar {
+    height: 8px;
+}
+.film-reel-track::-webkit-scrollbar-track,
+.movie-list::-webkit-scrollbar-track {
+    background: var(--cb-surface);
+    border-radius: var(--cb-radius-pill);
+}
+.film-reel-track::-webkit-scrollbar-thumb,
+.movie-list::-webkit-scrollbar-thumb {
+    background: var(--cb-border-strong);
+    border-radius: var(--cb-radius-pill);
+}
+.film-reel-track::-webkit-scrollbar-thumb:hover,
+.movie-list::-webkit-scrollbar-thumb:hover {
+    background: var(--cb-accent);
+}
+
+.film-reel-track > li,
+.movie-list > li {
+    flex: 0 0 250px;
+    max-width: 270px;
+    scroll-snap-align: start;
+}
+
+/* Thẻ phim kiểu khung hình cuộn phim */
+.movie-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--cb-surface);
+    border: 1px solid var(--cb-border);
+    border-radius: var(--cb-radius-sm);
+    overflow: hidden;
+    padding: 0;
+    position: relative;
+    /* hover card -> nhấc nhẹ khung hình phim -> var(--cb-dur-press) -> var(--cb-ease-out) */
+    transition: transform var(--cb-dur-press) var(--cb-ease-out),
+                border-color var(--cb-dur-press) var(--cb-ease-out),
+                box-shadow var(--cb-dur-press) var(--cb-ease-out);
+}
+
+.movie-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--cb-accent);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6), 0 0 20px rgba(var(--cb-accent-rgb), 0.2);
+}
+
+.movie-poster {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    background-color: var(--cb-bg-elevated);
+}
+
+.movie-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* hover poster -> phóng nhẹ poster phim -> var(--cb-dur-surface) -> var(--cb-ease-out) */
+    transition: transform var(--cb-dur-surface) var(--cb-ease-out);
+}
+
+.movie-card:hover .movie-poster img {
+    transform: scale(1.05);
+}
+
+.movie-badge {
+    position: absolute;
+    top: 0.625rem;
+    left: 0.625rem;
+    z-index: 2;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--cb-radius-pill);
+    background-color: rgba(13, 7, 22, 0.85);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--cb-accent);
+    color: var(--cb-accent);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.movie-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(13, 7, 22, 0.9) 0%, transparent 60%);
+    opacity: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 1rem;
+    color: var(--cb-accent);
+    font-weight: 700;
+    font-size: 0.875rem;
+    /* hover overlay -> hiện nút xem chi tiết -> var(--cb-dur-press) -> var(--cb-ease-out) */
+    transition: opacity var(--cb-dur-press) var(--cb-ease-out);
+    z-index: 2;
+}
+
+.movie-card:hover .movie-overlay {
+    opacity: 1;
+}
+
+.movie-card-body {
+    padding: var(--cb-space-4);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 0.35rem;
+}
+
+.movie-title {
+    font-family: var(--cb-font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.movie-title a,
+.movie-title-link {
+    color: var(--cb-text);
+    text-decoration: none;
+    /* hover title -> đổi màu tên phim -> var(--cb-dur-press) -> var(--cb-ease-out) */
+    transition: color var(--cb-dur-press) var(--cb-ease-out);
+}
+
+.movie-card:hover .movie-title a,
+.movie-card:hover .movie-title-link {
+    color: var(--cb-accent);
+}
+
+.movie-meta {
+    font-size: 0.8125rem;
+    margin: 0;
+    color: var(--cb-text-muted);
+}
+
+.movie-genre {
+    color: var(--cb-beam);
+}
+
+.movie-release {
+    font-size: 0.75rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+    color: var(--cb-text-faint);
+}
+
+/* ===========================================================================
+   RESPONSIVE MOBILE
+   =========================================================================== */
+
+@media (max-width: 879px) {
+    .home-hero {
+        grid-template-columns: 1fr;
+        padding: var(--cb-space-4) 0 var(--cb-space-6) 0;
+        gap: var(--cb-space-6);
+    }
+    .hero-carousel {
+        max-width: 320px;
+        margin: 0 auto;
+    }
+    .movie-search {
+        flex-direction: column;
+    }
+    .film-reel-track > li,
+    .movie-list > li {
+        flex: 0 0 210px;
+        max-width: 220px;
+    }
+}

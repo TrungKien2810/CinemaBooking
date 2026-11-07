@@ -1,0 +1,18 @@
+{
+  "lane": "agy",
+  "brief": "docs/lane-briefs/v3-b-booking.md",
+  "allow": [
+    "src/CinemaBooking.Web/Views/Booking/**",
+    "src/CinemaBooking.Web/wwwroot/css/seatmap.css",
+    "src/CinemaBooking.Web/wwwroot/css/booking.css",
+    "src/CinemaBooking.Web/wwwroot/js/seat-map.js",
+    "src/CinemaBooking.Web/wwwroot/js/checkout-timer.js"
+  ],
+  "contract": "D:\\Edu\\Project\\CinemaBooking\\lane-contract.md",
+  "model": "",
+  "prompt": "D:\\Edu\\Project\\CinemaBooking\\.lane\\runs\\20261105-162952\\prompt.md",
+  "command": "C:\\Users\\tinyg\\AppData\\Local\\agy\\bin\\agy.exe --print Doc toan bo file sau day - do la brief va contract day du cua ban, khong co chi thi nao khac ngoai no:\nD:\\Edu\\Project\\CinemaBooking\\.lane\\runs\\20261105-162952\\prompt.md\nDoc het file TRUOC khi lam bat cu viec gi, roi thuc hien dung theo no. --add-dir D:\\Edu\\Project\\CinemaBooking --dangerously-skip-permissions --print-timeout 2400s --output-format text",
+  "startedAt": "2026-11-05T09:29:52.768Z",
+  "status": "running",
+  "pid": 12208
+}

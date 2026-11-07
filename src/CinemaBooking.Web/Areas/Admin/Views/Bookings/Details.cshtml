@@ -1,65 +1,145 @@
 @model BookingDetailsViewModel
 @{
     ViewData["Title"] = "Đơn " + Model.BookingCode;
+
+    static string StatusBadgeClass(BookingStatus status) => status switch
+    {
+        BookingStatus.Confirmed => "is-confirmed",
+        BookingStatus.Pending => "is-pending",
+        BookingStatus.Cancelled => "is-cancelled",
+        _ => "is-secondary"
+    };
+
+    static string StatusLabel(BookingStatus status) => status switch
+    {
+        BookingStatus.Confirmed => "Đã xác nhận",
+        BookingStatus.Pending => "Chờ thanh toán",
+        BookingStatus.Cancelled => "Đã hủy",
+        BookingStatus.Expired => "Hết hạn",
+        _ => status.ToString()
+    };
 }
 
 <div class="admin-page-head">
-    <div>
-        <a asp-action="Index" class="back-link">← Danh sách đơn</a>
-        <h1 class="page-title">Đơn @Model.BookingCode <span class="badge bg-secondary">@Model.Status</span></h1>
+    <div class="admin-page-title-wrap">
+        <a asp-action="Index" class="admin-back-link">← Danh sách đơn</a>
+        <h1 class="admin-page-title">
+            <span>Đơn @Model.BookingCode</span>
+            <span class="status-badge @StatusBadgeClass(Model.Status)">@StatusLabel(Model.Status)</span>
+        </h1>
+        <p class="admin-page-subtitle">Chi tiết giao dịch và danh sách ghế đã đặt.</p>
     </div>
-    <a asp-action="Index" class="btn btn-outline-secondary">Về danh sách</a>
+    <div class="admin-page-actions">
+        <a asp-action="Index" class="cb-btn cb-btn-secondary cb-btn-sm">Về danh sách</a>
+    </div>
 </div>
 
 @if (TempData["Error"] is string error)
 {
-    <div class="alert alert-danger">@error</div>
+    <div class="cb-alert cb-alert-danger">
+        <span>⚠️</span>
+        <span>@error</span>
+    </div>
 }
 @if (TempData["Message"] is string message)
 {
-    <div class="alert alert-success">@message</div>
+    <div class="cb-alert cb-alert-success">
+        <span>✓</span>
+        <span>@message</span>
+    </div>
 }
 
-<dl class="row">
-    <dt class="col-sm-3">Đặt lúc</dt>
-    <dd class="col-sm-9">@Model.BookedLocal.ToString("dd/MM/yyyy HH:mm")</dd>
-    <dt class="col-sm-3">Khách hàng</dt>
-    <dd class="col-sm-9">@Model.CustomerName · @Model.CustomerEmail @(Model.CustomerPhone is null ? "" : "· " + Model.CustomerPhone)</dd>
-    <dt class="col-sm-3">Phim</dt>
-    <dd class="col-sm-9">@Model.MovieTitle</dd>
-    <dt class="col-sm-3">Suất chiếu</dt>
-    <dd class="col-sm-9">@Model.ShowtimeStartLocal.ToString("dd/MM/yyyy HH:mm") · @Model.TheaterName · @Model.RoomName</dd>
-    <dt class="col-sm-3">Thanh toán</dt>
-    <dd class="col-sm-9">@(Model.PaymentStatus?.ToString() ?? "Chưa có") @(Model.TransactionId is null ? "" : "· " + Model.TransactionId)</dd>
-</dl>
+<div class="admin-details-card">
+    <div class="admin-details-grid">
+        <div class="admin-details-label">Thời gian đặt</div>
+        <div class="admin-details-value cb-num" style="text-align: left !important;">
+            @Model.BookedLocal.ToString("dd/MM/yyyy HH:mm")
+        </div>
 
-<h2 class="h5">Ghế</h2>
-<div class="table-responsive"><table class="table table-sm align-middle">
-    <thead>
-        <tr>
-            <th>Ghế</th>
-            <th>Loại</th>
-            <th class="text-end">Giá lúc đặt</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var s in Model.Seats)
-        {
+        <div class="admin-details-label">Khách hàng</div>
+        <div class="admin-details-value">
+            <strong>@Model.CustomerName</strong> · 
+            <span style="color: var(--cb-beam);">@Model.CustomerEmail</span>
+            @(Model.CustomerPhone is null ? "" : " · " + Model.CustomerPhone)
+        </div>
+
+        <div class="admin-details-label">Phim</div>
+        <div class="admin-details-value" style="font-weight: 600; color: var(--cb-accent);">
+            @Model.MovieTitle
+        </div>
+
+        <div class="admin-details-label">Suất chiếu</div>
+        <div class="admin-details-value">
+            @Model.ShowtimeStartLocal.ToString("dd/MM/yyyy HH:mm") · 
+            <strong>@Model.TheaterName</strong> · 
+            <span>@Model.RoomName</span>
+        </div>
+
+        <div class="admin-details-label">Thanh toán</div>
+        <div class="admin-details-value">
+            <span class="status-badge @(Model.PaymentStatus == PaymentStatus.Succeeded ? "is-confirmed" : Model.PaymentStatus == PaymentStatus.Failed ? "is-cancelled" : "is-pending")">
+                @(Model.PaymentStatus?.ToString() ?? "Chưa có")
+            </span>
+            @(Model.TransactionId is null ? "" : " · Mã GD: " + Model.TransactionId)
+        </div>
+    </div>
+</div>
+
+<div class="admin-chart-head">
+    <h2 class="admin-chart-title">Danh sách ghế</h2>
+</div>
+
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead>
             <tr>
-                <td>@s.Label</td>
-                <td>@s.SeatType</td>
-                <td class="text-end">@s.Price.ToString("N0")</td>
+                <th>Ghế</th>
+                <th>Loại ghế</th>
+                <th class="cb-num">Giá lúc đặt</th>
             </tr>
-        }
-        @if (Model.Seats.Count == 0)
-        {
-            <tr><td colspan="3" class="text-center text-muted">Đơn không còn giữ ghế nào (thanh toán quá hạn).</td></tr>
-        }
-    </tbody>
-    <tfoot>
-        <tr>
-            <th colspan="2">Tổng tiền</th>
-            <th class="text-end">@Model.TotalAmount.ToString("N0")</th>
-        </tr>
-    </tfoot>
-</table></div>
+        </thead>
+        <tbody>
+            @foreach (var s in Model.Seats)
+            {
+                <tr>
+                    <td>
+                        <span class="cb-badge cb-badge-surface" style="font-family: var(--cb-font-ticket); font-weight: 700;">
+                            @s.Label
+                        </span>
+                    </td>
+                    <td>
+                        @switch (s.SeatType)
+                        {
+                            case SeatType.Vip:
+                                <span class="cb-badge cb-badge-accent">VIP</span>
+                                break;
+                            case SeatType.Couple:
+                                <span class="cb-badge cb-badge-curtain">Ghế đôi</span>
+                                break;
+                            default:
+                                <span class="cb-badge cb-badge-surface">Thường</span>
+                                break;
+                        }
+                    </td>
+                    <td class="cb-num">@s.Price.ToString("N0") ₫</td>
+                </tr>
+            }
+            @if (Model.Seats.Count == 0)
+            {
+                <tr>
+                    <td colspan="3" style="text-align: center; color: var(--cb-text-muted); padding: 2rem;">
+                        Đơn không còn giữ ghế nào (quá hạn thanh toán hoặc đã hủy).
+                    </td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="2">Tổng tiền</th>
+                <th class="cb-num" style="color: var(--cb-accent); font-size: 1.125rem;">
+                    @Model.TotalAmount.ToString("N0") ₫
+                </th>
+            </tr>
+        </tfoot>
+    </table>
+</div>

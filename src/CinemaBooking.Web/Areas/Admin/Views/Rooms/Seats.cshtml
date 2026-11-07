@@ -1,4 +1,3 @@
-@using CinemaBooking.Domain.Enums
 @model RoomSeatsViewModel
 @{
     ViewData["Title"] = "Sửa loại ghế — " + Model.RoomName;
@@ -12,30 +11,37 @@
 }
 
 <div class="admin-page-head">
-    <div>
-        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="back-link">← Phòng chiếu · @Model.TheaterName</a>
-        <h1 class="page-title">Sửa loại ghế · @Model.RoomName</h1>
-        <p class="cb-muted page-subtitle">
-            @Model.TotalRows hàng × @Model.TotalColumns ghế · bấm vào ghế để đổi <strong>Thường ↔ VIP</strong>.
-            Hàng cuối (@(Model.Rows.Count > 0 ? Model.Rows[^1].Label : "?")) tự động là <strong>ghế đôi</strong>, không sửa được.
+    <div class="admin-page-title-wrap">
+        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="admin-back-link">
+            ← Phòng chiếu · @Model.TheaterName
+        </a>
+        <h1 class="admin-page-title">Sửa loại ghế · @Model.RoomName</h1>
+        <p class="admin-page-subtitle">
+            @Model.TotalRows hàng × @Model.TotalColumns ghế · Bấm vào ghế bất kỳ để chuyển đổi giữa <strong>Thường ↔ VIP</strong>.
+            Hàng cuối (@(Model.Rows.Count > 0 ? Model.Rows[^1].Label : "?")) được cố định là <strong>ghế đôi</strong> theo thiết kế rạp.
         </p>
     </div>
 </div>
 
 @if (TempData["Message"] is string message)
 {
-    <div class="alert alert-success">@message</div>
+    <div class="cb-alert cb-alert-success">
+        <span>✓</span>
+        <span>@message</span>
+    </div>
 }
 @if (TempData["Error"] is string error)
 {
-    <div class="alert alert-danger">@error</div>
+    <div class="cb-alert cb-alert-danger">
+        <span>⚠️</span>
+        <span>@error</span>
+    </div>
 }
 
-<form asp-action="Seats" asp-route-id="@Model.RoomId" method="post" class="cb-card">
-    @* Form tag helper tự gắn antiforgery token. *@
+<form asp-action="Seats" asp-route-id="@Model.RoomId" method="post" class="admin-form">
     <input type="hidden" name="types" id="seat-types" value="" />
 
-    <div class="seat-preview">
+    <div class="seat-preview" style="padding: 1.5rem 1rem;">
         <div class="seat-screen" aria-hidden="true">Màn hình</div>
 
         <div class="seat-preview-scroll">
@@ -68,24 +74,24 @@
             </div>
         </div>
 
-        <ul class="seat-legend">
-            <li><span class="seat-dot seat-standard"></span> Thường · <span id="count-standard">@Model.StandardCount</span></li>
-            <li><span class="seat-dot seat-vip"></span> VIP · <span id="count-vip">@Model.VipCount</span></li>
-            <li><span class="seat-dot seat-couple"></span> Ghế đôi (hàng cuối) · @Model.CoupleCount</li>
-            <li class="cb-muted">Tổng @(Model.TotalRows * Model.TotalColumns) ghế</li>
+        <ul class="seat-legend" style="margin-top: 1rem;">
+            <li><span class="seat-dot seat-standard"></span> Thường · <strong id="count-standard">@Model.StandardCount</strong></li>
+            <li><span class="seat-dot seat-vip"></span> VIP · <strong id="count-vip" style="color: var(--cb-seat-vip);">@Model.VipCount</strong></li>
+            <li><span class="seat-dot seat-couple"></span> Ghế đôi (hàng cuối) · <strong>@Model.CoupleCount</strong></li>
+            <li style="color: var(--cb-text-faint);">Tổng @(Model.TotalRows * Model.TotalColumns) ghế</li>
         </ul>
     </div>
 
     <div class="admin-form-actions">
-        <button type="submit" class="btn btn-primary">Lưu loại ghế</button>
-        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="btn btn-link">Hủy</a>
+        <button type="submit" class="cb-btn cb-btn-primary">
+            <span>💾</span> Lưu cấu hình loại ghế
+        </button>
+        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="cb-btn cb-btn-ghost">Hủy</a>
     </div>
 </form>
 
 @section Scripts {
     <script>
-        // Bấm ghế = đổi Thường ↔ VIP rồi ghi cả sơ đồ vào input ẩn dạng "id=Vip;id=Standard;…".
-        // Hàng cuối là span khóa (không có nút) nên không bao giờ bị gửi lên.
         (function () {
             var buttons = Array.prototype.slice.call(document.querySelectorAll('.seat-editable'));
             var input = document.getElementById('seat-types');

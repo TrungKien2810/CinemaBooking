@@ -1,12 +1,11 @@
-// Sơ đồ ghế real-time (Sprint 3).
+// Sơ đồ ghế real-time (v3 "Phòng Chiếu Đêm").
 //
 // Luồng: mở trang -> kết nối /hubs/seat -> JoinShowtime -> nhận SeatSnapshot
 // (ghế đang bị giữ). Click ghế trống -> SelectSeat; server trả SeatHeldByMe cho
 // chính mình và broadcast SeatLocked cho người khác. Click lại ghế của mình ->
-// ReleaseSeat. Ghế đã đặt (đỏ) lấy từ DB và render sẵn trong view.
+// ReleaseSeat. Ghế đã đặt lấy từ DB và render sẵn trong view.
 //
-// Mọi thay đổi UI chỉ xảy ra khi server xác nhận, không tô màu lạc quan: nếu
-// hai người click cùng lúc, người thua sẽ nhận SeatRejected và giữ nguyên ghế trống.
+// Hiệu ứng: hàng ghế uốn cung nhẹ về màn hình vòm + sóng xuất hiện từ tâm + nảy khi chọn ghế.
 (function () {
     'use strict';
 
@@ -36,9 +35,61 @@
     var selected = new Map();
 
     function unitIds(btn) {
-        return btn.dataset.seatIds.split(',')
+        return (btn.dataset.seatIds || '').split(',')
             .map(Number)
             .filter(function (id) { return id > 0; });
+    }
+
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // 1. Tính toán độ uốn cong hình cung cho các hàng ghế hướng về màn hình vòm cong
+    function applyRowCurves() {
+        var rows = Array.prototype.slice.call(root.querySelectorAll('.seat-row:not(.seat-row-head)'));
+        if (rows.length === 0) return;
+
+        rows.forEach(function (rowEl) {
+            var seats = Array.prototype.slice.call(rowEl.querySelectorAll('.seat'));
+            if (seats.length <= 1) return;
+            var mid = (seats.length - 1) / 2;
+            seats.forEach(function (seatEl, idx) {
+                var diff = idx - mid;
+                var norm = diff / (mid || 1); // từ -1 đến +1
+                // Cung parabol nhẹ: hai bên uốn cong nhẹ về phía trước màn hình (tối đa 12px, góc nghiêng 4.5 độ)
+                var curveY = reduced ? 0 : Math.round(Math.pow(norm, 2) * 12);
+                var curveR = reduced ? 0 : Number((norm * 4.5).toFixed(2));
+                seatEl.style.setProperty('--seat-curve-y', curveY + 'px');
+                seatEl.style.setProperty('--seat-curve-r', curveR + 'deg');
+            });
+        });
+    }
+    applyRowCurves();
+
+    // 2. Hiệu ứng sóng xuất hiện từ giữa khán phòng ra ngoài (tổng thời gian <= 600ms)
+    if (!reduced) {
+        var rows = Array.prototype.slice.call(root.querySelectorAll('.seat-row:not(.seat-row-head)'));
+        var midRow = (rows.length - 1) / 2;
+        var maxDist = 1;
+
+        rows.forEach(function (rowEl, rIdx) {
+            var seatsInRow = Array.prototype.slice.call(rowEl.querySelectorAll('.seat[data-seat-ids]'));
+            var midCol = (seatsInRow.length - 1) / 2;
+            seatsInRow.forEach(function (btn, cIdx) {
+                var d = Math.sqrt(Math.pow(rIdx - midRow, 2) + Math.pow(cIdx - midCol, 2));
+                if (d > maxDist) maxDist = d;
+            });
+        });
+
+        rows.forEach(function (rowEl, rIdx) {
+            var seatsInRow = Array.prototype.slice.call(rowEl.querySelectorAll('.seat[data-seat-ids]'));
+            var midCol = (seatsInRow.length - 1) / 2;
+            seatsInRow.forEach(function (btn, cIdx) {
+                var d = Math.sqrt(Math.pow(rIdx - midRow, 2) + Math.pow(cIdx - midCol, 2));
+                var i = Math.round((d / maxDist) * 18);
+                btn.style.setProperty('--i', i);
+            });
+        });
+
+        root.classList.add('seat-wave-ready');
     }
 
     var money = new Intl.NumberFormat('vi-VN', {
@@ -77,23 +128,45 @@
         return minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
     }
 
+    function updateBumpedText(el, text) {
+        if (!el) return;
+        if (el.textContent === text) return;
+        el.textContent = text;
+        el.classList.remove('is-bumped');
+        void el.offsetWidth;
+        el.classList.add('is-bumped');
+        var onEnd = function () {
+            el.classList.remove('is-bumped');
+            el.removeEventListener('animationend', onEnd);
+        };
+        el.addEventListener('animationend', onEnd);
+    }
+
     function renderSelection() {
-        selectedInputs.innerHTML = '';
+        if (selectedInputs) selectedInputs.innerHTML = '';
         selected.forEach(function (item) {
             item.seatIds.forEach(function (seatId) {
-                var input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'seatIds';
-                input.value = seatId;
-                selectedInputs.appendChild(input);
+                if (selectedInputs) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'seatIds';
+                    input.value = seatId;
+                    selectedInputs.appendChild(input);
+                }
             });
         });
 
         if (selected.size === 0) {
-            selectedList.textContent = 'Chưa chọn ghế nào';
-            totalEl.textContent = money.format(0);
-            timerEl.hidden = true;
-            continueBtn.disabled = true;
+            if (selectedList) {
+                updateBumpedText(selectedList, 'Chưa chọn ghế nào');
+                selectedList.classList.add('cb-muted');
+            }
+            if (totalEl) updateBumpedText(totalEl, money.format(0));
+            if (timerEl) {
+                timerEl.hidden = true;
+                timerEl.classList.remove('is-warning');
+            }
+            if (continueBtn) continueBtn.disabled = true;
             return;
         }
 
@@ -103,9 +176,12 @@
             labels.push(item.label);
             total += item.price;
         });
-        selectedList.textContent = 'Đã chọn: ' + labels.join(', ');
-        totalEl.textContent = money.format(total);
-        continueBtn.disabled = false;
+        if (selectedList) {
+            updateBumpedText(selectedList, 'Đã chọn: ' + labels.join(', '));
+            selectedList.classList.remove('cb-muted');
+        }
+        if (totalEl) updateBumpedText(totalEl, money.format(total));
+        if (continueBtn) continueBtn.disabled = false;
     }
 
     function addMine(seatId, seconds) {
@@ -113,6 +189,13 @@
         if (!btn) return;
 
         setState(btn, 'mine');
+
+        // Hiệu ứng nảy phản hồi khi server cấp lock ghế
+        if (!reduced) {
+            btn.classList.add('is-popping');
+            setTimeout(function () { btn.classList.remove('is-popping'); }, 300);
+        }
+
         selected.set(btn, {
             label: btn.dataset.seatLabel,
             price: Number(btn.dataset.seatPrice) || 0,
@@ -161,8 +244,10 @@
     // Đồng hồ 5 phút của các ghế đang giữ. Chỉ vẽ lại khi có ghế hết hạn.
     setInterval(function () {
         if (selected.size === 0) {
-            timerEl.hidden = true;
-            timerEl.classList.remove('is-warning');
+            if (timerEl) {
+                timerEl.hidden = true;
+                timerEl.classList.remove('is-warning');
+            }
             return;
         }
 
@@ -184,14 +269,18 @@
 
         if (changed) renderSelection();
         if (selected.size === 0) {
-            timerEl.hidden = true;
-            timerEl.classList.remove('is-warning');
+            if (timerEl) {
+                timerEl.hidden = true;
+                timerEl.classList.remove('is-warning');
+            }
             return;
         }
 
-        timerEl.hidden = false;
-        timerEl.classList.toggle('is-warning', soonest < 60000);
-        timerEl.textContent = 'Giữ ghế còn ' + formatClock(soonest);
+        if (timerEl) {
+            timerEl.hidden = false;
+            timerEl.classList.toggle('is-warning', soonest < 60000);
+            timerEl.textContent = '⏱ Giữ ghế còn ' + formatClock(soonest);
+        }
     }, 500);
 
     if (form) {
@@ -201,15 +290,18 @@
                 toast('Vui lòng chọn ít nhất một ghế.', true);
                 return;
             }
-            if (!connectionIdInput.value) {
+            if (!connectionIdInput || !connectionIdInput.value) {
                 event.preventDefault();
                 toast('Chưa kết nối real-time, vui lòng thử lại.', true);
+                return;
             }
             if (event.defaultPrevented) return;
 
             // Chặn double-submit: lần gửi thứ hai sẽ thấy lock đã được chuyển sang hold-token.
-            continueBtn.disabled = true;
-            continueBtn.textContent = 'Đang chuyển…';
+            if (continueBtn) {
+                continueBtn.disabled = true;
+                continueBtn.textContent = 'Đang chuyển sang thanh toán…';
+            }
         });
     }
 
@@ -251,7 +343,7 @@
             unitIds(btn).forEach(function (id) {
                 connection.invoke('ReleaseSeat', showtimeId, id).catch(function () { });
             });
-            removeSelected(seatId);
+            removeSelected(Number((btn.dataset.seatIds || '').split(',')[0]));
         }
         toast(message || 'Ghế đang được người khác chọn.', true);
     });
@@ -264,13 +356,11 @@
 
     connection.onreconnecting(function () {
         toast('Mất kết nối real-time, đang kết nối lại…', true);
-        // Lock gắn với connection cũ; server đã nhả khi mất kết nối nên lựa chọn
-        // hiện tại không còn giá trị. Người dùng phải chọn lại.
         clearSelection();
     });
 
     connection.onreconnected(function () {
-        connectionIdInput.value = connection.connectionId;
+        if (connectionIdInput) connectionIdInput.value = connection.connectionId;
         joinShowtime();
         toast('Đã kết nối lại. Vui lòng chọn lại ghế.');
     });
@@ -287,7 +377,7 @@
     function start() {
         connection.start()
             .then(function () {
-                connectionIdInput.value = connection.connectionId;
+                if (connectionIdInput) connectionIdInput.value = connection.connectionId;
                 return joinShowtime();
             })
             .catch(function () {
@@ -310,7 +400,7 @@
                 unitIds(btn).forEach(function (id) {
                     connection.invoke('ReleaseSeat', showtimeId, id).catch(function () { });
                 });
-                removeSelected(Number(btn.dataset.seatIds.split(',')[0]));
+                removeSelected(Number((btn.dataset.seatIds || '').split(',')[0]));
                 return;
             }
 

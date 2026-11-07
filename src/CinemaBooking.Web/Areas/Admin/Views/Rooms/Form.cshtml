@@ -5,63 +5,72 @@
 }
 
 <div class="admin-page-head">
-    <div>
-        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="back-link">← Phòng chiếu · @Model.TheaterName</a>
-        <h1 class="page-title">@(isEdit ? "Sửa phòng" : "Thêm phòng")</h1>
+    <div class="admin-page-title-wrap">
+        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="admin-back-link">
+            ← Phòng chiếu · @Model.TheaterName
+        </a>
+        <h1 class="admin-page-title">@(isEdit ? "Sửa phòng" : "Thêm phòng mới")</h1>
+        <p class="admin-page-subtitle">Thiết lập quy cách hàng và cột ghế cho phòng chiếu tại @Model.TheaterName.</p>
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form">
-    <div asp-validation-summary="ModelOnly"></div>
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="admin-form">
+    <div asp-validation-summary="ModelOnly" class="cb-alert cb-alert-danger" style="margin-bottom: 1.5rem;"></div>
     <input asp-for="TheaterId" type="hidden" />
 
-    <div class="row g-4">
-        <div class="col-lg-5">
-            <div class="mb-3">
-                <label asp-for="RoomName" class="form-label"></label>
-                <input asp-for="RoomName" class="form-control" placeholder="Phòng 1" />
-                <span asp-validation-for="RoomName" class="text-danger small"></span>
+    <div class="admin-form-layout-room">
+        <div>
+            <div class="admin-form-group">
+                <label asp-for="RoomName" class="admin-label"></label>
+                <input asp-for="RoomName" class="admin-input" placeholder="Ví dụ: Phòng 1, IMAX Laser..." />
+                <span asp-validation-for="RoomName" class="admin-form-error"></span>
             </div>
-            <div class="row">
-                <div class="col mb-3">
-                    <label asp-for="TotalRows" class="form-label"></label>
-                    <input asp-for="TotalRows" class="form-control" />
-                    <span asp-validation-for="TotalRows" class="text-danger small"></span>
+
+            <div class="admin-form-grid admin-form-grid-2">
+                <div class="admin-form-group">
+                    <label asp-for="TotalRows" class="admin-label"></label>
+                    <input asp-for="TotalRows" class="admin-input" type="number" min="1" max="26" />
+                    <span asp-validation-for="TotalRows" class="admin-form-error"></span>
                 </div>
-                <div class="col mb-3">
-                    <label asp-for="TotalColumns" class="form-label"></label>
-                    <input asp-for="TotalColumns" class="form-control" />
-                    <span asp-validation-for="TotalColumns" class="text-danger small"></span>
+                <div class="admin-form-group">
+                    <label asp-for="TotalColumns" class="admin-label"></label>
+                    <input asp-for="TotalColumns" class="admin-input" type="number" min="1" max="40" />
+                    <span asp-validation-for="TotalColumns" class="admin-form-error"></span>
                 </div>
             </div>
-            <p class="form-text">
-                Ghế được sinh tự động theo số hàng × số ghế mỗi hàng.
+
+            <div class="admin-form-hint" style="margin-top: 0.5rem; line-height: 1.6;">
+                <p>Ghế được sinh tự động theo quy tắc: Hàng A, B, C... từ trên xuống dưới màn hình.</p>
                 @if (isEdit)
                 {
-                    <text>Đổi số hàng hoặc số ghế sẽ sinh lại toàn bộ sơ đồ — chỉ làm được khi phòng chưa có vé nào được đặt.</text>
+                    <p style="color: var(--cb-warning);">
+                        ⚠️ Thay đổi số hàng hoặc số cột sẽ tạo lại toàn bộ sơ đồ ghế — chỉ cho phép khi phòng chưa phát sinh đơn vé nào.
+                    </p>
                 }
-            </p>
+            </div>
         </div>
 
-        <div class="col-lg-7">
-            <div class="form-label">Xem trước sơ đồ ghế</div>
-            <div data-seat-preview data-url="@Url.Action("SeatPreview")" aria-live="polite">
-                <partial name="_SeatPreview" model="SeatPreviewModel.For(Model.TotalRows, Model.TotalColumns)" />
+        <div>
+            <div class="admin-poster-preview-card" style="text-align: left;">
+                <div class="admin-label" style="margin-bottom: 0.75rem;">Xem trước sơ đồ phòng</div>
+                <div data-seat-preview data-url="@Url.Action("SeatPreview")" aria-live="polite">
+                    <partial name="_SeatPreview" model="SeatPreviewModel.For(Model.TotalRows, Model.TotalColumns)" />
+                </div>
             </div>
         </div>
     </div>
 
     <div class="admin-form-actions">
-        <button type="submit" class="btn btn-primary">Lưu</button>
-        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="btn btn-link">Hủy</a>
+        <button type="submit" class="cb-btn cb-btn-primary">
+            <span>💾</span> Lưu phòng chiếu
+        </button>
+        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="cb-btn cb-btn-ghost">Hủy</a>
     </div>
 </form>
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
     <script>
-        // Vẽ lại sơ đồ khi đổi số hàng/số ghế. Debounce để gõ "12" không bắn 2 request,
-        // và bỏ qua phản hồi cũ về muộn (gõ nhanh 8 → 10, request "8" về sau "10").
         (function () {
             var box = document.querySelector('[data-seat-preview]');
             var rows = document.getElementById('@Html.IdFor(m => m.TotalRows)');
@@ -79,7 +88,7 @@
                 fetch(url, { headers: { 'X-Requested-With': 'fetch' } })
                     .then(function (res) { return res.ok ? res.text() : Promise.reject(res.status); })
                     .then(function (html) { if (ticket === latest) box.innerHTML = html; })
-                    .catch(function () { /* giữ sơ đồ cũ, lỗi mạng không đáng chặn form */ });
+                    .catch(function () { });
             }
 
             [rows, cols].forEach(function (input) {

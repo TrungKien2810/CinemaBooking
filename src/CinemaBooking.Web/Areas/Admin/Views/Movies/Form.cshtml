@@ -6,76 +6,86 @@
 }
 
 <div class="admin-page-head">
-    <div>
-        <a asp-action="Index" class="back-link">← Danh sách phim</a>
-        <h1 class="page-title">@ViewData["Title"]</h1>
+    <div class="admin-page-title-wrap">
+        <a asp-action="Index" class="admin-back-link">← Danh sách phim</a>
+        <h1 class="admin-page-title">@ViewData["Title"]</h1>
+        <p class="admin-page-subtitle">Nhập thông tin chi tiết của phim để hiển thị trên hệ thống đặt vé.</p>
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form">
-    <div asp-validation-summary="ModelOnly"></div>
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="admin-form">
+    <div asp-validation-summary="ModelOnly" class="cb-alert cb-alert-danger" style="margin-bottom: 1.5rem;"></div>
 
-    <div class="row g-4">
-        <div class="col-lg-8">
-            <div class="mb-3">
-                <label asp-for="Title" class="form-label"></label>
-                <input asp-for="Title" class="form-control" />
-                <span asp-validation-for="Title" class="text-danger small"></span>
+    <div class="admin-form-layout-poster">
+        <div>
+            <div class="admin-form-group">
+                <label asp-for="Title" class="admin-label"></label>
+                <input asp-for="Title" class="admin-input" placeholder="Ví dụ: Đào, Phở và Piano" />
+                <span asp-validation-for="Title" class="admin-form-error"></span>
             </div>
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label asp-for="Genre" class="form-label"></label>
-                    <input asp-for="Genre" class="form-control" placeholder="Hành động, Hoạt hình…" />
-                    <span asp-validation-for="Genre" class="text-danger small"></span>
+
+            <div class="admin-form-grid admin-form-grid-3">
+                <div class="admin-form-group">
+                    <label asp-for="Genre" class="admin-label"></label>
+                    <input asp-for="Genre" class="admin-input" placeholder="Hành động, Tâm lý…" />
+                    <span asp-validation-for="Genre" class="admin-form-error"></span>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label asp-for="DurationMinutes" class="form-label"></label>
-                    <input asp-for="DurationMinutes" class="form-control" />
-                    <span asp-validation-for="DurationMinutes" class="text-danger small"></span>
+                <div class="admin-form-group">
+                    <label asp-for="DurationMinutes" class="admin-label"></label>
+                    <input asp-for="DurationMinutes" class="admin-input" type="number" min="1" placeholder="Phút" />
+                    <span asp-validation-for="DurationMinutes" class="admin-form-error"></span>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label asp-for="ReleaseDate" class="form-label"></label>
-                    <input asp-for="ReleaseDate" type="date" class="form-control" />
-                    <span asp-validation-for="ReleaseDate" class="text-danger small"></span>
+                <div class="admin-form-group">
+                    <label asp-for="ReleaseDate" class="admin-label"></label>
+                    <input asp-for="ReleaseDate" type="date" class="admin-input" />
+                    <span asp-validation-for="ReleaseDate" class="admin-form-error"></span>
                 </div>
             </div>
-            <div class="mb-3">
-                <label asp-for="PosterUrl" class="form-label"></label>
-                <input asp-for="PosterUrl" class="form-control" placeholder="https://… hoặc /img/…" data-poster-input />
-                <span asp-validation-for="PosterUrl" class="text-danger small"></span>
+
+            <div class="admin-form-group">
+                <label asp-for="PosterUrl" class="admin-label"></label>
+                <input asp-for="PosterUrl" class="admin-input" placeholder="https://… hoặc /img/…" data-poster-input />
+                <span asp-validation-for="PosterUrl" class="admin-form-error"></span>
             </div>
-            <div class="mb-3">
-                <label asp-for="Description" class="form-label"></label>
-                <textarea asp-for="Description" rows="5" class="form-control"></textarea>
-                <span asp-validation-for="Description" class="text-danger small"></span>
+
+            <div class="admin-form-group">
+                <label asp-for="Description" class="admin-label"></label>
+                <textarea asp-for="Description" rows="5" class="admin-input" placeholder="Tóm tắt nội dung phim…"></textarea>
+                <span asp-validation-for="Description" class="admin-form-error"></span>
             </div>
-            <div class="form-check mb-1">
+
+            <div class="admin-form-check">
                 <input asp-for="IsActive" class="form-check-input" />
-                <label asp-for="IsActive" class="form-check-label"></label>
+                <label asp-for="IsActive" class="admin-label" style="margin-bottom: 0; cursor: pointer;">Đang chiếu (hiển thị trên trang khách)</label>
             </div>
-            <p class="form-text mt-0">Bỏ chọn để ẩn phim khỏi trang khách. Suất chiếu và vé cũ vẫn được giữ.</p>
+            <p class="admin-form-hint">Bỏ chọn để ẩn phim khỏi trang khách. Toàn bộ suất chiếu và vé cũ vẫn được lưu trữ nguyên vẹn.</p>
         </div>
 
-        <div class="col-lg-4">
-            <div class="form-label">Xem trước poster</div>
-            <div class="movie-poster admin-poster-preview">
-                <img src="@poster" alt="Xem trước poster"
-                     data-poster-fallback="@MovieCardViewModel.PlaceholderPoster" data-poster-preview />
+        <div>
+            <div class="admin-poster-preview-card">
+                <div class="admin-label" style="margin-bottom: 0.75rem;">Xem trước poster</div>
+                <div class="admin-poster-preview">
+                    <img src="@poster" alt="Xem trước poster"
+                         data-poster-fallback="@MovieCardViewModel.PlaceholderPoster" data-poster-preview />
+                </div>
+                <p class="admin-form-hint" style="margin-top: 0.75rem;">
+                    Tỷ lệ chuẩn 2:3. Hình ảnh tự động cập nhật khi bạn dán URL.
+                </p>
             </div>
         </div>
     </div>
 
     <div class="admin-form-actions">
-        <button type="submit" class="btn btn-primary">Lưu</button>
-        <a asp-action="Index" class="btn btn-link">Hủy</a>
+        <button type="submit" class="cb-btn cb-btn-primary">
+            <span>💾</span> Lưu thông tin
+        </button>
+        <a asp-action="Index" class="cb-btn cb-btn-ghost">Hủy</a>
     </div>
 </form>
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
     <script>
-        // Xem trước poster ngay khi gõ URL. Ảnh lỗi thì site.js tự thay bằng ảnh mặc định;
-        // đổi URL mới phải xóa cờ "đã thay" để ảnh mới được thử tải lại.
         (function () {
             var input = document.querySelector('[data-poster-input]');
             var img = document.querySelector('[data-poster-preview]');

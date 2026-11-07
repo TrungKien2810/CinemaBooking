@@ -1,5 +1,7 @@
-// Banner poster phim ở hero trang chủ.
-// Tự chuyển ảnh sau 4 giây; dừng khi rê chuột/focus và tôn trọng reduced motion.
+// CinemaBooking v3 "Phòng Chiếu Đêm" — hero-carousel.js
+// Giữ nguyên hợp đồng selector: [data-hero-carousel], .hero-slide, [data-hero-dot], [data-hero-pause], .is-active.
+// Tự chuyển ảnh sau 4 giây; có nút dừng, dừng khi rê chuột/focus và tôn trọng reduced-motion.
+
 (function () {
     'use strict';
 
@@ -8,10 +10,12 @@
 
     var slides = Array.prototype.slice.call(root.querySelectorAll('.hero-slide'));
     var dots = Array.prototype.slice.call(root.querySelectorAll('[data-hero-dot]'));
+    var pauseBtn = root.querySelector('[data-hero-pause]');
     if (slides.length < 2) return;
 
     var index = 0;
     var timer = null;
+    var isManualPaused = false;
     var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     function show(next) {
@@ -39,8 +43,31 @@
 
     function start() {
         stop();
-        if (reduced.matches) return;
-        timer = setInterval(function () { show(index + 1); }, 4000);
+        if (reduced.matches || isManualPaused) return;
+        timer = setInterval(function () {
+            show(index + 1);
+        }, 4000);
+    }
+
+    function togglePause() {
+        isManualPaused = !isManualPaused;
+        if (pauseBtn) {
+            pauseBtn.textContent = isManualPaused ? '▶' : '⏸';
+            pauseBtn.setAttribute('aria-label', isManualPaused ? 'Tiếp tục trình chiếu' : 'Tạm dừng trình chiếu');
+            pauseBtn.setAttribute('title', isManualPaused ? 'Tiếp tục trình chiếu' : 'Tạm dừng trình chiếu');
+        }
+        if (isManualPaused) {
+            stop();
+        } else {
+            start();
+        }
+    }
+
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            togglePause();
+        });
     }
 
     dots.forEach(function (dot, i) {
@@ -51,10 +78,12 @@
     });
 
     root.addEventListener('mouseenter', stop);
-    root.addEventListener('mouseleave', start);
+    root.addEventListener('mouseleave', function () {
+        if (!isManualPaused) start();
+    });
     root.addEventListener('focusin', stop);
     root.addEventListener('focusout', function (event) {
-        if (!root.contains(event.relatedTarget)) start();
+        if (!root.contains(event.relatedTarget) && !isManualPaused) start();
     });
 
     root.addEventListener('keydown', function (event) {
@@ -71,11 +100,14 @@
 
     document.addEventListener('visibilitychange', function () {
         if (document.hidden) stop();
-        else start();
+        else if (!isManualPaused) start();
     });
 
     if (typeof reduced.addEventListener === 'function') {
-        reduced.addEventListener('change', start);
+        reduced.addEventListener('change', function () {
+            if (reduced.matches) stop();
+            else if (!isManualPaused) start();
+        });
     }
 
     start();

@@ -1,94 +1,118 @@
 @model ShowtimesIndexViewModel
 @{
     ViewData["Title"] = "Quản lý suất chiếu";
-    // Controller đã sắp theo chi nhánh rồi giờ chiếu.
     var byTheater = Model.Items.GroupBy(s => s.TheaterName).ToList();
 
     string DayLink(DateOnly d) => Url.Action("Index", new { date = d.ToString("yyyy-MM-dd"), theaterId = Model.TheaterId })!;
 }
 
 <div class="admin-page-head">
-    <div>
-        <h1 class="page-title">Suất chiếu</h1>
-        <p class="cb-muted page-subtitle">
-            Ngày @Model.Date.ToString("dd/MM/yyyy") · @Model.Items.Count suất ở @byTheater.Count chi nhánh
+    <div class="admin-page-title-wrap">
+        <h1 class="admin-page-title">Suất chiếu</h1>
+        <p class="admin-page-subtitle">
+            Ngày @Model.Date.ToString("dd/MM/yyyy") · @Model.Items.Count suất chiếu tại @byTheater.Count chi nhánh
         </p>
     </div>
-    <a asp-action="Create" class="btn btn-primary">Thêm suất chiếu</a>
+    <div class="admin-page-actions">
+        <a asp-action="Create" class="cb-btn cb-btn-primary">
+            <span>+</span> Thêm suất chiếu
+        </a>
+    </div>
 </div>
 
-<form method="get" class="cb-card admin-filter">
-    <div class="btn-group" role="group" aria-label="Chuyển ngày">
-        <a href="@DayLink(Model.Date.AddDays(-1))" class="btn btn-outline-secondary" aria-label="Ngày trước">‹</a>
-        <a href="@Url.Action("Index", new { theaterId = Model.TheaterId })" class="btn btn-outline-secondary">Hôm nay</a>
-        <a href="@DayLink(Model.Date.AddDays(1))" class="btn btn-outline-secondary" aria-label="Ngày sau">›</a>
+<form method="get" class="admin-filter-bar">
+    <div class="admin-date-stepper" role="group" aria-label="Chuyển ngày">
+        <a href="@DayLink(Model.Date.AddDays(-1))" class="admin-date-btn" title="Ngày trước">‹</a>
+        <a href="@Url.Action("Index", new { theaterId = Model.TheaterId })" class="admin-date-btn">Hôm nay</a>
+        <a href="@DayLink(Model.Date.AddDays(1))" class="admin-date-btn" title="Ngày sau">›</a>
     </div>
-    <div>
+
+    <div class="admin-filter-item">
         <label for="date" class="visually-hidden">Ngày</label>
-        <input id="date" name="date" type="date" value="@Model.Date.ToString("yyyy-MM-dd")" class="form-control" />
+        <input id="date" name="date" type="date" value="@Model.Date.ToString("yyyy-MM-dd")" class="admin-filter-input" />
     </div>
-    <div>
+
+    <div class="admin-filter-item">
         <label for="theaterId" class="visually-hidden">Chi nhánh</label>
-        <select id="theaterId" name="theaterId" class="form-select"
+        <select id="theaterId" name="theaterId" class="admin-filter-input"
                 asp-items="@(new SelectList(Model.Theaters, "Value", "Text", Model.TheaterId))">
             <option value="">Tất cả chi nhánh</option>
         </select>
     </div>
-    <button type="submit" class="btn btn-outline-primary">Lọc</button>
+
+    <div class="admin-filter-item">
+        <button type="submit" class="cb-btn cb-btn-primary cb-btn-sm">
+            <span>🔍</span> Lọc
+        </button>
+    </div>
 </form>
 
 @if (TempData["Error"] is string error)
 {
-    <div class="alert alert-danger">@error</div>
+    <div class="cb-alert cb-alert-danger">
+        <span>⚠️</span>
+        <span>@error</span>
+    </div>
 }
 
 @if (Model.Items.Count == 0)
 {
-    <div class="cb-card empty-state">
-        <p class="empty-title">Không có suất chiếu nào trong ngày này</p>
-        <p class="cb-muted">Chọn ngày khác hoặc thêm suất chiếu mới.</p>
+    <div class="cb-empty">
+        <div class="cb-empty-icon" aria-hidden="true">🕐</div>
+        <h3 class="cb-empty-title">Không có suất chiếu nào</h3>
+        <p class="cb-empty-desc">Không tìm thấy suất chiếu nào trong ngày @Model.Date.ToString("dd/MM/yyyy"). Chọn ngày khác hoặc thêm suất chiếu mới.</p>
+        <a asp-action="Create" class="cb-btn cb-btn-primary">Thêm suất chiếu mới</a>
     </div>
 }
 else
 {
-    <div class="cb-card admin-table-wrap">
-        <table class="table admin-table align-middle mb-0">
+    <div class="admin-table-wrap">
+        <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Giờ chiếu</th>
+                    <th>Khung giờ</th>
                     <th>Phim</th>
-                    <th>Phòng</th>
-                    <th class="text-end">Giá vé</th>
-                    <th class="text-end">Đơn</th>
-                    <th></th>
+                    <th>Phòng chiếu</th>
+                    <th class="cb-num">Giá vé cơ bản</th>
+                    <th class="cb-num">Đơn vé</th>
+                    <th class="admin-actions">Thao tác</th>
                 </tr>
             </thead>
             @foreach (var theater in byTheater)
             {
                 <tbody>
                     <tr class="admin-group-row">
-                        <th colspan="6" scope="rowgroup">@theater.Key <span class="cb-muted fw-normal">· @theater.Count() suất</span></th>
+                        <th colspan="6" scope="rowgroup">
+                            <span>🏢 @theater.Key</span>
+                            <span style="color: var(--cb-text-muted); font-weight: 500; font-size: 0.75rem;">· @theater.Count() suất chiếu</span>
+                        </th>
                     </tr>
                     @foreach (var s in theater)
                     {
                         <tr>
-                            <td class="text-nowrap">
-                                <span class="fw-semibold">@s.StartLocal.ToString("HH:mm")</span>
-                                <span class="cb-muted">– @s.EndLocal.ToString("HH:mm")</span>
+                            <td class="cb-num" style="text-align: left !important; white-space: nowrap;">
+                                <strong style="color: var(--cb-accent); font-size: 0.9375rem;">@s.StartLocal.ToString("HH:mm")</strong>
+                                <span style="color: var(--cb-text-muted);">– @s.EndLocal.ToString("HH:mm")</span>
                             </td>
-                            <td>@s.MovieTitle</td>
-                            <td class="text-nowrap">@s.RoomName</td>
-                            <td class="text-end text-nowrap">@s.BasePrice.ToString("N0") đ</td>
-                            <td class="text-end">@s.BookingCount</td>
+                            <td>
+                                <div style="font-weight: 600;">@s.MovieTitle</div>
+                            </td>
+                            <td>
+                                <span class="cb-badge cb-badge-surface">@s.RoomName</span>
+                            </td>
+                            <td class="cb-num" style="font-weight: 700; color: var(--cb-text);">@s.BasePrice.ToString("N0") ₫</td>
+                            <td class="cb-num">@s.BookingCount</td>
                             <td class="admin-actions">
-                                <a asp-action="Edit" asp-route-id="@s.Id" class="btn btn-sm btn-outline-secondary">Sửa</a>
-                                @if (s.BookingCount == 0)
-                                {
-                                    <form asp-action="Delete" asp-route-id="@s.Id" method="post" class="d-inline"
-                                          data-confirm="Xóa suất @s.StartLocal.ToString("HH:mm") “@s.MovieTitle” ở @s.TheaterName?">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
-                                    </form>
-                                }
+                                <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
+                                    <a asp-action="Edit" asp-route-id="@s.Id" class="cb-btn cb-btn-secondary cb-btn-sm">Sửa</a>
+                                    @if (s.BookingCount == 0)
+                                    {
+                                        <form asp-action="Delete" asp-route-id="@s.Id" method="post" style="display: inline;"
+                                              data-confirm="Xóa suất @s.StartLocal.ToString("HH:mm") “@s.MovieTitle” ở @s.TheaterName?">
+                                            <button type="submit" class="cb-btn cb-btn-danger cb-btn-sm">Xóa</button>
+                                        </form>
+                                    }
+                                </div>
                             </td>
                         </tr>
                     }
