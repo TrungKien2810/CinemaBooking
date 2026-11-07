@@ -25,6 +25,8 @@
     </div>
 </div>
 
+@await Html.PartialAsync("_RangeChips", new RangeChipsModel("Index", Model.From, Model.To, Model.Today))
+
 <form method="get" class="admin-filter-bar">
     <div class="admin-filter-item">
         <label for="from" class="admin-filter-label">Từ ngày</label>
@@ -44,7 +46,8 @@
 <div class="admin-stat-grid">
     <div class="admin-stat-card">
         <span class="admin-stat-label">Tổng doanh thu</span>
-        <strong class="admin-stat-value is-accent">@Model.TotalRevenue.ToString("N0") ₫</strong>
+        <strong class="admin-stat-value is-accent" title="@Model.TotalRevenue.Vnd()">@Model.TotalRevenue.VndShort()</strong>
+        <span class="admin-stat-hint">@Model.TotalRevenue.Vnd()</span>
     </div>
     <div class="admin-stat-card">
         <span class="admin-stat-label">Vé đã bán</span>
@@ -159,7 +162,7 @@
                 <tr>
                     <td style="font-weight: 600;">@t.TheaterName</td>
                     <td class="cb-num">@t.Tickets</td>
-                    <td class="cb-num" style="color: var(--cb-accent); font-weight: 700;">@t.Revenue.ToString("N0") ₫</td>
+                    <td class="cb-num" style="color: var(--cb-accent); font-weight: 700;">@t.Revenue.Vnd()</td>
                     <td>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
                             <div class="admin-occupancy-bar" style="height: 6px;">
@@ -204,7 +207,7 @@
                     <td class="cb-num" style="text-align: left !important; font-weight: 600;">@r.Day.ToString("dd/MM/yyyy")</td>
                     <td>@r.TheaterName</td>
                     <td class="cb-num">@r.Tickets</td>
-                    <td class="cb-num" style="color: var(--cb-accent); font-weight: 700;">@r.Revenue.ToString("N0") ₫</td>
+                    <td class="cb-num" style="color: var(--cb-accent); font-weight: 700;">@r.Revenue.Vnd()</td>
                 </tr>
             }
             @if (Model.ByDay.Count == 0)

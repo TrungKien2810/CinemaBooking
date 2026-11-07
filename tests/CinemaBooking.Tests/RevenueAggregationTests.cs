@@ -74,7 +74,33 @@ public class RevenueAggregationTests
     }
 
     private static RevenueController CreateController(CinemaDbContext db) =>
-        new(db, Options.Create(new DisplayTimeZone()), new FixedTimeProvider(Now));
+        new(db, Options.Create(new DisplayTimeZone()), new FixedTimeProvider(Now), FakeBranchScope.Admin());
+
+    [Fact]
+    public async Task Branch_admin_only_sees_revenue_of_own_branch()
+    {
+        var f = await SeedAsync();
+        var controller = new RevenueController(
+            f.Db, Options.Create(new DisplayTimeZone()), new FixedTimeProvider(Now), FakeBranchScope.Branch(f.North.Id));
+
+        var result = await controller.Index(null, null, CancellationToken.None);
+
+        var model = Assert.IsType<RevenueDashboardViewModel>(Assert.IsType<ViewResult>(result).Model);
+        Assert.All(model.ByTheater, t => Assert.Equal(f.North.Id, t.TheaterId));
+        Assert.Equal(320_000m, model.TotalRevenue);
+    }
+
+    [Fact]
+    public async Task Branch_admin_cannot_ask_for_another_branch_breakdown()
+    {
+        var f = await SeedAsync();
+        var controller = new RevenueController(
+            f.Db, Options.Create(new DisplayTimeZone()), new FixedTimeProvider(Now), FakeBranchScope.Branch(f.North.Id));
+
+        var result = await controller.Breakdown(null, null, f.South.Id, CancellationToken.None);
+
+        Assert.IsType<ForbidResult>(result);
+    }
 
     [Fact]
     public async Task Dashboard_groups_confirmed_tickets_by_local_day_and_branch()

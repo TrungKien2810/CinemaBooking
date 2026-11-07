@@ -5,48 +5,77 @@
 }
 
 <div class="admin-page-head">
-    <div class="admin-page-title-wrap">
+    <div>
         <a asp-action="Index" class="admin-back-link">← Danh sách chi nhánh</a>
         <h1 class="admin-page-title">@ViewData["Title"]</h1>
-        <p class="admin-page-subtitle">Quản lý thông tin địa điểm và tình trạng hoạt động của chi nhánh rạp.</p>
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="admin-form admin-form-narrow">
-    <div asp-validation-summary="ModelOnly" class="cb-alert cb-alert-danger" style="margin-bottom: 1.5rem;"></div>
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form admin-form-narrow"
+      data-confirm="@(isEdit ? "Lưu thay đổi chi nhánh này? Khách sẽ thấy thông tin mới ngay. Nếu đóng chi nhánh, khách sẽ không thấy suất chiếu của chi nhánh này nữa." : null)">
+    <div asp-validation-summary="ModelOnly"></div>
 
-    <div class="admin-form-group">
+    <div class="mb-3">
         <label asp-for="Name" class="admin-label"></label>
-        <input asp-for="Name" class="admin-input" placeholder="Ví dụ: CinemaBooking Quận 1, CinemaBooking Cầu Giấy..." />
-        <span asp-validation-for="Name" class="admin-form-error"></span>
+        <input asp-for="Name" class="admin-input" placeholder="CinemaBooking Quận 1" />
+        <span asp-validation-for="Name" class="text-danger small"></span>
     </div>
-
-    <div class="admin-form-group">
+    <div class="mb-3">
         <label asp-for="City" class="admin-label"></label>
-        <input asp-for="City" class="admin-input" placeholder="Ví dụ: TP. Hồ Chí Minh, Hà Nội, Đà Nẵng..." />
-        <span asp-validation-for="City" class="admin-form-error"></span>
-        <div class="admin-form-hint">
-            Khách hàng lọc suất chiếu theo tên thành phố — vui lòng nhập chính xác và đồng nhất với các chi nhánh cùng khu vực.
+        <input asp-for="City" class="admin-input" placeholder="TP. Hồ Chí Minh" list="city-options" autocomplete="off" />
+        <datalist id="city-options">
+            @foreach (var city in ViewData["Cities"] as IEnumerable<string> ?? [])
+            {
+                <option value="@city"></option>
+            }
+        </datalist>
+        <span asp-validation-for="City" class="text-danger small"></span>
+        <div class="admin-form-hint">Khách lọc suất chiếu theo thành phố — gõ đúng như tên các chi nhánh khác cùng thành phố.</div>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Address" class="admin-label"></label>
+        <input asp-for="Address" class="admin-input" placeholder="Số nhà, đường, phường/xã, quận/huyện" />
+        <span asp-validation-for="Address" class="text-danger small"></span>
+    </div>
+    <div class="row">
+        <div class="col-sm-6 mb-3">
+            <label asp-for="Phone" class="admin-label"></label>
+            <input asp-for="Phone" class="admin-input" inputmode="tel" placeholder="1900 6017" />
+            <span asp-validation-for="Phone" class="text-danger small"></span>
+        </div>
+        <div class="col-sm-6 mb-3">
+            <label asp-for="Email" class="admin-label"></label>
+            <input asp-for="Email" type="email" class="admin-input" placeholder="chinhanh@cinesmart.vn" />
+            <span asp-validation-for="Email" class="text-danger small"></span>
         </div>
     </div>
-
-    <div class="admin-form-group">
-        <label asp-for="Address" class="admin-label"></label>
-        <input asp-for="Address" class="admin-input" placeholder="Địa chỉ chi tiết của cụm rạp..." />
-        <span asp-validation-for="Address" class="admin-form-error"></span>
+    <div class="mb-3">
+        <label asp-for="OpeningHours" class="admin-label"></label>
+        <input asp-for="OpeningHours" class="admin-input" placeholder="08:00 – 23:30 hằng ngày" />
+        <span asp-validation-for="OpeningHours" class="text-danger small"></span>
     </div>
-
-    <div class="admin-form-check">
+    <div class="mb-3">
+        <label asp-for="Description" class="admin-label"></label>
+        <textarea asp-for="Description" rows="3" class="admin-input" placeholder="Vị trí, tiện ích, bãi đỗ xe..."></textarea>
+        <span asp-validation-for="Description" class="text-danger small"></span>
+    </div>
+    <div class="form-check mb-1">
         <input asp-for="IsActive" class="form-check-input" />
-        <label asp-for="IsActive" class="admin-label" style="margin-bottom: 0; cursor: pointer;">Đang hoạt động</label>
+        <label asp-for="IsActive" class="form-check-label"></label>
     </div>
-    <p class="admin-form-hint">Chi nhánh tạm đóng hoặc ngừng hoạt động vẫn giữ nguyên các phòng chiếu, suất chiếu cũ và đơn vé để phục vụ tra cứu lịch sử.</p>
+    <span asp-validation-for="IsActive" class="text-danger small d-block"></span>
+    <p class="admin-form-hint mt-0">Chi nhánh đã đóng vẫn giữ phòng, suất chiếu và vé cũ để tra cứu.</p>
+    @if (Model.Id is null)
+    {
+        <div class="cb-alert cb-alert-info small">
+            Sau khi tạo chi nhánh: thêm <strong>phòng chiếu</strong> (mục Phòng chiếu) và tạo <strong>tài khoản quản lý chi nhánh</strong>
+            ở mục <a asp-controller="Users" asp-action="Create">Tài khoản</a> để chi nhánh bắt đầu xếp lịch được.
+        </div>
+    }
 
     <div class="admin-form-actions">
-        <button type="submit" class="cb-btn cb-btn-primary">
-            <span>💾</span> Lưu chi nhánh
-        </button>
-        <a asp-action="Index" class="cb-btn cb-btn-ghost">Hủy</a>
+        <button type="submit" class="cb-btn cb-btn-primary">Lưu</button>
+        <a asp-action="Index" class="cb-btn cb-btn-secondary">Hủy</a>
     </div>
 </form>
 

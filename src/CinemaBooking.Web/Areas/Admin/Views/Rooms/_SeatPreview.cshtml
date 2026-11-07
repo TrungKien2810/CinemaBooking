@@ -1,3 +1,4 @@
+@using CinemaBooking.Domain.Enums
 @model SeatPreviewModel
 
 @{
@@ -20,16 +21,30 @@
                 <span class="seat-row-label">@SeatPreviewModel.RowLabel(r)</span>
                 @foreach (var type in Model.Grid[r])
                 {
-                    <span class="seat-dot @CssFor(type)"></span>
+                    if (type is null)
+                    {
+                        <span class="seat-dot seat-gap" aria-hidden="true"></span>
+                    }
+                    else
+                    {
+                        <span class="seat-dot @CssFor(type.Value)"></span>
+                    }
                 }
             }
         </div>
     </div>
 
+    @if (Model.Columns % 2 == 1)
+    {
+        <p class="small text-warning mb-1">
+            Số ghế mỗi hàng là số lẻ: ở hàng ghế đôi mặc định, ghế ngoài cùng bên phải sẽ là ghế thường
+            (ghế đôi luôn đi thành cặp). Chọn số chẵn nếu muốn cả hàng là ghế đôi.
+        </p>
+    }
     <ul class="seat-legend">
         <li><span class="seat-dot seat-standard"></span> Thường · @Model.Count(SeatType.Standard)</li>
         <li><span class="seat-dot seat-vip"></span> VIP · @Model.Count(SeatType.Vip)</li>
         <li><span class="seat-dot seat-couple"></span> Ghế đôi · @Model.Count(SeatType.Couple)</li>
-        <li style="color: var(--cb-text-faint);">Tổng @(Model.Rows * Model.Columns) ghế</li>
+        <li class="cb-muted">Tổng @Model.SeatTotal ghế@(Model.HasAisle ? " (có lối đi)" : "")</li>
     </ul>
 </div>

@@ -1,63 +1,167 @@
 @model ShowtimeFormModel
 @{
     var isEdit = Model.Id is not null;
+    var locked = Model.SoldTickets > 0;
     ViewData["Title"] = isEdit ? "Sửa suất chiếu" : "Thêm suất chiếu";
 }
 
 <div class="admin-page-head">
-    <div class="admin-page-title-wrap">
+    <div>
         <a asp-action="Index" class="admin-back-link">← Danh sách suất chiếu</a>
         <h1 class="admin-page-title">@ViewData["Title"]</h1>
-        <p class="admin-page-subtitle">Xếp lịch và ấn định giá vé cơ bản cho suất chiếu.</p>
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="admin-form admin-form-narrow">
-    <div asp-validation-summary="ModelOnly" class="cb-alert cb-alert-danger" style="margin-bottom: 1.5rem;"></div>
+@if (TempData["Error"] is string error)
+{
+    <div class="cb-alert cb-alert-danger" role="alert">@error</div>
+}
+@if (locked)
+{
+    <div class="cb-alert cb-alert-warning" role="status">
+        Suất này đã có <strong>@Model.SoldTickets đơn</strong> nên không đổi được phim, phòng và giờ chiếu: khách đã mua vé cho đúng suất này.
+        Nếu rạp không chiếu được, hãy dùng mục <a href="#cancel-showtime">Hủy suất chiếu</a> ở cuối trang.
+    </div>
+}
 
-    <div class="admin-form-group">
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form admin-form-narrow"
+      data-confirm="@(isEdit ? "Lưu thay đổi suất chiếu này? Khách sẽ thấy thông tin mới ngay." : null)">
+    <div asp-validation-summary="ModelOnly"></div>
+    @if (locked)
+    {
+        @* Ô bị khóa không gửi lên server nên phải có bản ẩn. *@
+        <input type="hidden" name="MovieId" value="@Model.MovieId" />
+        <input type="hidden" name="RoomId" value="@Model.RoomId" />
+    }
+
+    <div class="mb-3">
         <label asp-for="MovieId" class="admin-label"></label>
-        <select asp-for="MovieId" asp-items="Model.Movies" class="admin-input">
+        <select asp-for="MovieId" asp-items="Model.Movies" class="admin-input" disabled="@locked">
             <option value="0">— Chọn phim —</option>
         </select>
-        <span asp-validation-for="MovieId" class="admin-form-error"></span>
+        <span asp-validation-for="MovieId" class="text-danger small"></span>
     </div>
-
-    <div class="admin-form-group">
+    <div class="mb-3">
         <label asp-for="RoomId" class="admin-label"></label>
-        <select asp-for="RoomId" asp-items="Model.Rooms" class="admin-input">
-            <option value="0">— Chọn phòng chiếu —</option>
+        @* Phòng gom nhóm theo "Thành phố · Chi nhánh" (optgroup) — chọn phòng là chọn luôn chi nhánh. *@
+        <select asp-for="RoomId" asp-items="Model.Rooms" class="admin-input" disabled="@locked">
+            <option value="0">— Chọn phòng —</option>
         </select>
-        <span asp-validation-for="RoomId" class="admin-form-error"></span>
+        <span asp-validation-for="RoomId" class="text-danger small"></span>
     </div>
-
-    <div class="admin-form-grid admin-form-grid-2">
-        <div class="admin-form-group">
+    <div class="mb-3">
+        <label asp-for="Language" class="admin-label"></label>
+        <select asp-for="Language" class="admin-input" style="max-width:14rem">
+            @foreach (var l in Enum.GetValues<CinemaBooking.Domain.Enums.ShowLanguage>())
+            {
+                <option value="@l" selected="@(l == Model.Language)">@l.Label()</option>
+            }
+        </select>
+    </div>
+    <div class="mb-3" data-slot-picker data-url="@Url.Action("Suggest")" data-exclude="@Model.Id" hidden="@locked">
+        <label for="suggest-date" class="admin-label">Ngày chiếu</label>
+        <input id="suggest-date" type="date" class="admin-input" style="max-width:12rem" />
+        <div id="slot-chips" class="d-flex flex-wrap gap-2 mt-2" aria-live="polite"></div>
+        <div id="slot-hint" class="admin-form-hint">Chọn phim, phòng và ngày để xem giờ gợi ý còn trống; bấm một giờ để điền vào ô bên dưới. <span class="cb-badge cb-badge-success">Liền sau</span> = ngay sau suất trước.</div>
+    </div>
+    <div class="row">
+        <div class="col-sm-7 mb-3">
             <label asp-for="StartTimeLocal" class="admin-label"></label>
-            <input asp-for="StartTimeLocal" type="datetime-local" class="admin-input" />
-            <span asp-validation-for="StartTimeLocal" class="admin-form-error"></span>
+            <input asp-for="StartTimeLocal" type="datetime-local" class="admin-input" readonly="@locked" />
+            <span asp-validation-for="StartTimeLocal" class="text-danger small"></span>
         </div>
-        <div class="admin-form-group">
-            <label asp-for="BasePrice" class="admin-label"></label>
-            <input asp-for="BasePrice" class="admin-input" type="number" step="1000" min="0" placeholder="VNĐ" />
-            <span asp-validation-for="BasePrice" class="admin-form-error"></span>
+        <div class="col-sm-5 mb-3">
+            <label class="admin-label">Giá ghế thường</label>
+            <input type="hidden" asp-for="BasePrice" />
+            <div class="form-control-plaintext fw-semibold" id="price-auto">@Model.BasePrice.Vnd()</div>
+            <div class="admin-form-hint" id="price-suggest" data-url="@Url.Action("SuggestPrice")">
+                Tự tính theo <a asp-controller="Pricing" asp-action="Index">bảng giá chi nhánh</a> (loại phòng, giờ và ngày chiếu), không nhập tay và không phụ thuộc phim.
+            </div>
         </div>
     </div>
-
-    <ul class="admin-hints">
-        <li>Giờ nhập theo giờ rạp; giờ kết thúc được hệ thống tự tính dựa trên thời lượng phim.</li>
-        <li>Hai suất chiếu trong cùng một phòng phải cách nhau tối thiểu @CinemaBooking.Web.Areas.Admin.Controllers.ShowtimesController.CleaningBuffer.TotalMinutes phút để dọn dẹp vệ sinh.</li>
-        <li>Giá vé cơ bản là giá cho ghế Thường; ghế VIP và ghế đôi sẽ áp dụng hệ số phụ thu tự động.</li>
+    <ul class="admin-form-hint admin-hints">
+        <li>Giờ nhập theo giờ rạp; giờ kết thúc tự tính theo thời lượng phim.</li>
+        <li>Hai suất cùng phòng phải cách nhau ít nhất @CinemaBooking.Web.Areas.Admin.Controllers.ShowtimesController.CleaningBuffer.TotalMinutes phút để dọn phòng.</li>
+        <li>Mỗi chi nhánh xếp lịch và đặt giá riêng.</li>
     </ul>
 
     <div class="admin-form-actions">
-        <button type="submit" class="cb-btn cb-btn-primary">
-            <span>💾</span> Lưu suất chiếu
-        </button>
-        <a asp-action="Index" class="cb-btn cb-btn-ghost">Hủy</a>
+        <button type="submit" class="cb-btn cb-btn-primary">Lưu</button>
+        <a asp-action="Index" class="cb-btn cb-btn-secondary">Hủy</a>
     </div>
 </form>
 
+@if (locked)
+{
+    <form asp-action="CancelTickets" asp-route-id="@Model.Id" method="post" id="cancel-showtime"
+          class="cb-card admin-form admin-form-narrow mt-3"
+          data-confirm="Hủy suất này? @Model.SoldTickets đơn sẽ bị hủy, khách nhận email và rạp phải hoàn tiền. Không hoàn tác được.">
+        <h2 class="h5">Hủy suất chiếu</h2>
+        <p class="admin-form-hint">Chỉ dùng khi rạp không chiếu được (hỏng máy, sự cố phòng...). Suất sẽ bị ẩn, ghế được trả lại và rạp hoàn tiền thủ công cho từng đơn.</p>
+        <div class="mb-3">
+            <label for="cancel-reason" class="admin-label">Lý do gửi cho khách</label>
+            <input id="cancel-reason" name="reason" class="admin-input" maxlength="300" required
+                   placeholder="Ví dụ: Phòng chiếu gặp sự cố kỹ thuật" />
+        </div>
+        <button type="submit" class="cb-btn cb-btn-danger">Hủy suất và toàn bộ vé</button>
+    </form>
+}
+
 @section Scripts {
+    <script>
+    (() => {
+        const root = document.querySelector("[data-slot-picker]");
+        if (!root) return;
+        const movie = document.getElementById("MovieId"), room = document.getElementById("RoomId");
+        const dateEl = document.getElementById("suggest-date"), start = document.getElementById("StartTimeLocal");
+        const chips = document.getElementById("slot-chips"), hint = document.getElementById("slot-hint");
+        const fmt = d => d.toISOString().slice(0, 10);
+        dateEl.value = start.value ? start.value.slice(0, 10) : fmt(new Date());
+        dateEl.min = fmt(new Date());
+
+        async function load() {
+            chips.textContent = "";
+            if (!+movie.value || !+room.value || !dateEl.value) return;
+            const q = new URLSearchParams({ roomId: room.value, movieId: movie.value, date: dateEl.value });
+            if (root.dataset.exclude) q.set("excludeId", root.dataset.exclude);
+            try {
+                const res = await fetch(root.dataset.url + "?" + q);
+                if (!res.ok) throw new Error();
+                const slots = await res.json();
+                hint.hidden = slots.length > 0;
+                if (!slots.length) { chips.textContent = "Không còn giờ trống trong ngày này — thử ngày khác."; return; }
+                for (const s of slots) {
+                    const b = document.createElement("button");
+                    b.type = "button";
+                    b.className = "btn btn-sm " + (s.snug ? "btn-success" : "btn-outline-secondary");
+                    b.textContent = s.text;
+                    b.title = s.snug ? "Liền sau suất trước" : "";
+                    b.addEventListener("click", () => { start.value = s.value; start.dispatchEvent(new Event("input", { bubbles: true })); });
+                    chips.appendChild(b);
+                }
+            } catch { chips.textContent = "Không tải được giờ gợi ý."; }
+        }
+        [movie, room, dateEl].forEach(e => e.addEventListener("change", load));
+        load();
+    })();
+
+    // Giá tự tính theo bảng giá chi nhánh: phòng + giờ bắt đầu → giá ghế thường (chỉ hiển thị; server tính lại khi lưu).
+    (() => {
+        const box = document.getElementById("price-suggest"), label = document.getElementById("price-auto");
+        const room = document.getElementById("RoomId"), start = document.getElementById("StartTimeLocal");
+        if (!box || !label || !room || !start) return;
+        async function refresh() {
+            if (!+room.value || !start.value) return;
+            try {
+                const res = await fetch(box.dataset.url + "?" + new URLSearchParams({ roomId: room.value, start: start.value }));
+                const data = res.ok ? await res.json() : { found: false };
+                if (data.found) label.textContent = data.text;
+            } catch { }
+        }
+        [room, start].forEach(e => e.addEventListener("change", refresh));
+        start.addEventListener("input", refresh);
+        refresh();
+    })();
+    </script>
     @await Html.PartialAsync("_ValidationScriptsPartial")
 }

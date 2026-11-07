@@ -1,0 +1,79 @@
+@model PromotionsIndexViewModel
+@{
+    ViewData["Title"] = $"Khuyến mãi — {Model.TheaterName}";
+}
+
+<div class="admin-page-head">
+    <div>
+        @if (User.IsInRole(AppRoles.Admin))
+        {
+            <a asp-controller="Theaters" asp-action="Index" class="admin-back-link">← Danh sách chi nhánh</a>
+        }
+        <h1 class="admin-page-title">Khuyến mãi · @Model.TheaterName</h1>
+        <p class="cb-muted admin-page-subtitle">Hiện ở trang chi tiết chi nhánh của khách. Mỗi chi nhánh có chương trình riêng.</p>
+    </div>
+    <a asp-action="Create" asp-route-theaterId="@Model.TheaterId" class="cb-btn cb-btn-primary">Thêm khuyến mãi</a>
+</div>
+
+@if (TempData["Message"] is string message)
+{
+    <div class="cb-alert cb-alert-success" role="status">@message</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="cb-alert cb-alert-danger" role="alert">@error</div>
+}
+
+@if (Model.Branches is { Count: > 0 } branches)
+{
+    <form method="get" class="cb-card admin-filter">
+        <label for="theaterId" class="mb-0 fw-semibold">Chi nhánh</label>
+        <select id="theaterId" name="theaterId" class="admin-input" style="max-width:22rem" onchange="this.form.submit()">
+            @foreach (var b in branches)
+            {
+                <option value="@b.Value" selected="@(b.Value == Model.TheaterId.ToString())">@b.Text</option>
+            }
+        </select>
+    </form>
+}
+
+@if (Model.Items.Count == 0)
+{
+    <div class="cb-card cb-empty">
+        <p class="cb-empty-title">Chi nhánh chưa có khuyến mãi</p>
+        <p class="cb-muted">Thêm chương trình để khách thấy ngay trên trang chi nhánh.</p>
+    </div>
+}
+else
+{
+    <div class="admin-table-wrap">
+        <table class="admin-table mb-0">
+            <thead>
+                <tr><th>Chương trình</th><th>Nhãn</th><th>Quy tắc giảm giá</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.Items)
+                {
+                    <tr>
+                        <td class="fw-semibold">@p.Title</td>
+                        <td>@p.Badge</td>
+                        <td class="small">@p.Rule</td>
+                        <td class="text-nowrap">@p.StartDate.ToString("dd/MM/yyyy") – @p.EndDate.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            @if (p.IsRunning) { <span class="cb-badge cb-badge-success">Đang chạy</span> }
+                            else if (!p.IsActive) { <span class="cb-badge cb-badge-surface">Tắt</span> }
+                            else { <span class="cb-badge text-bg-light">Ngoài thời gian</span> }
+                        </td>
+                        <td class="admin-actions">
+                            <a asp-action="Edit" asp-route-id="@p.Id" class="cb-btn cb-btn-sm cb-btn-secondary">Sửa</a>
+                            <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="d-inline"
+                                  data-confirm="Xóa khuyến mãi “@p.Title”?">
+                                <button type="submit" class="cb-btn cb-btn-sm cb-btn-danger">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

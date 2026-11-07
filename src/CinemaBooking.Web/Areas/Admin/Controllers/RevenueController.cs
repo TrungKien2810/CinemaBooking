@@ -17,7 +17,6 @@ namespace CinemaBooking.Web.Areas.Admin.Controllers;
 /// tới từng phút, không phụ thuộc DailyReportWorker đã chạy hay chưa. Một ngày = một ngày theo giờ
 /// rạp của thời điểm ĐẶT vé (lúc thu tiền), không phải ngày chiếu.
 /// </summary>
-[Authorize(Roles = AppRoles.Admin)]
 public class RevenueController : AdminControllerBase
 {
     /// <summary>Mặc định xem 7 ngày gần nhất, tính cả hôm nay.</summary>
@@ -26,12 +25,14 @@ public class RevenueController : AdminControllerBase
     private readonly CinemaDbContext _db;
     private readonly DisplayTimeZone _tz;
     private readonly TimeProvider _clock;
+    private readonly IBranchScope _branches;
 
-    public RevenueController(CinemaDbContext db, IOptions<DisplayTimeZone> tz, TimeProvider clock)
+    public RevenueController(CinemaDbContext db, IOptions<DisplayTimeZone> tz, TimeProvider clock, IBranchScope branches)
     {
         _db = db;
         _tz = tz.Value;
         _clock = clock;
+        _branches = branches;
     }
 
     public async Task<IActionResult> Index(DateOnly? from, DateOnly? to, CancellationToken ct)
@@ -39,7 +40,8 @@ public class RevenueController : AdminControllerBase
         var (fromDay, toDay) = ResolveRange(from, to);
         var offsetHours = _tz.TimeZoneOffsetHours;
 
-        var byDay = await ConfirmedTickets(fromDay, toDay)
+        var scoped = await _branches.TheaterIdAsync(ct);
+        var byDay = await ConfirmedTickets(fromDay, toDay, scoped)
             .GroupBy(bs => new
             {
                 Day = bs.Booking!.BookingTimeUtc.AddHours(offsetHours).Date,
@@ -60,14 +62,21 @@ public class RevenueController : AdminControllerBase
             .OrderByDescending(r => r.Revenue)
             .ToList();
 
-        return View(new RevenueDashboardViewModel(fromDay, toDay, dayRows, theaterRows));
+        return View(new RevenueDashboardViewModel(
+            fromDay, toDay, dayRows, theaterRows, _tz.ToLocalDate(_clock.GetUtcNow().UtcDateTime)));
     }
 
     /// <summary>Doanh thu chia theo phim và theo từng suất chiếu, lọc được theo chi nhánh.</summary>
     public async Task<IActionResult> Breakdown(DateOnly? from, DateOnly? to, int? theaterId, CancellationToken ct)
     {
         var (fromDay, toDay) = ResolveRange(from, to);
-        var tickets = ConfirmedTickets(fromDay, toDay);
+        var scoped = await _branches.TheaterIdAsync(ct);
+        if (scoped is not null)
+        {
+            if (theaterId is not null && theaterId != scoped) return Forbid();
+            theaterId = scoped;
+        }
+        var tickets = ConfirmedTickets(fromDay, toDay, scoped);
         if (theaterId is not null)
             tickets = tickets.Where(bs => bs.Showtime!.Room!.TheaterId == theaterId);
 
@@ -119,23 +128,29 @@ public class RevenueController : AdminControllerBase
             .OrderByDescending(r => r.Revenue).ThenBy(r => r.StartLocal)
             .ToList();
 
-        var theaters = await _db.Theaters.AsNoTracking()
+        var theatersQuery = _db.Theaters.AsNoTracking();
+        if (scoped is not null) theatersQuery = theatersQuery.Where(t => t.Id == scoped);
+        var theaters = await theatersQuery
             .OrderBy(t => t.City).ThenBy(t => t.Name)
             .Select(t => new SelectListItem(t.City + " · " + t.Name, t.Id.ToString()))
             .ToListAsync(ct);
 
-        return View(new RevenueBreakdownViewModel(fromDay, toDay, theaterId, theaters, movieRows, showtimeRows));
+        return View(new RevenueBreakdownViewModel(
+            fromDay, toDay, theaterId, theaters, movieRows, showtimeRows, _tz.ToLocalDate(_clock.GetUtcNow().UtcDateTime)));
     }
 
     /// <summary>Vé (BookingSeats) của đơn Confirmed, đặt trong [fromDay, toDay] theo giờ rạp.</summary>
-    private IQueryable<BookingSeat> ConfirmedTickets(DateOnly fromDay, DateOnly toDay)
+    private IQueryable<BookingSeat> ConfirmedTickets(DateOnly fromDay, DateOnly toDay, int? scopedTheaterId)
     {
         var fromUtc = _tz.DayRangeUtc(fromDay).FromUtc;
         var toUtc = _tz.DayRangeUtc(toDay).ToUtc;
-        return _db.BookingSeats.AsNoTracking()
+        var query = _db.BookingSeats.AsNoTracking()
             .Where(bs => bs.Booking!.Status == BookingStatus.Confirmed
                          && bs.Booking.BookingTimeUtc >= fromUtc
                          && bs.Booking.BookingTimeUtc < toUtc);
+        return scopedTheaterId is null
+            ? query
+            : query.Where(bs => bs.Showtime!.Room!.TheaterId == scopedTheaterId);
     }
 
     private (DateOnly From, DateOnly To) ResolveRange(DateOnly? from, DateOnly? to)

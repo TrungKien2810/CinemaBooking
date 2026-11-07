@@ -18,4 +18,15 @@ namespace CinemaBooking.Web.Areas.Admin.Controllers;
 [Authorize(Roles = AppRoles.AdminOrBranchAdmin)]
 public abstract class AdminControllerBase : Controller
 {
+    /// <summary>Thông báo thành công hiện ở trang kế tiếp. TempData null khi controller chạy trần trong unit test.</summary>
+    protected void Notify(string message)
+    {
+        if (TempData is not null) TempData["Message"] = message;
+    }
+
+    /// <summary>Thông báo lỗi hiện ở trang kế tiếp.</summary>
+    protected void NotifyError(string message)
+    {
+        if (TempData is not null) TempData["Error"] = message;
+    }
 }

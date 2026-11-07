@@ -301,6 +301,67 @@ public sealed class BookingFlowTests : IAsyncLifetime
         Assert.Single(await _db.BookingSeats.ToListAsync());
     }
 
+    [Fact]
+    public async Task Automatic_promotion_is_applied_to_price_and_recorded_on_each_seat()
+    {
+        _db.Promotions.Add(new Promotion
+        {
+            TheaterId = _room.TheaterId, Title = "Suất sớm", IsActive = true,
+            StartDate = new DateOnly(2026, 10, 1), EndDate = new DateOnly(2026, 10, 31),
+            DiscountPercent = 25, ApplicableSeatType = SeatType.Standard,
+        });
+        await _db.SaveChangesAsync();
+
+        var seats = await StandardSeatIdsAsync(2);
+        Hold(seats);
+
+        var placed = await Service().PlaceAsync(Request(seats));
+        Assert.True(placed.IsRedirectToPayment);
+
+        _db.ChangeTracker.Clear();
+        var booking = await _db.Bookings.Include(b => b.Seats).Include(b => b.Payment)
+            .SingleAsync(b => b.BookingCode == placed.BookingCode);
+
+        // 90.000 giảm 25% = 67.500 mỗi ghế; tổng tiền đơn và số tiền thanh toán khớp giá đã giảm.
+        Assert.Equal(135_000m, booking.TotalAmount);
+        Assert.Equal(135_000m, booking.Payment!.Amount);
+        Assert.All(booking.Seats, s =>
+        {
+            Assert.Equal(67_500m, s.PriceAtBooking);
+            Assert.Equal(22_500m, s.DiscountAmount);
+            Assert.Equal("Suất sớm", s.PromotionTitle);
+        });
+    }
+
+    [Fact]
+    public async Task Promotion_for_another_seat_type_or_outside_its_dates_does_not_change_the_price()
+    {
+        _db.Promotions.AddRange(
+            new Promotion
+            {
+                TheaterId = _room.TheaterId, Title = "Chỉ VIP", IsActive = true,
+                StartDate = new DateOnly(2026, 10, 1), EndDate = new DateOnly(2026, 10, 31),
+                DiscountPercent = 50, ApplicableSeatType = SeatType.Vip,
+            },
+            new Promotion
+            {
+                TheaterId = _room.TheaterId, Title = "Hết hạn", IsActive = true,
+                StartDate = new DateOnly(2026, 9, 1), EndDate = new DateOnly(2026, 9, 30),
+                DiscountPercent = 50,
+            });
+        await _db.SaveChangesAsync();
+
+        var seats = await StandardSeatIdsAsync(1);
+        Hold(seats);
+        var placed = await Service().PlaceAsync(Request(seats));
+
+        _db.ChangeTracker.Clear();
+        var booking = await _db.Bookings.Include(b => b.Seats).SingleAsync(b => b.BookingCode == placed.BookingCode);
+        Assert.Equal(90_000m, booking.TotalAmount);
+        Assert.Equal(0m, booking.Seats.Single().DiscountAmount);
+        Assert.Null(booking.Seats.Single().PromotionTitle);
+    }
+
     private BookingService Service(
         IBookedSeatQuery? bookedSeats = null,
         IVnpayPaymentService? vnpay = null,

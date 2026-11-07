@@ -30,6 +30,7 @@ public sealed class SeatAvailabilityQuery : ISeatAvailabilityQuery
         var seat = await _db.Showtimes.AsNoTracking()
             .Where(s => s.Id == showtimeId
                 && s.StartTimeUtc > nowUtc
+                && s.IsActive
                 && s.Movie!.IsActive
                 && s.Room!.Theater!.IsActive)
             .SelectMany(s => s.Room!.Seats.Where(seat => seat.Id == seatId))

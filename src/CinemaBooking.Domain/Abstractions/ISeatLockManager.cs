@@ -15,8 +15,15 @@ public interface ISeatLockManager
 {
     LockResult TryLock(SeatKey key, string connectionId, string? userRef, TimeSpan ttl);
     bool Release(SeatKey key, string connectionId);
-    /// <summary>Giải phóng mọi ghế của một connection (gọi từ OnDisconnectedAsync).</summary>
+    /// <summary>Giải phóng mọi ghế của một connection.</summary>
     IReadOnlyCollection<SeatKey> ReleaseAllFor(string connectionId);
+    /// <summary>
+    /// Connection đóng (đổi trang, đăng xuất, rớt mạng): ghế của người ĐÃ ĐĂNG NHẬP vẫn được giữ tới hết hạn (khách quay lại
+    /// trong thời gian giữ ghế sẽ nhận lại bằng <see cref="Adopt"/>); ghế của khách vãng lai được nhả ngay. Trả về các ghế đã nhả.
+    /// </summary>
+    IReadOnlyCollection<SeatKey> DetachFor(string connectionId);
+    /// <summary>Gắn lại các ghế còn hạn mà <paramref name="userRef"/> đang giữ ở suất này cho connection mới, trả về chúng.</summary>
+    IReadOnlyCollection<SeatLock> Adopt(int showtimeId, string userRef, string connectionId);
     /// <summary>
     /// Chuyển quyền giữ ghế từ owner này sang owner khác và gia hạn TTL. Dùng khi khách rời
     /// trang chọn ghế sang thanh toán: connection SignalR đóng nhưng hold-token trong Session

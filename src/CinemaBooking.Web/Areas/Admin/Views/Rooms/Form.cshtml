@@ -5,77 +5,125 @@
 }
 
 <div class="admin-page-head">
-    <div class="admin-page-title-wrap">
-        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="admin-back-link">
-            ← Phòng chiếu · @Model.TheaterName
-        </a>
-        <h1 class="admin-page-title">@(isEdit ? "Sửa phòng" : "Thêm phòng mới")</h1>
-        <p class="admin-page-subtitle">Thiết lập quy cách hàng và cột ghế cho phòng chiếu tại @Model.TheaterName.</p>
+    <div>
+        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="admin-back-link">← Phòng chiếu · @Model.TheaterName</a>
+        <h1 class="admin-page-title">@(isEdit ? "Sửa phòng" : "Thêm phòng")</h1>
     </div>
 </div>
 
-<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="admin-form">
-    <div asp-validation-summary="ModelOnly" class="cb-alert cb-alert-danger" style="margin-bottom: 1.5rem;"></div>
+<form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" class="cb-card admin-form"
+      data-confirm="@(isEdit ? "Lưu thay đổi của phòng này? Đổi số hàng, số ghế hoặc sinh lại sơ đồ sẽ thay toàn bộ ghế và mất các chỉnh sửa ghế bằng tay." : null)">
+    <div asp-validation-summary="ModelOnly"></div>
     <input asp-for="TheaterId" type="hidden" />
 
-    <div class="admin-form-layout-room">
-        <div>
-            <div class="admin-form-group">
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="mb-3">
                 <label asp-for="RoomName" class="admin-label"></label>
-                <input asp-for="RoomName" class="admin-input" placeholder="Ví dụ: Phòng 1, IMAX Laser..." />
-                <span asp-validation-for="RoomName" class="admin-form-error"></span>
+                <input asp-for="RoomName" class="admin-input" placeholder="Phòng 1" />
+                <span asp-validation-for="RoomName" class="text-danger small"></span>
             </div>
-
-            <div class="admin-form-grid admin-form-grid-2">
-                <div class="admin-form-group">
+            <div class="mb-3">
+                <label asp-for="RoomType" class="admin-label"></label>
+                <select asp-for="RoomType" class="admin-input">
+                    @foreach (var t in Enum.GetValues<CinemaBooking.Domain.Enums.RoomType>())
+                    {
+                        <option value="@t" selected="@(t == Model.RoomType)">@t.Label()</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label asp-for="LayoutPreset" class="admin-label"></label>
+                <select asp-for="LayoutPreset" class="admin-input">
+                    @foreach (var p in Enum.GetValues<SeatLayoutPreset>())
+                    {
+                        <option value="@p" selected="@(p == Model.LayoutPreset)">@p.Label()</option>
+                    }
+                </select>
+                <span class="admin-form-hint">Không phải phòng nào cũng có VIP hay ghế đôi. “Tự động” chọn theo loại phòng (2D: cổ điển, 3D/IMAX: VIP giữa, 4DX: toàn thường). Sau khi tạo vẫn chỉnh từng ghế được.</span>
+            </div>
+            <div class="row">
+                <div class="col mb-3">
                     <label asp-for="TotalRows" class="admin-label"></label>
-                    <input asp-for="TotalRows" class="admin-input" type="number" min="1" max="26" />
-                    <span asp-validation-for="TotalRows" class="admin-form-error"></span>
+                    <input asp-for="TotalRows" class="admin-input" />
+                    <span asp-validation-for="TotalRows" class="text-danger small"></span>
                 </div>
-                <div class="admin-form-group">
+                <div class="col mb-3">
                     <label asp-for="TotalColumns" class="admin-label"></label>
-                    <input asp-for="TotalColumns" class="admin-input" type="number" min="1" max="40" />
-                    <span asp-validation-for="TotalColumns" class="admin-form-error"></span>
+                    <input asp-for="TotalColumns" class="admin-input" />
+                    <span asp-validation-for="TotalColumns" class="text-danger small"></span>
                 </div>
             </div>
-
-            <div class="admin-form-hint" style="margin-top: 0.5rem; line-height: 1.6;">
-                <p>Ghế được sinh tự động theo quy tắc: Hàng A, B, C... từ trên xuống dưới màn hình.</p>
+            <div class="mb-3">
+                <label asp-for="AisleAfterColumn" class="admin-label"></label>
+                <input asp-for="AisleAfterColumn" type="number" min="0" max="49" class="admin-input" style="max-width:9rem" />
+                <span asp-validation-for="AisleAfterColumn" class="text-danger small"></span>
+                <span class="admin-form-hint" id="aisle-hint">0 = không có lối đi. Ví dụ 6 = chừa cột 7 làm lối đi chia đôi phòng (cột đó nằm trong tổng số ghế mỗi hàng và không có ghế).</span>
+            </div>
+            @if (isEdit)
+            {
+                <div class="form-check mb-3">
+                    <input asp-for="RegenerateSeats" class="form-check-input" />
+                    <label asp-for="RegenerateSeats" class="form-check-label"></label>
+                    <div class="admin-form-hint">Mất các chỉnh sửa ghế bằng tay. Chỉ làm được khi phòng chưa có vé nào.</div>
+                </div>
+            }
+            <p class="admin-form-hint">
+                Ghế được sinh tự động theo số hàng × số ghế mỗi hàng.
                 @if (isEdit)
                 {
-                    <p style="color: var(--cb-warning);">
-                        ⚠️ Thay đổi số hàng hoặc số cột sẽ tạo lại toàn bộ sơ đồ ghế — chỉ cho phép khi phòng chưa phát sinh đơn vé nào.
-                    </p>
+                    <text>Đổi số hàng hoặc số ghế sẽ sinh lại toàn bộ sơ đồ — chỉ làm được khi phòng chưa có vé nào được đặt.</text>
                 }
-            </div>
+            </p>
         </div>
 
-        <div>
-            <div class="admin-poster-preview-card" style="text-align: left;">
-                <div class="admin-label" style="margin-bottom: 0.75rem;">Xem trước sơ đồ phòng</div>
-                <div data-seat-preview data-url="@Url.Action("SeatPreview")" aria-live="polite">
-                    <partial name="_SeatPreview" model="SeatPreviewModel.For(Model.TotalRows, Model.TotalColumns)" />
-                </div>
+        <div class="col-lg-7">
+            <div class="admin-label">Xem trước sơ đồ ghế</div>
+            <div data-seat-preview data-url="@Url.Action("SeatPreview")" aria-live="polite">
+                <partial name="_SeatPreview" model="SeatPreviewModel.For(Model.TotalRows, Model.TotalColumns, Model.LayoutPreset, Model.AisleAfterColumn, Model.RoomType)" />
             </div>
         </div>
     </div>
 
     <div class="admin-form-actions">
-        <button type="submit" class="cb-btn cb-btn-primary">
-            <span>💾</span> Lưu phòng chiếu
-        </button>
-        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="cb-btn cb-btn-ghost">Hủy</a>
+        <button type="submit" class="cb-btn cb-btn-primary">Lưu</button>
+        <a asp-action="Index" asp-route-theaterId="@Model.TheaterId" class="cb-btn cb-btn-secondary">Hủy</a>
     </div>
 </form>
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
     <script>
+        // Vẽ lại sơ đồ khi đổi số hàng/số ghế. Debounce để gõ "12" không bắn 2 request,
+        // và bỏ qua phản hồi cũ về muộn (gõ nhanh 8 → 10, request "8" về sau "10").
         (function () {
             var box = document.querySelector('[data-seat-preview]');
             var rows = document.getElementById('@Html.IdFor(m => m.TotalRows)');
             var cols = document.getElementById('@Html.IdFor(m => m.TotalColumns)');
+            var preset = document.getElementById('@Html.IdFor(m => m.LayoutPreset)');
+            var aisle = document.getElementById('@Html.IdFor(m => m.AisleAfterColumn)');
+            var type = document.getElementById('@Html.IdFor(m => m.RoomType)');
+            var hint = document.getElementById('aisle-hint');
             if (!box || !rows || !cols) return;
+
+            // Lối đi chỉ hợp lệ trong [2, cột − 3] (mỗi bên ít nhất 2 ghế); phòng dưới 5 cột không chừa được.
+            function limitAisle() {
+                var c = parseInt(cols.value, 10) || 0;
+                var min = 2, max = c - 3;
+                if (c < 5) {
+                    aisle.value = 0; aisle.min = 0; aisle.max = 0; aisle.disabled = true;
+                    hint.textContent = 'Cần ít nhất 5 ghế mỗi hàng mới chừa được lối đi.';
+                    return;
+                }
+                aisle.disabled = false; aisle.min = 0; aisle.max = max;
+                var v = parseInt(aisle.value, 10) || 0;
+                if (v !== 0 && v < min) aisle.value = min;
+                if (v > max) aisle.value = max;
+                hint.textContent = '0 = không có lối đi; hoặc từ ' + min + ' đến ' + max + ' (mỗi bên lối đi còn ít nhất 2 ghế). Ví dụ ' +
+                    Math.floor(c / 2) + ' = chừa cột ' + (Math.floor(c / 2) + 1) + ' làm lối đi chia đôi phòng.';
+            }
+            cols.addEventListener('input', limitAisle);
+            limitAisle();
 
             var timer, latest = 0;
 
@@ -84,17 +132,21 @@
                 if (!(r > 0) || !(c > 0)) return;
 
                 var ticket = ++latest;
-                var url = box.dataset.url + '?rows=' + r + '&columns=' + c;
+                var url = box.dataset.url + '?rows=' + r + '&columns=' + c +
+                    '&preset=' + encodeURIComponent(preset.value) + '&aisle=' + (parseInt(aisle.value, 10) || 0) +
+                    '&roomType=' + encodeURIComponent(type.value);
                 fetch(url, { headers: { 'X-Requested-With': 'fetch' } })
                     .then(function (res) { return res.ok ? res.text() : Promise.reject(res.status); })
                     .then(function (html) { if (ticket === latest) box.innerHTML = html; })
-                    .catch(function () { });
+                    .catch(function () { /* giữ sơ đồ cũ, lỗi mạng không đáng chặn form */ });
             }
 
-            [rows, cols].forEach(function (input) {
-                input.addEventListener('input', function () {
-                    clearTimeout(timer);
-                    timer = setTimeout(refresh, 250);
+            [rows, cols, preset, aisle, type].forEach(function (input) {
+                ['input', 'change'].forEach(function (evt) {
+                    input.addEventListener(evt, function () {
+                        clearTimeout(timer);
+                        timer = setTimeout(refresh, 250);
+                    });
                 });
             });
         })();

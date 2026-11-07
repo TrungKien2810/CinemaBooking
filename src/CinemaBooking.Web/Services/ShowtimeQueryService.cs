@@ -40,7 +40,9 @@ public sealed class ShowtimeQueryService : IShowtimeQueryService
                 s.Room!.Theater!.City,
                 s.StartTimeUtc,
                 s.EndTimeUtc,
-                s.BasePrice))
+                s.BasePrice,
+                s.Room!.RoomType,
+                s.Language))
             .ToListAsync(ct);
     }
 
@@ -79,7 +81,7 @@ public sealed class ShowtimeQueryService : IShowtimeQueryService
     private IQueryable<Showtime> ForMovie(int movieId, ShowtimeQueryFilter? filter)
     {
         var query = _db.Showtimes.AsNoTracking()
-            .Where(s => s.MovieId == movieId && s.Room!.Theater!.IsActive);
+            .Where(s => s.MovieId == movieId && s.IsActive && s.Room!.Theater!.IsActive);
 
         if (!string.IsNullOrWhiteSpace(filter?.City))
         {

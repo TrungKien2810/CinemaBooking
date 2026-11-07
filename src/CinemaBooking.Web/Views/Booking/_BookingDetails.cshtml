@@ -5,7 +5,7 @@
     <div>
         <h2 class="cb-ticket-movie-title">@Model.MovieTitle</h2>
         <div class="cb-ticket-theater" style="margin-top: 0.35rem; margin-bottom: 1rem;">
-            <span>@Model.TheaterName (@Model.City) · @Model.RoomName</span>
+            <span>@Model.TheaterName (@Model.City) · @Model.RoomName@(Model.FormatLabel is null ? "" : " (" + Model.FormatLabel + ")")</span>
             <span class="cb-muted">@Model.StartLocal.ToString("HH:mm · dd/MM/yyyy")</span>
         </div>
 
@@ -22,15 +22,30 @@
                 {
                     <tr>
                         <td><strong>@seat.Label</strong></td>
-                        <td><span class="cb-badge cb-badge-surface">@seat.Type</span></td>
-                        <td class="cb-num">@seat.Price.ToString("N0") ₫</td>
+                        <td><span class="cb-badge cb-badge-surface">@seat.Type.Label()</span></td>
+                        <td class="cb-num">
+                            @if (seat.HasAnyDiscount)
+                            {
+                                <s class="cb-muted">@seat.ListPrice.Vnd()</s>
+                                <br />
+                                @if (seat.HasPromotion) { <small class="cb-success-text">@seat.PromotionTitle</small><br /> }
+                            }
+                            @seat.Price.Vnd()
+                        </td>
                     </tr>
                 }
             </tbody>
             <tfoot>
+                @if (Model.VoucherCode is not null && Model.VoucherDiscount > 0)
+                {
+                    <tr>
+                        <th colspan="2">Mã giảm giá <strong>@Model.VoucherCode</strong> (đã trừ vào giá từng ghế)</th>
+                        <td class="cb-num cb-success-text">−@Model.VoucherDiscount.Vnd()</td>
+                    </tr>
+                }
                 <tr>
                     <th colspan="2">Tổng cộng</th>
-                    <td class="cb-num cb-ticket-total-val">@Model.TotalAmount.ToString("N0") ₫</td>
+                    <td class="cb-num cb-ticket-total-val">@Model.TotalAmount.Vnd()</td>
                 </tr>
             </tfoot>
         </table>

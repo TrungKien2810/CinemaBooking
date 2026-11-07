@@ -25,7 +25,7 @@
         <a asp-action="Index" class="admin-back-link">← Danh sách đơn</a>
         <h1 class="admin-page-title">
             <span>Đơn @Model.BookingCode</span>
-            <span class="status-badge @StatusBadgeClass(Model.Status)">@StatusLabel(Model.Status)</span>
+            <span class="status-badge @StatusBadgeClass(Model.Status)">@Model.Status.Label()</span>
         </h1>
         <p class="admin-page-subtitle">Chi tiết giao dịch và danh sách ghế đã đặt.</p>
     </div>
@@ -78,10 +78,16 @@
         <div class="admin-details-label">Thanh toán</div>
         <div class="admin-details-value">
             <span class="status-badge @(Model.PaymentStatus == PaymentStatus.Succeeded ? "is-confirmed" : Model.PaymentStatus == PaymentStatus.Failed ? "is-cancelled" : "is-pending")">
-                @(Model.PaymentStatus?.ToString() ?? "Chưa có")
+                @(Model.PaymentStatus?.Label() ?? "Chưa có")
             </span>
             @(Model.TransactionId is null ? "" : " · Mã GD: " + Model.TransactionId)
         </div>
+
+        @if (Model.CheckedInLocal is { } checkedIn)
+        {
+            <div class="admin-details-label">Soát vé</div>
+            <div class="admin-details-value">Đã vào rạp lúc @checkedIn.ToString("HH:mm dd/MM/yyyy")</div>
+        }
     </div>
 </div>
 
@@ -117,11 +123,11 @@
                                 <span class="cb-badge cb-badge-curtain">Ghế đôi</span>
                                 break;
                             default:
-                                <span class="cb-badge cb-badge-surface">Thường</span>
+                                <span class="cb-badge cb-badge-surface">@s.SeatType.Label()</span>
                                 break;
                         }
                     </td>
-                    <td class="cb-num">@s.Price.ToString("N0") ₫</td>
+                    <td class="cb-num">@s.Price.Vnd()</td>
                 </tr>
             }
             @if (Model.Seats.Count == 0)
@@ -134,12 +140,44 @@
             }
         </tbody>
         <tfoot>
+            @if (Model.VoucherCode is not null && Model.VoucherDiscount > 0)
+            {
+                <tr>
+                    <td colspan="2">Mã giảm giá <strong>@Model.VoucherCode</strong></td>
+                    <td class="cb-num cb-success-text">−@Model.VoucherDiscount.Vnd()</td>
+                </tr>
+            }
             <tr>
                 <th colspan="2">Tổng tiền</th>
                 <th class="cb-num" style="color: var(--cb-accent); font-size: 1.125rem;">
-                    @Model.TotalAmount.ToString("N0") ₫
+                    @Model.TotalAmount.Vnd()
                 </th>
             </tr>
         </tfoot>
     </table>
 </div>
+
+@if (Model.PaymentStatus == PaymentStatus.RefundPending)
+{
+    <form asp-action="MarkRefunded" asp-route-id="@Model.Id" method="post" class="admin-form"
+          data-confirm="Xác nhận đã chuyển trả @Model.TotalAmount.Vnd() cho khách?">
+        <h2 class="admin-chart-title">Hoàn tiền</h2>
+        <p class="admin-form-hint">Đơn đã hủy, rạp cần hoàn @Model.TotalAmount.Vnd() cho khách. Chuyển tiền xong thì bấm nút dưới đây.</p>
+        <button type="submit" class="cb-btn cb-btn-primary">Đánh dấu đã hoàn tiền</button>
+    </form>
+}
+
+@if (Model.CancelBlockedReason is null)
+{
+    <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="admin-form"
+          data-confirm="Hủy vé @Model.BookingCode? Khách nhận email, ghế được trả lại và rạp phải hoàn tiền. Không hoàn tác được.">
+        <h2 class="admin-chart-title">Rạp hủy vé</h2>
+        <p class="admin-form-hint">Chỉ dùng khi lỗi ở phía rạp. Khách không tự hủy được vé đã mua.</p>
+        <div class="admin-form-group">
+            <label for="cancel-reason" class="admin-label">Lý do gửi cho khách</label>
+            <input id="cancel-reason" name="reason" class="admin-input" maxlength="300" required
+                   placeholder="Ví dụ: Phòng chiếu gặp sự cố kỹ thuật" />
+        </div>
+        <button type="submit" class="cb-btn cb-btn-danger">Hủy vé và hoàn tiền</button>
+    </form>
+}

@@ -1,0 +1,121 @@
+@model PricesViewModel
+@{
+    ViewData["Title"] = "Bảng giá vé";
+}
+
+<section class="cr-card">
+    <h1 class="cb-page-title">Bảng giá vé</h1>
+    <p class="cr-desc">
+        Giá vé tính theo <strong>loại phòng</strong>, <strong>loại ghế</strong>, <strong>giờ chiếu</strong> và <strong>ngày chiếu</strong> —
+        không phụ thuộc phim. Giá hiển thị ở bước chọn ghế đúng bằng bảng này.
+    </p>
+</section>
+
+@if (Model.Selected is null)
+{
+    <div class="cr-empty">
+        <p class="cr-empty-title">Chưa có chi nhánh nào</p>
+        <p class="cb-muted">Quay lại sau nhé.</p>
+    </div>
+}
+else
+{
+    <form method="get" class="cr-toolbar" role="search" aria-label="Chọn chi nhánh">
+        <div class="cr-search">
+            <label for="theaterId" class="visually-hidden">Chi nhánh</label>
+            <select id="theaterId" name="theaterId" class="cb-input" onchange="this.form.submit()">
+                @foreach (var city in Model.Branches.GroupBy(b => b.City))
+                {
+                    <optgroup label="@city.Key">
+                        @foreach (var b in city)
+                        {
+                            <option value="@b.Id" selected="@(b.Id == Model.Selected.Id)">@b.Name</option>
+                        }
+                    </optgroup>
+                }
+            </select>
+            <noscript><button type="submit" class="cb-btn cb-btn-primary">Xem</button></noscript>
+        </div>
+    </form>
+
+    <section aria-labelledby="branch-prices" class="mb-4">
+        <h2 class="cr-section" id="branch-prices">@Model.Selected.Name</h2>
+        <p class="cb-muted">
+            @Model.Selected.City@(Model.Address is null ? "" : " · " + Model.Address)
+            @if (!string.IsNullOrWhiteSpace(Model.OpeningHours)) { <text> · Giờ mở cửa @Model.OpeningHours</text> }
+            · <a asp-controller="Branches" asp-action="Details" asp-route-id="@Model.Selected.Id">Xem phim đang chiếu</a>
+        </p>
+
+        @if (Model.HasPricing)
+        {
+            @await Html.PartialAsync("_PriceMatrix", Model.Matrix!)
+            <ul class="price-notes">
+                <li>Giá tính trên <strong>mỗi ghế</strong>. Ghế đôi bán theo <strong>cặp</strong> (2 ghế liền kề) — cột "cả cặp" là số tiền thực trả.</li>
+                @if (PricingRules.PeakEnabled(Model.Matrix!.Pricing))
+                {
+                    <li>Giờ cao điểm từ <strong>@Model.Matrix.Pricing.PeakFromHour:00</strong> (phụ thu @Model.Matrix.Pricing.PeakSurcharge.Vnd()/ghế).</li>
+                }
+                @if (PricingRules.WeekendEnabled(Model.Matrix!.Pricing))
+                {
+                    <li>Cuối tuần phụ thu @Model.Matrix.Pricing.WeekendSurcharge.Vnd()/ghế.</li>
+                }
+                @if (!PricingRules.PeakEnabled(Model.Matrix!.Pricing) && !PricingRules.WeekendEnabled(Model.Matrix.Pricing))
+                {
+                    <li>Chi nhánh không thu phụ thu giờ cao điểm hay cuối tuần: giá như nhau mọi ngày, mọi giờ chiếu.</li>
+                }
+                <li>Phụ thu ghế: VIP +@Model.Matrix.Pricing.VipSurcharge.Vnd(), ghế đôi +@Model.Matrix.Pricing.CoupleSurcharge.Vnd() mỗi ghế.</li>
+                <li>Khuyến mãi và mã giảm giá (nhập ở bước thanh toán) được trừ vào giá trên; giá cuối cùng hiển thị khi chọn ghế.</li>
+            </ul>
+        }
+        else
+        {
+            <div class="cr-empty">
+                <p class="cr-empty-title">Chi nhánh đang cập nhật bảng giá</p>
+                <p class="cb-muted">Giá từng suất vẫn hiển thị ở bước chọn ghế.</p>
+            </div>
+        }
+    </section>
+
+    @if (Model.Promotions.Count > 0)
+    {
+        <section aria-labelledby="promo-now" class="mb-4">
+            <h2 class="cr-section" id="promo-now">Đang khuyến mãi tại chi nhánh</h2>
+            <ul class="price-notes">
+                @foreach (var line in Model.Promotions) { <li>@line</li> }
+            </ul>
+        </section>
+    }
+
+    @if (Model.Compare.Count > 1)
+    {
+        <section aria-labelledby="compare" class="mb-4">
+            <h2 class="cr-section" id="compare">So sánh các chi nhánh</h2>
+            <p class="cb-muted small">Giá ghế thường, phòng 2D.</p>
+            <div class="admin-table-wrap">
+                <table class="table price-table price-compare mb-0">
+                    <thead>
+                        <tr>
+                            <th>Chi nhánh</th>
+                            <th class="text-end">Thứ 2–5 trước giờ cao điểm</th>
+                            <th class="text-end">Thứ 2–5 từ giờ cao điểm</th>
+                            <th class="text-end">Cuối tuần từ giờ cao điểm</th>
+                            <th class="text-end">Phụ thu VIP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.Compare)
+                        {
+                            <tr class="@(row.IsSelected ? "table-active" : null)">
+                                <td><a asp-action="Index" asp-route-theaterId="@row.Id">@row.Name</a> <span class="cb-muted small">· @row.City</span></td>
+                                <td class="text-end">@row.WeekdayDay.Vnd()</td>
+                                <td class="text-end">@row.WeekdayPeak.Vnd()</td>
+                                <td class="text-end">@row.WeekendPeak.Vnd()</td>
+                                <td class="text-end">+@row.VipSurcharge.Vnd()</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+}

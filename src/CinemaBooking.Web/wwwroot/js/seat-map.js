@@ -24,6 +24,18 @@
     var continueBtn = document.getElementById('seat-continue');
     var toasts = document.getElementById('seat-toasts');
 
+    // Admin/BranchAdmin chỉ XEM: vẫn nối hub để thấy ghế đang được giữ/đặt theo thời gian thực, nhưng không chọn ghế.
+    // Trang của họ không có khung "đã chọn", nên dùng phần tử rời để các hàm vẽ lại không phải kiểm tra null khắp nơi.
+    var readOnly = root.dataset.readonly === 'true';
+    if (readOnly) {
+        selectedInputs = document.createElement('div');
+        selectedList = document.createElement('span');
+        totalEl = document.createElement('span');
+        timerEl = document.createElement('span');
+        continueBtn = document.createElement('button');
+        connectionIdInput = document.createElement('input');
+    }
+
     // Ghế đôi là MỘT button mang 2 seat id; map mọi id về cùng button để sự kiện realtime
     // (vốn đi theo từng ghế) vẫn tìm được khối tương ứng.
     var seatButtons = new Map();
@@ -113,7 +125,7 @@
     function setState(btn, state) {
         btn.classList.remove('is-free', 'is-mine', 'is-held', 'is-booked');
         btn.classList.add('is-' + state);
-        btn.disabled = state === 'booked' || state === 'held';
+        btn.disabled = readOnly || state === 'booked' || state === 'held';
         btn.setAttribute('aria-pressed', state === 'mine' ? 'true' : 'false');
     }
 
@@ -231,6 +243,14 @@
         selected.delete(btn);
         renderSelection();
         setState(btn, 'booked');
+    }
+
+    // Ghế đã đặt trống lại: khác markFree ở chỗ được phép bỏ trạng thái "đã đặt".
+    function markFreed(seatId) {
+        var btn = seatButtons.get(seatId);
+        if (!btn) return;
+        if (selected.delete(btn)) renderSelection();
+        setState(btn, 'free');
     }
 
     function clearSelection() {
@@ -354,6 +374,10 @@
         (seatIds || []).forEach(markBooked);
     });
 
+    connection.on('SeatFreed', function (seatIds) {
+        (seatIds || []).forEach(markFreed);
+    });
+
     connection.onreconnecting(function () {
         toast('Mất kết nối real-time, đang kết nối lại…', true);
         clearSelection();
@@ -388,6 +412,7 @@
 
     // Mỗi button chỉ gắn listener một lần (ghế đôi có 2 seat id cùng trỏ về một button).
     new Set(seatButtons.values()).forEach(function (btn) {
+        if (readOnly) return;
         btn.addEventListener('click', function () {
             if (isBooked(btn)) return;
 

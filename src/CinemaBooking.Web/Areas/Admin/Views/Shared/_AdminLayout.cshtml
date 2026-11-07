@@ -6,7 +6,8 @@
 
     var displayName = User.Identity?.Name ?? "Admin";
     var initial = string.IsNullOrWhiteSpace(displayName) ? "A" : displayName.Substring(0, 1).ToUpperInvariant();
-    var roleLabel = User.IsInRole(AppRoles.Admin) ? "Quản trị viên" : "Quản lý chi nhánh";
+    var isAdmin = User.IsInRole(AppRoles.Admin);
+    var roleLabel = isAdmin ? "Quản trị viên" : "Quản lý chi nhánh";
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -35,48 +36,76 @@
             </div>
 
             <nav class="admin-nav">
-                @if (User.IsInRole(AppRoles.Admin))
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Dashboard")" data-icon="🏠">
+                        <span class="admin-nav-icon" aria-hidden="true">🏠</span>
+                        <span>Tổng quan</span>
+                    </a>
+                @if (isAdmin)
                 {
-                    <div class="admin-nav-section-title">Danh mục</div>
                     <a asp-area="Admin" asp-controller="Movies" asp-action="Index"
                        class="admin-nav-link @ActiveIf("Movies")" data-icon="🎬">
                         <span class="admin-nav-icon" aria-hidden="true">🎬</span>
                         <span>Phim</span>
                     </a>
+                }
+                @if (isAdmin)
+                {
                     <a asp-area="Admin" asp-controller="Theaters" asp-action="Index"
                        class="admin-nav-link @ActiveIf("Theaters", "Rooms")" data-icon="🏢">
                         <span class="admin-nav-icon" aria-hidden="true">🏢</span>
                         <span>Chi nhánh &amp; phòng</span>
                     </a>
-                    <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
-                       class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">
-                        <span class="admin-nav-icon" aria-hidden="true">🕐</span>
-                        <span>Suất chiếu</span>
-                    </a>
-                    <div class="admin-nav-section-title">Kinh doanh</div>
-                    <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
-                       class="admin-nav-link @ActiveIf("Bookings")" data-icon="🎟️">
-                        <span class="admin-nav-icon" aria-hidden="true">🎟️</span>
-                        <span>Đặt vé</span>
-                    </a>
-                    <a asp-area="Admin" asp-controller="Revenue" asp-action="Index"
-                       class="admin-nav-link @ActiveIf("Revenue")" data-icon="📊">
-                        <span class="admin-nav-icon" aria-hidden="true">📊</span>
-                        <span>Doanh thu</span>
-                    </a>
                 }
-                else
+                @if (!isAdmin)
                 {
-                    <div class="admin-nav-section-title">Quản lý rạp</div>
                     <a asp-area="Admin" asp-controller="Rooms" asp-action="Index"
                        class="admin-nav-link @ActiveIf("Rooms")" data-icon="🪑">
                         <span class="admin-nav-icon" aria-hidden="true">🪑</span>
                         <span>Phòng &amp; ghế</span>
                     </a>
-                    <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
+                }
+                <a asp-area="Admin" asp-controller="Showtimes" asp-action="Index"
                        class="admin-nav-link @ActiveIf("Showtimes")" data-icon="🕐">
                         <span class="admin-nav-icon" aria-hidden="true">🕐</span>
                         <span>Suất chiếu</span>
+                    </a>
+                <a asp-area="Admin" asp-controller="Pricing" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Pricing")" data-icon="💰">
+                        <span class="admin-nav-icon" aria-hidden="true">💰</span>
+                        <span>Bảng giá vé</span>
+                    </a>
+                <a asp-area="Admin" asp-controller="Promotions" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Promotions")" data-icon="🎁">
+                        <span class="admin-nav-icon" aria-hidden="true">🎁</span>
+                        <span>Khuyến mãi</span>
+                    </a>
+                <a asp-area="Admin" asp-controller="Vouchers" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Vouchers")" data-icon="🏷️">
+                        <span class="admin-nav-icon" aria-hidden="true">🏷️</span>
+                        <span>Mã giảm giá</span>
+                    </a>
+                <a asp-area="Admin" asp-controller="Bookings" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Bookings")" data-icon="🎟️">
+                        <span class="admin-nav-icon" aria-hidden="true">🎟️</span>
+                        <span>Đặt vé</span>
+                    </a>
+                <a asp-area="Admin" asp-controller="CheckIn" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("CheckIn")" data-icon="✅">
+                        <span class="admin-nav-icon" aria-hidden="true">✅</span>
+                        <span>Soát vé</span>
+                    </a>
+                <a asp-area="Admin" asp-controller="Revenue" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Revenue")" data-icon="📊">
+                        <span class="admin-nav-icon" aria-hidden="true">📊</span>
+                        <span>Doanh thu</span>
+                    </a>
+                @if (isAdmin)
+                {
+                    <a asp-area="Admin" asp-controller="Users" asp-action="Index"
+                       class="admin-nav-link @ActiveIf("Users")" data-icon="👥">
+                        <span class="admin-nav-icon" aria-hidden="true">👥</span>
+                        <span>Tài khoản</span>
                     </a>
                 }
             </nav>
@@ -109,6 +138,7 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/price-input.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

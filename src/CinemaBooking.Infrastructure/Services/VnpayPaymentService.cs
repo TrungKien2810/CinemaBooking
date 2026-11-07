@@ -96,12 +96,16 @@ public sealed class VnpayPaymentService : IVnpayPaymentService
     /// </summary>
     public Task<VnpayVerifyResult> VerifyVnpayPaymentAsync(VnpayPaymentRequest request, IDictionary<string, string?> response, CancellationToken ct = default)
     {
-        var txnRef = response["vnp_TxnRef"];
-        var responseCode = response["vnp_ResponseCode"];
-        var transactionId = response["vnp_TransactionNo"];
-        var bankCode = response["vnp_BankCode"];
-        var amountRaw = response["vnp_Amount"];
-        var payDate = response.TryGetValue("vnp_PayDate", out var payDateValue) ? payDateValue : null;
+        // URL này ai cũng gọi được nên có thể thiếu tham số: thiếu thì coi như chữ ký sai, không ném lỗi 500.
+        string? Value(string key) => response.TryGetValue(key, out var value) ? value : null;
+
+        var txnRef = Value("vnp_TxnRef");
+        var responseCode = Value("vnp_ResponseCode");
+        var transactionId = Value("vnp_TransactionNo");
+        var bankCode = Value("vnp_BankCode");
+        var amountRaw = Value("vnp_Amount");
+        var payDate = Value("vnp_PayDate");
+        var secureHash = Value("vnp_SecureHash");
 
         var data = response
             .Where(kv => !kv.Key.Equals("vnp_SecureHash", StringComparison.OrdinalIgnoreCase)
@@ -112,8 +116,8 @@ public sealed class VnpayPaymentService : IVnpayPaymentService
 
         var hashData = BuildQueryString(data);
         var computedHash = ComputeHmacSha512Hex(request.HashSecret, hashData);
-        var signatureValid = response["vnp_SecureHash"] is not null
-            && string.Equals(computedHash, response["vnp_SecureHash"], StringComparison.OrdinalIgnoreCase);
+        var signatureValid = secureHash is not null
+            && string.Equals(computedHash, secureHash, StringComparison.OrdinalIgnoreCase);
 
         if (!signatureValid)
         {

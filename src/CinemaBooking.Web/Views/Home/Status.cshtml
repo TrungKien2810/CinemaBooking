@@ -1,0 +1,22 @@
+@model int
+@{
+    var (title, detail) = Model switch
+    {
+        404 => ("Không tìm thấy trang", "Trang này không tồn tại, hoặc phim, suất chiếu bạn mở đã kết thúc hoặc không còn mở bán."),
+        403 => ("Không có quyền truy cập", "Tài khoản của bạn không được phép mở trang này."),
+        429 => ("Thao tác quá nhanh", "Bạn đã gửi quá nhiều yêu cầu. Vui lòng đợi một phút rồi thử lại."),
+        _ => ("Không xử lý được yêu cầu", "Yêu cầu chưa hợp lệ. Bạn thử quay lại trang trước nhé."),
+    };
+    ViewData["Title"] = title;
+}
+
+<div class="error-shell">
+    <div class="cr-empty error-card">
+                <h1 class="cr-empty-title">@title</h1>
+        <p class="cb-muted">@detail</p>
+        <div class="cr-actions">
+            <a class="cb-btn cb-btn-primary" asp-area="" asp-controller="Home" asp-action="Index">Về trang chủ</a>
+            <a class="cb-btn cb-btn-secondary" asp-area="" asp-controller="Booking" asp-action="Lookup">Tra cứu vé</a>
+        </div>
+    </div>
+</div>

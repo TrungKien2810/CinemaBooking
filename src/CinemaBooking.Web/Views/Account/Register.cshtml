@@ -71,10 +71,11 @@
             </div>
 
             <div class="register-terms-box">
-                <input id="terms" type="checkbox" class="auth-checkbox" required />
-                <label for="terms" class="auth-terms-text">
+                <input asp-for="AcceptTerms" class="auth-checkbox" />
+                <label asp-for="AcceptTerms" class="auth-terms-text">
                     Tôi đồng ý với <a asp-controller="Home" asp-action="Privacy">Chính sách bảo mật</a> và các điều khoản dịch vụ của rạp.
                 </label>
+                <span asp-validation-for="AcceptTerms" class="auth-field-error"></span>
             </div>
 
             <button type="submit" class="cb-btn cb-btn-primary auth-submit-btn">Đăng ký thành viên</button>

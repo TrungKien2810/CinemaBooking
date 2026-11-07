@@ -44,6 +44,8 @@ public class AccountController : Controller
     public async Task<IActionResult> Register(RegisterViewModel model, string? returnUrl = null)
     {
         ViewData["ReturnUrl"] = returnUrl;
+        if (!model.AcceptTerms)
+            ModelState.AddModelError(nameof(model.AcceptTerms), "Vui lòng đồng ý với chính sách và điều khoản để đăng ký.");
         if (!ModelState.IsValid) return View(model);
 
         // UserName = Email: hệ thống không có khái niệm nickname, đăng nhập luôn bằng email.
@@ -106,8 +108,11 @@ public class AccountController : Controller
 
         if (result.IsLockedOut)
         {
-            ModelState.AddModelError(string.Empty,
-                "Tài khoản tạm khóa do nhập sai quá nhiều lần. Vui lòng thử lại sau 5 phút.");
+            // Admin khóa thì hạn khóa rất xa (UsersController.ToggleLock); nhập sai chỉ khóa vài phút.
+            var lockedByAdmin = user.LockoutEnd > DateTimeOffset.UtcNow.AddDays(1);
+            ModelState.AddModelError(string.Empty, lockedByAdmin
+                ? "Tài khoản đã bị quản trị viên khóa. Vui lòng liên hệ rạp để được hỗ trợ."
+                : "Tài khoản tạm khóa do nhập sai quá nhiều lần. Vui lòng thử lại sau 5 phút.");
             return View(model);
         }
 
@@ -120,7 +125,7 @@ public class AccountController : Controller
         // Quản lý chi nhánh đăng nhập là vào thẳng khu phòng/ghế của mình; Admin và khách giữ
         // nguyên hành vi cũ (returnUrl hoặc trang chủ).
         if (string.IsNullOrWhiteSpace(returnUrl) && await _users.IsInRoleAsync(user, AppRoles.BranchAdmin))
-            return RedirectToAction("Index", "Rooms", new { area = "Admin" });
+            return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
 
         return RedirectToLocal(returnUrl);
     }

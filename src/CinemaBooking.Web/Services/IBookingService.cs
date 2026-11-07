@@ -15,7 +15,8 @@ public sealed record BookingRequest(
     string CustomerName,
     string CustomerEmail,
     string? CustomerPhone,
-    string? UserId);
+    string? UserId,
+    string? VoucherCode = null);
 
 public enum BookingResultKind
 {
@@ -27,6 +28,8 @@ public enum BookingResultKind
     LocksExpired,
     /// <summary>Suất đã bắt đầu / phim hoặc chi nhánh đã ẩn.</summary>
     ShowtimeNotBookable,
+    /// <summary>Mã giảm giá không dùng được (hết hạn, hết lượt, sai chi nhánh...) — khách chọn lại hoặc bỏ mã.</summary>
+    VoucherInvalid,
     /// <summary>Cổng thanh toán từ chối — đơn không được xác nhận.</summary>
     PaymentFailed,
     /// <summary>

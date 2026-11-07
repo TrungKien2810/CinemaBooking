@@ -35,22 +35,26 @@
 
             @if (User.IsInRole(AppRoles.Admin))
             {
-                <a class="cb-account-item" asp-area="Admin" asp-controller="Movies" asp-action="Index" role="menuitem">
+                <a class="cb-account-item" asp-area="Admin" asp-controller="Dashboard" asp-action="Index" role="menuitem">
                     Trang quản trị
                 </a>
                 <div class="cb-account-divider"></div>
             }
             else if (User.IsInRole(AppRoles.BranchAdmin))
             {
-                <a class="cb-account-item" asp-area="Admin" asp-controller="Rooms" asp-action="Index" role="menuitem">
+                <a class="cb-account-item" asp-area="Admin" asp-controller="Dashboard" asp-action="Index" role="menuitem">
                     Quản lý chi nhánh
                 </a>
                 <div class="cb-account-divider"></div>
             }
 
-            <a class="cb-account-item" asp-area="" asp-controller="Booking" asp-action="MyBookings" role="menuitem">
-                Vé của tôi
-            </a>
+            @if (!User.IsInRole(AppRoles.Admin) && !User.IsInRole(AppRoles.BranchAdmin))
+            {
+                @* Tài khoản quản trị không mua vé nên không có mục "Vé của tôi". *@
+                <a class="cb-account-item" asp-area="" asp-controller="Booking" asp-action="MyBookings" role="menuitem">
+                    Vé của tôi
+                </a>
+            }
             <a class="cb-account-item" asp-area="" asp-controller="Account" asp-action="Profile" role="menuitem">
                 Hồ sơ cá nhân
             </a>

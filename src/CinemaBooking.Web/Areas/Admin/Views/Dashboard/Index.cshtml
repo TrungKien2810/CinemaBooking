@@ -1,0 +1,62 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Tổng quan";
+}
+
+<div class="admin-page-head">
+    <div>
+        <h1 class="admin-page-title">Tổng quan · @Model.Scope</h1>
+        <p class="cb-muted admin-page-subtitle">Hôm nay, @Model.Today.ToString("dd/MM/yyyy")</p>
+    </div>
+</div>
+
+<div class="admin-stat-grid">
+    <div class="admin-stat">
+        <span class="admin-stat-label">Suất chiếu hôm nay</span>
+        <strong class="admin-stat-value">@Model.ShowtimesToday</strong>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat-label">Vé bán hôm nay</span>
+        <strong class="admin-stat-value">@Model.TicketsToday</strong>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat-label">Doanh thu hôm nay</span>
+        <strong class="admin-stat-value is-accent" title="@Model.RevenueToday.Vnd()">@Model.RevenueToday.VndShort()</strong>
+        <span class="admin-stat-hint">@Model.RevenueToday.Vnd()</span>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat-label">Lấp đầy hôm nay</span>
+        <strong class="admin-stat-value">@Model.OccupancyToday.ToString("P0")</strong>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat-label">Doanh thu 7 ngày</span>
+        <strong class="admin-stat-value is-accent" title="@Model.Revenue7Days.Vnd()">@Model.Revenue7Days.VndShort()</strong>
+        <span class="admin-stat-hint">@Model.Tickets7Days vé · @Model.Revenue7Days.Vnd()</span>
+    </div>
+</div>
+
+<h2 class="h5 mt-4">Suất sắp chiếu hôm nay</h2>
+@if (Model.Upcoming.Count == 0)
+{
+    <div class="cb-card cb-empty"><p class="cb-empty-title">Không còn suất nào hôm nay</p></div>
+}
+else
+{
+    <div class="admin-table-wrap">
+        <table class="admin-table mb-0">
+            <thead><tr><th>Giờ</th><th>Phim</th><th>Phòng</th><th class="text-end">Đã bán</th><th class="text-end">Lấp đầy</th></tr></thead>
+            <tbody>
+            @foreach (var s in Model.Upcoming)
+            {
+                <tr>
+                    <td class="fw-semibold">@s.StartLocal.ToString("HH:mm")</td>
+                    <td>@s.MovieTitle@if (!s.IsActive) { <span class="cb-badge cb-badge-surface ms-1">Đang ẩn</span> }</td>
+                    <td>@s.RoomName</td>
+                    <td class="text-end">@s.Sold / @s.Capacity</td>
+                    <td class="text-end">@s.Occupancy.ToString("P0")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

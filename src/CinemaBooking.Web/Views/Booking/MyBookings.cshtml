@@ -24,7 +24,7 @@
 }
 
 <nav class="cr-chips" aria-label="Bộ lọc vé">
-    <a class="@TabClass("all")" asp-action="MyBookings" asp-route-tab="all" aria-current="@Current("all")">Tất cả (@(Model.UpcomingCount + Model.HistoryCount))</a>
+    <a class="@TabClass("all")" asp-action="MyBookings" asp-route-tab="all" aria-current="@Current("all")">Tất cả (@Model.AllCount)</a>
     <a class="@TabClass("upcoming")" asp-action="MyBookings" asp-route-tab="upcoming" aria-current="@Current("upcoming")">Sắp chiếu (@Model.UpcomingCount)</a>
     <a class="@TabClass("history")" asp-action="MyBookings" asp-route-tab="history" aria-current="@Current("history")">Đã xem (@Model.HistoryCount)</a>
 </nav>
@@ -57,10 +57,16 @@ else
                 </div>
                 <div class="cr-stub-side">
                     <span class="cr-stub-code">@booking.BookingCode</span>
-                    <span class="cr-stub-total">@booking.TotalAmount.ToString("N0") ₫</span>
+                    <span class="cr-stub-total">@booking.TotalAmount.Vnd()</span>
                     <span class="cr-stub-status @(booking.Status == BookingStatus.Confirmed ? "is-ok" : null)">@booking.StatusLabel · @booking.PaymentStateLabel</span>
                 </div>
             </article>
         }
     </div>
+
+    @if (Model.Page is { } page)
+    {
+        <partial name="~/Areas/Admin/Views/Shared/_Pager.cshtml"
+                 model="@(new PagerModel("MyBookings", page, new Dictionary<string, object?> { ["tab"] = Model.Tab }))" />
+    }
 }

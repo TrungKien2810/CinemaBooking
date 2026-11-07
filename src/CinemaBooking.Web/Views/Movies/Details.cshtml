@@ -10,7 +10,7 @@
     ViewData["Title"] = m.Title;
 }
 
-<a asp-controller="Home" asp-action="Index" class="cr-back">← Phim đang chiếu</a>
+<a asp-area="" asp-controller="Home" asp-action="Index" class="cr-back">← Phim đang chiếu</a>
 
 <section class="cr-card cr-movie-card">
     <img class="cr-poster" src="@m.PosterOrPlaceholder"
@@ -22,7 +22,26 @@
     {
         <p class="cr-desc">@Model.Description</p>
     }
+    @if (Model.Extra is { } x)
+    {
+        <p class="cr-desc">
+            <span class="cr-chip" title="@x.AgeRating.Describe()">@x.AgeRating.Label()</span>
+            @x.AgeRating.Describe()
+        </p>
+        @if (!string.IsNullOrWhiteSpace(x.Director))
+        {
+            <p class="cr-desc"><strong>Đạo diễn:</strong> @x.Director</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(x.Cast))
+        {
+            <p class="cr-desc"><strong>Diễn viên:</strong> @x.Cast</p>
+        }
+    }
     <a href="#lich-chieu" class="cb-btn cb-btn-primary">Chọn suất chiếu</a>
+    @if (Model.Extra?.SafeTrailerUrl is { } trailer)
+    {
+        <a href="@trailer" target="_blank" rel="noopener noreferrer" class="cb-btn cb-btn-secondary">Xem trailer</a>
+    }
 </section>
 
 <section id="lich-chieu" class="cr-schedule">
@@ -93,7 +112,21 @@
                                         <a class="cr-chip cr-slot" href="@Url.Content($"~/Booking/SeatMap/{s.Id}")"
                                            title="@s.RoomName · kết thúc @s.EndLocal.ToString("HH:mm")">
                                             <span class="cr-slot-time">@s.StartLocal.ToString("HH:mm")</span>
-                                            <span class="cr-slot-meta">@s.RoomName · @s.BasePrice.ToString("N0") đ</span>
+                                            <span class="cr-slot-meta">
+                                                @s.RoomName ·
+                                                @if (s.Quote is { HasDiscount: true } quote)
+                                                {
+                                                    <s>@quote.ListPrice.Vnd()</s> <strong title="@quote.PromotionTitle">@quote.FinalPrice.Vnd()</strong>
+                                                }
+                                                else
+                                                {
+                                                    @s.BasePrice.Vnd()
+                                                }
+                                            </span>
+                                            @if (!string.IsNullOrEmpty(s.FormatLabel))
+                                            {
+                                                <span class="cr-slot-meta">@s.FormatLabel</span>
+                                            }
                                         </a>
                                     </li>
                                 }

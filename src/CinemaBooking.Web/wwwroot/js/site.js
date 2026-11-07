@@ -100,15 +100,54 @@
         }
     });
 
-    // 4. Form có data-confirm: xác nhận trước khi thực hiện hành động nguy hiểm
+    // 4. Form (hoặc nút submit) có data-confirm: hỏi lại bằng hộp thoại <dialog> trước khi gửi.
+    // Câu hỏi chứa tên phim/chi nhánh do admin nhập, nên để trong attribute cho Razor encode
+    // và gán bằng textContent, không nhét vào HTML hay chuỗi JS inline.
+    var approvedForm = null; // form đang được gửi lại sau khi người dùng đã đồng ý.
+
+    function askConfirm(message, danger, onConfirm) {
+        var dlg = document.createElement('dialog');
+        dlg.className = 'cb-confirm';
+        dlg.setAttribute('aria-labelledby', 'cb-confirm-title');
+        dlg.innerHTML =
+            '<form method="dialog">' +
+            '<h2 id="cb-confirm-title" class="cb-confirm-title">Bạn chắc chắn chứ?</h2>' +
+            '<p class="cb-confirm-msg"></p>' +
+            '<div class="cb-confirm-actions">' +
+            '<button type="submit" value="cancel" class="cb-btn cb-btn-outline" autofocus>Quay lại</button>' +
+            '<button type="submit" value="ok" class="cb-btn ' + (danger ? 'cb-btn-danger' : 'cb-btn-primary') + '">Xác nhận</button>' +
+            '</div></form>';
+        dlg.querySelector('.cb-confirm-msg').textContent = message;
+        dlg.addEventListener('close', function () {
+            var ok = dlg.returnValue === 'ok';
+            dlg.remove();
+            if (ok) onConfirm();
+        });
+        document.body.appendChild(dlg);
+        dlg.showModal();
+    }
+
     document.addEventListener('submit', function (event) {
         var form = event.target;
-        if (!(form instanceof HTMLFormElement)) return;
+        if (!(form instanceof HTMLFormElement) || form === approvedForm) return;
+        if (form.method === 'dialog') return;
+        // Validator chạy trước: nhập sai thì đã bị chặn, chỉ báo lỗi, không hỏi.
+        if (event.defaultPrevented) return;
 
-        var message = form.dataset.confirm;
-        if (message && !window.confirm(message)) {
-            event.preventDefault();
-        }
+        var submitter = event.submitter || undefined;
+        var message = (submitter && submitter.dataset.confirm) || form.dataset.confirm;
+        if (!message) return;
+
+        event.preventDefault();
+        var button = submitter || form.querySelector('[type="submit"]');
+        var danger = !!button && /cb-btn-danger/.test(button.className);
+
+        askConfirm(message, danger, function () {
+            // requestSubmit (không dùng form.submit) để giữ giá trị nút đã bấm, ví dụ command=apply.
+            approvedForm = form;
+            form.requestSubmit(submitter);
+            approvedForm = null;
+        });
     });
 
     // 6. Nút gửi form (.cb-btn-primary): submit hợp lệ bật is-loading + aria-busy="true", chống bấm đúp

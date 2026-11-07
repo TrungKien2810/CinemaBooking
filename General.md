@@ -49,6 +49,7 @@ xem §12.
 - Đặt vé (guest checkout hoặc đã đăng nhập), thanh toán giả lập.
 - Nhận email xác nhận kèm mã đặt vé.
 - Bỏ chọn ghế thủ công; hoặc ghế tự trả về trống sau 5 phút.
+- **Khách không tự hủy được vé đã mua.** Vé đã thanh toán là chốt; chỉ rạp mới hủy khi không chiếu được (§3.2).
 
 ### 3.2 Quản trị (vai trò `Admin`)
 
@@ -59,7 +60,9 @@ Một vai trò quản trị duy nhất, quản lý toàn bộ chi nhánh của r
 - CRUD **chi nhánh** (tên, thành phố, địa chỉ) và **phòng chiếu** (cấu hình số hàng × số cột → sinh ghế tự động).
 - CRUD **suất chiếu** — **xếp lịch cho từng chi nhánh một** (§3.2.1): chọn phim từ danh mục chung
   (không gõ tên phim tự do) + phòng thuộc chi nhánh đó, đặt giá riêng cho suất.
-- Quản lý đơn: xem, tìm theo mã, hủy vé.
+- Quản lý đơn: xem, tìm theo mã. **Rạp hủy vé** khi lỗi ở phía rạp (hỏng máy, sự cố phòng): trả ghế, gửi email cho khách,
+  đơn chuyển "Chờ hoàn tiền", rạp hoàn tiền thủ công rồi đánh dấu "Đã hoàn tiền".
+- Suất đã có vé không đổi được phim, phòng, giờ. Phim và chi nhánh còn vé của suất chưa chiếu không ẩn/đóng được.
 - Thống kê doanh thu theo ngày / chi nhánh / phim / suất chiếu.
 
 #### 3.2.1 Cái gì dùng chung, cái gì riêng theo chi nhánh

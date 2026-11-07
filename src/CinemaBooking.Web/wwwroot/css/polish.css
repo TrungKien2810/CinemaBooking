@@ -1,0 +1,407 @@
+/* =============================================================================
+   Chỉnh giao diện chung (nạp cuối cùng): bỏ gạch chân, giãn menu, thẻ thống kê, khoảng chọn nhanh.
+   ============================================================================= */
+
+/* Không gạch chân liên kết: tên rạp, tên phim, thẻ, bảng... Chỉ liên kết nằm trong đoạn văn mới gạch khi rê chuột. */
+a,
+a:hover,
+a:focus,
+.btn,
+.btn:hover {
+    text-decoration: none;
+}
+
+p a:hover,
+.alert a:hover,
+.form-text a:hover,
+.empty-state a:hover,
+.cb-muted a:hover {
+    text-decoration: underline;
+}
+
+/* Menu chính: giãn các mục cho dễ nhìn. */
+.site-navbar .navbar-nav {
+    gap: 0.35rem;
+}
+
+.site-navbar .navbar-nav > .nav-item > .nav-link {
+    padding: 0.55rem 0.95rem;
+}
+
+/* Thẻ thống kê (trang tổng quan, doanh thu): nhãn trên, số liệu to ở dưới, không dính vào nhau. */
+.admin-stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.admin-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-height: 6.2rem;
+    justify-content: center;
+}
+
+.admin-stat-label {
+    margin-bottom: 0;
+}
+
+.admin-stat-value {
+    line-height: 1.15;
+    word-break: break-word;
+}
+
+.admin-stat-hint {
+    color: var(--cb-text-muted);
+    font-size: 0.8rem;
+}
+
+/* Nút chọn nhanh khoảng thời gian (trang doanh thu). */
+.range-chips {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    max-width: 100%;
+    padding: 3px;
+    margin-bottom: 0.9rem;
+    border: 1px solid var(--cb-border);
+    border-radius: 999px;
+    background: var(--cb-surface);
+}
+
+.range-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--cb-text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Hover chỉ làm sáng nhẹ nền, khác hẳn trạng thái đang chọn. */
+.range-chip:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--cb-text);
+}
+
+.range-chip.active,
+.range-chip.active:hover {
+    background: var(--cb-accent);
+    color: #fff;
+}
+
+/* Cửa sổ xác nhận dùng chung (data-confirm). */
+.confirm-modal {
+    border: 1px solid var(--cb-border);
+    border-radius: 14px;
+    background: var(--cb-surface);
+    color: var(--cb-text);
+}
+
+.confirm-modal .modal-header,
+.confirm-modal .modal-footer {
+    border-color: var(--cb-border);
+}
+
+.confirm-modal .modal-body {
+    color: var(--cb-text-muted);
+    overflow-wrap: anywhere;
+}
+
+/* Ô nhập giá theo nghìn đồng. */
+.price-input .form-control {
+    text-align: right;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.price-input .input-group-text {
+    background: var(--cb-surface-2);
+    border-color: var(--cb-border);
+    color: var(--cb-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.price-preview {
+    color: var(--cb-success);
+    font-weight: 600;
+}
+
+/* Thẻ phim sắp chiếu: huy hiệu xanh thay vì đỏ "đang chiếu"; mục thứ hai cách mục trước cho thoáng. */
+.movie-badge.movie-badge-soon {
+    background: #2563eb;
+    color: #fff;
+}
+
+.section-head + .movie-list + .section-head {
+    margin-top: 2.5rem;
+}
+
+.movie-list + .section-head {
+    margin-top: 2.5rem;
+}
+
+/* Khu quản trị trên màn hẹp: cột lưới phải co được (minmax(0, 1fr)), nếu không menu ngang đẩy cả trang rộng quá màn hình. */
+.admin-shell {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 992px) {
+    .admin-shell {
+        grid-template-columns: 14rem minmax(0, 1fr);
+    }
+}
+
+.admin-sidebar {
+    min-width: 0;
+}
+
+.admin-nav {
+    scrollbar-width: none;
+}
+
+.admin-nav::-webkit-scrollbar {
+    display: none;
+}
+
+/* Số tiền trong thẻ thống kê: không xuống dòng giữa chừng; dòng nhỏ bên dưới có số đầy đủ (được phép cuộn xuống dòng gọn). */
+.admin-stat-value {
+    white-space: nowrap;
+    word-break: normal;
+    font-size: 1.4rem;
+}
+
+.admin-stat-hint {
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+/* Ô tiền trong bảng: không ngắt dòng, căn phải đều nhau. */
+td.text-end,
+th.text-end {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Phân trang. */
+.pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.pager-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pager-link,
+.pager-gap {
+    display: inline-flex;
+    min-width: 2.2rem;
+    height: 2.2rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.5rem;
+    border: 1px solid var(--cb-border);
+    border-radius: 10px;
+    background: var(--cb-surface);
+    color: var(--cb-text);
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.pager-gap { border-color: transparent; background: transparent; color: var(--cb-text-muted); }
+.pager-link:hover { border-color: var(--cb-accent); }
+.pager-link.active { border-color: var(--cb-accent); background: var(--cb-accent-soft); }
+.pager-link.disabled { opacity: 0.4; pointer-events: none; }
+
+/* Bảng quản trị: cuộn ngang thay vì bóp chữ thành từng từ một; nút thao tác luôn đủ chỗ. */
+.admin-table-wrap {
+    overflow-x: auto;
+}
+
+.admin-table .admin-actions {
+    white-space: nowrap;
+    text-align: right;
+}
+
+.admin-table .cell-wide {
+    min-width: 13rem;
+}
+
+.admin-table .cell-ellipsis {
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.code-link {
+    white-space: nowrap;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 767.98px) {
+    .admin-table-wrap > .table {
+        min-width: 600px;
+    }
+}
+
+/* Bộ lọc dạng nhãn-trên-ô: các ô thẳng hàng đáy, nút Lọc ngang với ô nhập. */
+form.admin-filter-grid {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+form.admin-filter-grid .col-auto {
+    width: auto;
+    padding: 0;
+}
+
+/* Mã giảm giá ở trang thanh toán. */
+.voucher-box {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--cb-border);
+}
+
+.voucher-form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.voucher-form .form-control {
+    letter-spacing: 0.06em;
+    font-weight: 700;
+}
+
+.voucher-applied {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px dashed var(--cb-success);
+    border-radius: 12px;
+    background: var(--cb-success-soft);
+}
+
+/* Bảng giá vé. */
+.price-tables {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.price-card {
+    padding: 1.1rem 1.25rem;
+}
+
+.price-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0 0 0.9rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.price-table th,
+.price-table td {
+    padding: 0.7rem 0.75rem;
+    border-color: var(--cb-border);
+    font-variant-numeric: tabular-nums;
+}
+
+.price-table thead th {
+    color: var(--cb-text-muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.price-table tbody th {
+    min-width: 14rem;
+}
+
+.price-table td {
+    white-space: nowrap;
+}
+
+.price-notes {
+    margin: 1rem 0 0;
+    padding-left: 1.1rem;
+    color: var(--cb-text-muted);
+    font-size: 0.9rem;
+}
+
+.price-compare td:first-child {
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+/* Cột lưới phải co được (min-width: 0) để bảng giá rộng không đẩy cả trang tràn ngang. */
+.row > [class*="col"] {
+    min-width: 0;
+}
+
+.price-tables {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+/* Làm nổi giờ cao điểm / cuối tuần trên bảng giá. */
+.price-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin-bottom: 1rem; padding: 0.75rem 1rem; border: 1px solid var(--cb-border); border-radius: 12px; font-size: 0.9rem; }
+.price-tag { margin-left: 0.4rem; font-weight: 700; }
+.price-legend .price-tag { margin-left: 0; }
+.price-tag-peak { background: #f59e0b; color: #1c1300; }
+.price-tag-weekend { background: #6366f1; color: #fff; }
+.price-row-peak > * { background: rgba(245, 158, 11, 0.14) !important; }
+.price-row-peak > th { box-shadow: inset 4px 0 0 #f59e0b; }
+.price-row-weekend:not(.price-row-peak) > th { box-shadow: inset 4px 0 0 #6366f1; }
+.price-row-weekend.price-row-peak > th { box-shadow: inset 4px 0 0 #f59e0b, inset 8px 0 0 #6366f1; }
+
+/* Nút "Áp dụng" không bị xuống hai dòng khi cột tóm tắt hẹp. */
+.voucher-form .btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* Hero gọn lại để ô tìm phim nằm trong màn hình đầu. */
+.home-hero {
+    padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.home-hero-art {
+    min-height: 0;
+}
+
+.hero-carousel {
+    width: min(100%, 165px);
+    margin-bottom: 1.1rem;
+}
+
+/* Poster đã có tên phim, chú thích đè lên chữ khi carousel nhỏ lại. */
+.hero-slide-caption {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    .home-hero-art {
+        display: none;
+    }
+}
