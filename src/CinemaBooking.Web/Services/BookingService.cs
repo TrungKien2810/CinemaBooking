@@ -1,5 +1,3 @@
-using CinemaBooking.Web.Hubs;
-using Microsoft.AspNetCore.SignalR;
 using CinemaBooking.Domain;
 using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Domain.Entities;
@@ -43,7 +41,7 @@ public sealed class BookingService : IBookingService
 
     private readonly IHttpContextAccessor? _http;
     private readonly SeatHoldService? _holds;
-    private readonly IHubContext<SeatHub, ISeatClient>? _seats;
+    private readonly SeatBroadcaster? _seats;
 
     public BookingService(
         CinemaDbContext db,
@@ -58,7 +56,7 @@ public sealed class BookingService : IBookingService
         IVoucherService? vouchers = null,
         IHttpContextAccessor? http = null,
         SeatHoldService? holds = null,
-        IHubContext<SeatHub, ISeatClient>? seats = null)
+        SeatBroadcaster? seats = null)
     {
         _seats = seats;
         _holds = holds;
@@ -352,7 +350,7 @@ public sealed class BookingService : IBookingService
         // Cleaner chỉ quét đơn còn Pending nên sẽ không bao giờ thấy các đơn vừa hết hạn ở đây: phải tự báo.
         if (_seats is not null)
             foreach (var group in freed)
-                await _seats.Clients.Group(SeatHub.GroupName(group.ShowtimeId)).SeatFreed(group.SeatIds);
+                await _seats.FreedAsync(group.ShowtimeId, group.SeatIds);
     }
 
     /// <summary>

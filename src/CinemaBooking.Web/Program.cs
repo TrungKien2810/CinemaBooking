@@ -49,9 +49,9 @@ builder.Services.AddSingleton<ISeatPricingService, SeatPricingService>();
 // ── Dev B: SeatHub kiểm tra ghế ở DB trước khi cấp lock ──
 builder.Services.AddScoped<ISeatAvailabilityQuery, SeatAvailabilityQuery>();
 
-// ── Dọn ghế phải chạy TRONG process Web: bảng lock là in-memory singleton của process này, và chỉ ở
-//    đây mới có IHubContext để báo SeatUnlocked cho các tab đang mở suất chiếu. ──
-builder.Services.AddHostedService<SeatLockCleaner>();       // lock RAM hết hạn (mỗi 10s)
+// ── Dọn ghế/đơn hết hạn phải chạy TRONG process Web: chỉ ở đây mới có IHubContext để báo
+//    SeatUnlocked/SeatFreed cho các tab đang mở suất chiếu. ──
+builder.Services.AddSingleton<SeatBroadcaster>();
 builder.Services.AddHostedService<ExpiredBookingCleaner>(); // đơn Pending quá hạn thanh toán (mỗi 30s)
 
 // ── Dev B: luồng đặt vé (kiểm ghế + lock → ghi Booking trong một transaction → thu tiền → outbox) ──
