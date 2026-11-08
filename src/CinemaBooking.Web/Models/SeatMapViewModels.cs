@@ -13,7 +13,6 @@ public sealed record SeatMapViewModel(
     string City,
     string RoomName,
     DateTime StartLocal,
-    int HoldSeconds,
     int TotalColumns,
     IReadOnlyList<SeatRowViewModel> Rows,
     string? FormatLabel = null)
@@ -28,7 +27,6 @@ public sealed record SeatMapViewModel(
         IReadOnlySet<int> bookedSeatIds,
         ISeatPricingService pricing,
         DateTime startLocal,
-        int holdSeconds,
         IReadOnlyList<Promotion>? promotions = null,
         SeatSurcharges? surcharges = null)
     {
@@ -90,7 +88,7 @@ public sealed record SeatMapViewModel(
 
         return new SeatMapViewModel(
             showtime.Id, movie.Title, theater.Name, theater.City, room.RoomName,
-            startLocal, holdSeconds, room.TotalColumns, rows,
+            startLocal, room.TotalColumns, rows,
             FormatLabel: room.RoomType.Label() + " · " + showtime.Language.Label());
     }
 

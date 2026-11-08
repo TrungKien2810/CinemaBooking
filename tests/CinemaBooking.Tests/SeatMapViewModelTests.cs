@@ -33,7 +33,7 @@ public class SeatMapViewModelTests
     }
 
     private static SeatMapViewModel Build(Showtime showtime, params int[] booked) =>
-        SeatMapViewModel.Build(showtime, booked.ToHashSet(), new SeatPricingService(), StartLocal, holdSeconds: 300);
+        SeatMapViewModel.Build(showtime, booked.ToHashSet(), new SeatPricingService(), StartLocal);
 
     [Fact]
     public void Grid_has_one_row_per_room_row_and_one_cell_per_column()
@@ -142,7 +142,6 @@ public class SeatMapViewModelTests
         Assert.Equal("Hà Nội", model.City);
         Assert.Equal("Phòng A", model.RoomName);
         Assert.Equal(StartLocal, model.StartLocal);
-        Assert.Equal(300, model.HoldSeconds);
     }
 
     [Fact]

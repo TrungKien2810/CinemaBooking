@@ -517,6 +517,62 @@ namespace CinemaBooking.Infrastructure.Persistence.Migrations
                     b.ToTable("Seats");
                 });
 
+            modelBuilder.Entity("CinemaBooking.Domain.Entities.SeatHold", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("SeatId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ShowtimeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShowtimeId", "SeatId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "ShowtimeId");
+
+                    b.ToTable("SeatHolds");
+                });
+
+            modelBuilder.Entity("CinemaBooking.Domain.Entities.SeatHoldSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ShowtimeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "ShowtimeId")
+                        .IsUnique();
+
+                    b.ToTable("SeatHoldSessions");
+                });
+
             modelBuilder.Entity("CinemaBooking.Domain.Entities.Showtime", b =>
                 {
                     b.Property<int>("Id")

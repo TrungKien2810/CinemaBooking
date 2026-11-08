@@ -1,9 +1,11 @@
 using CinemaBooking.Domain.Abstractions;
 using CinemaBooking.Web.Hubs;
 using CinemaBooking.Web.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace CinemaBooking.Tests;
 
+/// <summary>Giữ ghế khi chọn: hạn cố định 10 phút theo (khách, suất), lưu DB, không gia hạn được.</summary>
 public class SeatHubTests
 {
     private const int Showtime = 7;
@@ -18,21 +20,19 @@ public class SeatHubTests
     }
 
     [Fact]
-    public async Task Select_locks_seat_answers_caller_and_notifies_only_others_in_the_same_showtime()
+    public async Task Select_holds_the_seat_for_the_caller_with_the_full_deadline_and_tells_others_in_the_showtime()
     {
         var h = await JoinedAsync(("A", Showtime), ("B", Showtime), ("C", OtherShowtime));
 
         await h.Hub("A").SelectSeat(Showtime, 10);
 
-        Assert.Equal(new SentMessage("SeatHeldByMe", new object?[] { 10, 300 }), Assert.Single(h.Inbox("A")), MessageComparer.Instance);
+        Assert.Equal(new SentMessage("SeatHeldByMe", new object?[] { 10, 600 }), Assert.Single(h.Inbox("A")), MessageComparer.Instance);
         Assert.Equal(new SentMessage("SeatLocked", new object?[] { 10 }), Assert.Single(h.Inbox("B")), MessageComparer.Instance);
         Assert.Empty(h.Inbox("C"));
-        Assert.False(h.Locks.ValidateLocks(new[] { new SeatKey(Showtime, 10) }, "B"));
-        Assert.True(h.Locks.ValidateLocks(new[] { new SeatKey(Showtime, 10) }, "A"));
     }
 
     [Fact]
-    public async Task Select_of_a_seat_held_by_someone_else_is_rejected_without_broadcast()
+    public async Task A_second_person_is_blocked_while_the_seat_is_held()
     {
         var h = await JoinedAsync(("A", Showtime), ("B", Showtime));
         await h.Hub("A").SelectSeat(Showtime, 10);
@@ -45,33 +45,151 @@ public class SeatHubTests
     }
 
     [Fact]
-    public async Task Selecting_an_own_seat_again_renews_it_without_telling_others()
+    public async Task Reselecting_a_seat_does_not_move_the_deadline_and_tells_nobody()
+    {
+        var h = await JoinedAsync(("A", Showtime), ("B", Showtime));
+        await h.Hub("A").SelectSeat(Showtime, 10);
+        h.Clock.Advance(TimeSpan.FromMinutes(4));
+        h.ClearInboxes();
+
+        await h.Hub("A").SelectSeat(Showtime, 10);
+
+        Assert.Equal(new SentMessage("SeatHeldByMe", new object?[] { 10, 360 }), Assert.Single(h.Inbox("A")), MessageComparer.Instance);
+        Assert.Empty(h.Inbox("B"));
+    }
+
+    [Fact]
+    public async Task Deselecting_everything_and_selecting_again_does_not_restart_the_clock()
+    {
+        var h = await JoinedAsync(("A", Showtime));
+        await h.Hub("A").SelectSeat(Showtime, 10);
+        h.Clock.Advance(TimeSpan.FromMinutes(6));
+        await h.Hub("A").ReleaseSeat(Showtime, 10);
+        h.ClearInboxes();
+
+        await h.Hub("A").SelectSeat(Showtime, 11);
+
+        Assert.Equal(new SentMessage("SeatHeldByMe", new object?[] { 11, 240 }), Assert.Single(h.Inbox("A")), MessageComparer.Instance);
+    }
+
+    [Fact]
+    public async Task Once_the_hold_expires_another_person_can_take_the_seat_and_the_old_holder_is_refused_at_booking()
+    {
+        var h = await JoinedAsync(("A", Showtime), ("B", Showtime));
+        await h.Hub("A").SelectSeat(Showtime, 10);
+        h.Clock.Advance(TimeSpan.FromMinutes(10));
+        h.ClearInboxes();
+
+        await h.Hub("B").SelectSeat(Showtime, 10);
+
+        Assert.Equal("SeatHeldByMe", Assert.Single(h.Inbox("B")).Method);
+        Assert.False(await h.Holds().ClaimAsync("A", Showtime, new[] { 10 }));
+        Assert.True(await h.Holds().ClaimAsync("B", Showtime, new[] { 10 }));
+    }
+
+    [Fact]
+    public async Task Claiming_needs_every_seat_held_by_the_caller_and_still_unexpired()
+    {
+        var h = await JoinedAsync(("A", Showtime), ("B", Showtime));
+        await h.Hub("A").SelectSeat(Showtime, 10);
+        await h.Hub("B").SelectSeat(Showtime, 11);
+
+        Assert.False(await h.Holds().ClaimAsync("A", Showtime, new[] { 10, 11 })); // 11 là của người khác
+        Assert.False(await h.Holds().ClaimAsync("A", OtherShowtime, new[] { 10 })); // sai suất
+
+        h.Clock.Advance(TimeSpan.FromMinutes(10));
+        Assert.False(await h.Holds().ClaimAsync("A", Showtime, new[] { 10 }));      // hết hạn
+    }
+
+    [Fact]
+    public async Task The_sweep_frees_expired_holds_and_leaves_live_ones()
+    {
+        var h = await JoinedAsync(("A", Showtime), ("B", Showtime));
+        await h.Hub("A").SelectSeat(Showtime, 10);
+        h.Clock.Advance(TimeSpan.FromMinutes(5));
+        await h.Hub("B").SelectSeat(Showtime, 11);
+        h.Clock.Advance(TimeSpan.FromMinutes(5)); // A hết hạn, B còn 5 phút
+
+        var freed = await h.Holds().SweepExpiredAsync();
+
+        var released = Assert.Single(freed);
+        Assert.Equal(Showtime, released.ShowtimeId);
+        Assert.Equal(new[] { 10 }, released.SeatIds);
+        await using var db = h.NewDb();
+        Assert.Equal(new[] { 11 }, await db.SeatHolds.Select(x => x.SeatId).ToArrayAsync());
+    }
+
+    [Fact]
+    public async Task Release_frees_the_seat_for_others_and_tells_them()
     {
         var h = await JoinedAsync(("A", Showtime), ("B", Showtime));
         await h.Hub("A").SelectSeat(Showtime, 10);
         h.ClearInboxes();
 
-        await h.Hub("A").SelectSeat(Showtime, 10);
+        await h.Hub("A").ReleaseSeat(Showtime, 10);
+        await h.Hub("B").SelectSeat(Showtime, 10);
 
-        Assert.Equal("SeatHeldByMe", Assert.Single(h.Inbox("A")).Method);
-        Assert.Empty(h.Inbox("B"));
+        Assert.Equal(new[] { "SeatUnlocked", "SeatHeldByMe" }, h.Inbox("B").Select(m => m.Method));
     }
 
     [Fact]
-    public async Task Select_without_joining_the_showtime_takes_no_lock()
+    public async Task Nobody_can_release_someone_elses_seat()
+    {
+        var h = await JoinedAsync(("A", Showtime), ("B", Showtime));
+        await h.Hub("A").SelectSeat(Showtime, 10);
+        h.ClearInboxes();
+
+        await h.Hub("B").ReleaseSeat(Showtime, 10);
+
+        Assert.Empty(h.Inbox("A"));
+        await using var db = h.NewDb();
+        Assert.Equal("A", (await db.SeatHolds.SingleAsync()).UserId);
+    }
+
+    [Fact]
+    public async Task Join_sends_a_snapshot_with_my_seats_and_deadline_and_other_peoples_seats_without_theirs()
+    {
+        var h = await JoinedAsync(("A", Showtime));
+        await h.Hub("A").SelectSeat(Showtime, 10);
+        await h.Hub("B").JoinShowtime(Showtime);
+        await h.Hub("B").SelectSeat(Showtime, 11);
+        h.Clock.Advance(TimeSpan.FromMinutes(1));
+        h.ClearInboxes();
+
+        await h.Hub("A").JoinShowtime(Showtime);
+
+        var seats = (IReadOnlyList<HeldSeat>)Assert.Single(h.Inbox("A")).Args[0]!;
+        Assert.Equal(new HeldSeat(10, true, 540), seats.Single(s => s.SeatId == 10));
+        Assert.Equal(new HeldSeat(11, false, null), seats.Single(s => s.SeatId == 11));
+    }
+
+    [Fact]
+    public async Task Losing_the_connection_keeps_the_hold_until_the_deadline()
+    {
+        var h = await JoinedAsync(("A", Showtime), ("B", Showtime));
+        await h.Hub("A").SelectSeat(Showtime, 10);
+        h.ClearInboxes();
+
+        await h.DisconnectAsync("A");
+        await h.Hub("B").SelectSeat(Showtime, 10);
+
+        Assert.Equal("SeatRejected", Assert.Single(h.Inbox("B")).Method);
+    }
+
+    [Fact]
+    public async Task Select_without_joining_the_showtime_is_rejected()
     {
         var h = new SeatHubHarness();
 
         await h.Hub("A").SelectSeat(Showtime, 10);
 
         Assert.Equal("SeatRejected", Assert.Single(h.Inbox("A")).Method);
-        Assert.Empty(h.Locks.GetLocksForShowtime(Showtime));
     }
 
     [Theory]
     [InlineData(SeatAvailability.Booked)]
     [InlineData(SeatAvailability.NotBookable)]
-    public async Task Select_of_a_seat_that_cannot_be_sold_is_rejected_without_a_lock(SeatAvailability availability)
+    public async Task Select_of_a_seat_that_cannot_be_sold_is_rejected_for_the_caller_only_and_takes_no_hold(SeatAvailability availability)
     {
         var h = await JoinedAsync(("A", Showtime), ("B", Showtime));
         h.Availability.Set(Showtime, 10, availability);
@@ -80,11 +198,12 @@ public class SeatHubTests
 
         Assert.Equal("SeatRejected", Assert.Single(h.Inbox("A")).Method);
         Assert.Empty(h.Inbox("B"));
-        Assert.Empty(h.Locks.GetLocksForShowtime(Showtime));
+        await using var db = h.NewDb();
+        Assert.Empty(db.SeatHolds);
     }
 
     [Fact]
-    public async Task Select_beyond_the_per_connection_limit_is_rejected()
+    public async Task Select_beyond_the_per_person_limit_is_rejected_but_reselecting_is_not()
     {
         var h = await JoinedAsync(("A", Showtime));
         for (var seat = 1; seat <= SeatHub.MaxSeatsPerConnection; seat++)
@@ -92,80 +211,9 @@ public class SeatHubTests
         h.ClearInboxes();
 
         await h.Hub("A").SelectSeat(Showtime, 99);
-        // Gia hạn ghế đang giữ vẫn được, dù đã chạm hạn mức.
         await h.Hub("A").SelectSeat(Showtime, 1);
 
         Assert.Equal(new[] { "SeatRejected", "SeatHeldByMe" }, h.Inbox("A").Select(m => m.Method));
-        Assert.Equal(SeatHub.MaxSeatsPerConnection, h.Locks.GetLocksForShowtime(Showtime).Count);
-    }
-
-    [Fact]
-    public async Task Join_sends_a_snapshot_with_own_seats_marked_and_their_time_left()
-    {
-        var h = await JoinedAsync(("A", Showtime), ("B", Showtime));
-        await h.Hub("A").SelectSeat(Showtime, 10);
-        await h.Hub("B").SelectSeat(Showtime, 11);
-        h.ClearInboxes();
-
-        await h.Hub("A").JoinShowtime(Showtime);
-
-        var snapshot = (IReadOnlyList<HeldSeat>)Assert.Single(h.Inbox("A")).Args[0]!;
-        Assert.Equal(2, snapshot.Count);
-        var mine = snapshot[0];
-        Assert.Equal((10, true), (mine.SeatId, mine.Mine));
-        Assert.InRange(mine.SecondsLeft!.Value, 295, 300);
-        Assert.Equal(new HeldSeat(11, false), snapshot[1]);
-    }
-
-    [Fact]
-    public async Task Release_frees_the_seat_for_the_whole_group()
-    {
-        var h = await JoinedAsync(("A", Showtime), ("B", Showtime));
-        await h.Hub("A").SelectSeat(Showtime, 10);
-        h.ClearInboxes();
-
-        await h.Hub("A").ReleaseSeat(Showtime, 10);
-
-        foreach (var conn in new[] { "A", "B" })
-        {
-            var msg = Assert.Single(h.Inbox(conn));
-            Assert.Equal("SeatUnlocked", msg.Method);
-            Assert.Equal(new[] { 10 }, (IReadOnlyList<int>)msg.Args[0]!);
-        }
-        Assert.Empty(h.Locks.GetLocksForShowtime(Showtime));
-    }
-
-    [Fact]
-    public async Task Release_of_someone_elses_seat_only_resyncs_the_caller()
-    {
-        var h = await JoinedAsync(("A", Showtime), ("B", Showtime));
-        await h.Hub("A").SelectSeat(Showtime, 10);
-        h.ClearInboxes();
-
-        await h.Hub("B").ReleaseSeat(Showtime, 10);
-
-        Assert.Equal(new SentMessage("SeatLocked", new object?[] { 10 }), Assert.Single(h.Inbox("B")), MessageComparer.Instance);
-        Assert.Empty(h.Inbox("A"));
-        Assert.True(h.Locks.ValidateLocks(new[] { new SeatKey(Showtime, 10) }, "A"));
-    }
-
-    [Fact]
-    public async Task Disconnect_releases_every_seat_with_one_message_per_showtime()
-    {
-        var h = await JoinedAsync(("A", Showtime), ("A", OtherShowtime), ("B", Showtime), ("C", OtherShowtime));
-        await h.Hub("A").SelectSeat(Showtime, 12);
-        await h.Hub("A").SelectSeat(Showtime, 10);
-        await h.Hub("A").SelectSeat(OtherShowtime, 10);
-        h.ClearInboxes();
-
-        await h.DisconnectAsync("A");
-
-        var toB = Assert.Single(h.Inbox("B"));
-        Assert.Equal("SeatUnlocked", toB.Method);
-        Assert.Equal(new[] { 10, 12 }, (IReadOnlyList<int>)toB.Args[0]!);
-        Assert.Equal(new[] { 10 }, (IReadOnlyList<int>)Assert.Single(h.Inbox("C")).Args[0]!);
-        Assert.Empty(h.Locks.GetLocksForShowtime(Showtime));
-        Assert.Empty(h.Locks.GetLocksForShowtime(OtherShowtime));
     }
 
     private sealed class MessageComparer : IEqualityComparer<SentMessage>

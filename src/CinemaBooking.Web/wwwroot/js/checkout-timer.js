@@ -1,6 +1,6 @@
 // Đồng hồ giữ ghế ở trang thanh toán (v3 "Phòng Chiếu Đêm").
 //
-// Ghế chỉ được giữ SeatHold:DurationMinutes (mặc định 5 phút) kể từ lúc bấm "Tiếp tục thanh toán".
+// Ghế chỉ được giữ SeatHold:DurationMinutes (10 phút) kể từ lúc chọn ghế đầu tiên (hạn cố định).
 // Đồng hồ này đếm ngược theo đúng mốc server đã tính, hết giờ thì chặn gửi form và đưa về sơ đồ ghế.
 (function () {
     'use strict';

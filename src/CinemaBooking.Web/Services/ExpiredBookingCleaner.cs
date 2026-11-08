@@ -70,34 +70,17 @@ public sealed class ExpiredBookingCleaner : BackgroundService
 
         var cutoff = _clock.GetUtcNow().UtcDateTime - _vnpay.PendingHoldWindow;
 
-        var stale = await db.Bookings
-            .Include(b => b.Seats)
-            .Include(b => b.Payment)
-            .Where(b => b.Status == BookingStatus.Pending && b.BookingTimeUtc <= cutoff)
-            .OrderBy(b => b.BookingTimeUtc) // đơn cũ nhất trước: Take(200) phải xác định, không phụ thuộc thứ tự DB trả về
-            .Take(200)
-            .ToListAsync(ct);
+        // Lượt giữ ghế hết hạn: nhả ghế và báo cho các tab đang mở suất để họ chọn được ngay (không đợi thao tác kế tiếp).
+        var holds = scope.ServiceProvider.GetRequiredService<SeatHoldService>();
+        foreach (var released in await holds.SweepExpiredAsync(ct))
+            await _hub.Clients.Group(SeatHub.GroupName(released.ShowtimeId)).SeatUnlocked(released.SeatIds);
 
-        if (stale.Count == 0) return;
-
-        var freed = stale
-            .SelectMany(b => b.Seats.Select(s => new { b.ShowtimeId, s.SeatId }))
-            .GroupBy(x => x.ShowtimeId)
-            .Select(g => new { ShowtimeId = g.Key, SeatIds = g.Select(x => x.SeatId).OrderBy(id => id).ToList() })
-            .ToList();
-
-        foreach (var booking in stale)
-        {
-            db.BookingSeats.RemoveRange(booking.Seats);
-            booking.Status = BookingStatus.Expired;
-            if (booking.Payment is not null) booking.Payment.Status = PaymentStatus.Failed;
-        }
-
-        await db.SaveChangesAsync(ct);
+        var freed = await PendingExpiry.ExpireAsync(db, cutoff, null, 200, ct);
+        if (freed.Count == 0) return;
 
         foreach (var showtime in freed)
             await _hub.Clients.Group(SeatHub.GroupName(showtime.ShowtimeId)).SeatFreed(showtime.SeatIds);
 
-        _log.LogInformation("Đã hết hạn {Count} đơn chờ thanh toán và trả ghế.", stale.Count);
+        _log.LogInformation("Đã hết hạn đơn chờ thanh toán ở {Count} suất chiếu và trả ghế.", freed.Count);
     }
 }

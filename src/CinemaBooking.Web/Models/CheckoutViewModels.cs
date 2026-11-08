@@ -33,8 +33,8 @@ public sealed record CheckoutSeatItem(
 
 /// <summary>
 /// Trang thanh toán: tóm tắt đơn (đọc từ Session) + form thông tin khách.
-/// <see cref="HoldSecondsRemaining"/> để view chạy đồng hồ đếm ngược — ghế chỉ được giữ 5 phút kể
-/// từ lúc bấm "Tiếp tục thanh toán", khách ngồi lâu quá thì phải quay lại chọn ghế.
+/// <see cref="HoldSecondsRemaining"/> để view chạy đồng hồ đếm ngược theo hạn giữ ghế CỐ ĐỊNH đã bắt đầu
+/// từ lúc chọn ghế — hết giờ thì phải quay lại chọn ghế.
 /// </summary>
 public sealed record CheckoutPageViewModel(
     CheckoutViewModel Summary,

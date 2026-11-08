@@ -18,6 +18,8 @@ public class CinemaDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Showtime> Showtimes => Set<Showtime>();
     public DbSet<Booking> Bookings => Set<Booking>();
     public DbSet<BookingSeat> BookingSeats => Set<BookingSeat>();
+    public DbSet<SeatHoldSession> SeatHoldSessions => Set<SeatHoldSession>();
+    public DbSet<SeatHold> SeatHolds => Set<SeatHold>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<OutboxEmail> OutboxEmails => Set<OutboxEmail>();
     public DbSet<DailyRevenueReport> DailyRevenueReports => Set<DailyRevenueReport>();
@@ -91,6 +93,15 @@ public class CinemaDbContext : IdentityDbContext<ApplicationUser>
         // Không cascade từ Seat/Showtime xuống BookingSeat để tránh multiple cascade paths trên SQL Server.
         b.Entity<BookingSeat>().HasOne(x => x.Seat).WithMany().HasForeignKey(x => x.SeatId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Giữ ghế khi chọn (AD-2 mới): hạn nằm ở session, ghế nằm ở SeatHold. Hai unique index là chốt chặn:
+        // một khách một hạn mỗi suất, một ghế một người giữ. Cố ý KHÔNG có FK: dòng giữ tạm sống tối đa vài phút,
+        // bộ dọn xóa khi hết hạn, nên admin sửa ghế/xóa suất không bao giờ vướng ràng buộc của chúng.
+        b.Entity<SeatHoldSession>().HasIndex(x => new { x.UserId, x.ShowtimeId }).IsUnique();
+        b.Entity<SeatHoldSession>().Property(x => x.UserId).HasMaxLength(450);
+        b.Entity<SeatHold>().HasIndex(x => new { x.ShowtimeId, x.SeatId }).IsUnique();
+        b.Entity<SeatHold>().HasIndex(x => new { x.UserId, x.ShowtimeId });
+        b.Entity<SeatHold>().Property(x => x.UserId).HasMaxLength(450);
 
         b.Entity<OutboxEmail>().HasIndex(x => new { x.Status, x.CreatedUtc });
 

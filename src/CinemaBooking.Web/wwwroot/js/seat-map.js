@@ -1,9 +1,9 @@
 // Sơ đồ ghế real-time (v3 "Phòng Chiếu Đêm").
 //
-// Luồng: mở trang -> kết nối /hubs/seat -> JoinShowtime -> nhận SeatSnapshot
-// (ghế đang bị giữ). Click ghế trống -> SelectSeat; server trả SeatHeldByMe cho
-// chính mình và broadcast SeatLocked cho người khác. Click lại ghế của mình ->
-// ReleaseSeat. Ghế đã đặt lấy từ DB và render sẵn trong view.
+// Luồng: mở trang -> kết nối /hubs/seat -> JoinShowtime. Click ghế trống -> SelectSeat;
+// server giữ ghế trong DB với hạn CỐ ĐỊNH (không gia hạn): trả SeatHeldByMe kèm số giây còn lại
+// cho chính mình và SeatLocked cho người khác. Click lại ghế của mình -> ReleaseSeat. Hết hạn thì
+// server phát SeatUnlocked; ghế đã đặt / đang thanh toán lấy từ DB, cập nhật qua SeatBooked/SeatFreed.
 //
 // Hiệu ứng: hàng ghế uốn cung nhẹ về màn hình vòm + sóng xuất hiện từ tâm + nảy khi chọn ghế.
 (function () {
@@ -13,14 +13,14 @@
     if (!root) return;
 
     var showtimeId = Number(root.dataset.showtimeId);
-    var holdSeconds = Number(root.dataset.holdSeconds) || 300;
+    var MAX_SEATS = 8; // khớp BookingService.MaxSeatsPerOrder (server vẫn kiểm lại)
 
     var form = document.getElementById('seat-selection-form');
-    var connectionIdInput = document.getElementById('seat-connection-id');
     var selectedInputs = document.getElementById('seat-selected-inputs');
     var selectedList = document.getElementById('seat-selected-list');
-    var totalEl = document.getElementById('seat-total');
     var timerEl = document.getElementById('seat-hold-timer');
+    var holdDeadline = 0; // mốc hết hạn theo đồng hồ server (đổi ra Date.now() lúc nhận số giây còn lại)
+    var totalEl = document.getElementById('seat-total');
     var continueBtn = document.getElementById('seat-continue');
     var toasts = document.getElementById('seat-toasts');
 
@@ -31,9 +31,7 @@
         selectedInputs = document.createElement('div');
         selectedList = document.createElement('span');
         totalEl = document.createElement('span');
-        timerEl = document.createElement('span');
         continueBtn = document.createElement('button');
-        connectionIdInput = document.createElement('input');
     }
 
     // Ghế đôi là MỘT button mang 2 seat id; map mọi id về cùng button để sự kiện realtime
@@ -43,7 +41,7 @@
         unitIds(btn).forEach(function (id) { seatButtons.set(id, btn); });
     });
 
-    // button -> { label, price, expiresAt, seatIds }
+    // button -> { label, price, seatIds }
     var selected = new Map();
 
     function unitIds(btn) {
@@ -133,13 +131,6 @@
     function isHeld(btn) { return btn.classList.contains('is-held'); }
     function isMine(btn) { return btn.classList.contains('is-mine'); }
 
-    function formatClock(ms) {
-        var total = Math.max(0, Math.ceil(ms / 1000));
-        var minutes = Math.floor(total / 60);
-        var seconds = total % 60;
-        return minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-    }
-
     function updateBumpedText(el, text) {
         if (!el) return;
         if (el.textContent === text) return;
@@ -174,10 +165,6 @@
                 selectedList.classList.add('cb-muted');
             }
             if (totalEl) updateBumpedText(totalEl, money.format(0));
-            if (timerEl) {
-                timerEl.hidden = true;
-                timerEl.classList.remove('is-warning');
-            }
             if (continueBtn) continueBtn.disabled = true;
             return;
         }
@@ -196,13 +183,20 @@
         if (continueBtn) continueBtn.disabled = false;
     }
 
-    function addMine(seatId, seconds) {
+    function formatClock(ms) {
+        var total = Math.max(0, Math.ceil(ms / 1000));
+        var seconds = total % 60;
+        return Math.floor(total / 60) + ':' + (seconds < 10 ? '0' : '') + seconds;
+    }
+
+    function addMine(seatId, secondsLeft) {
+        if (secondsLeft) holdDeadline = Date.now() + secondsLeft * 1000;
         var btn = seatButtons.get(seatId);
         if (!btn) return;
 
         setState(btn, 'mine');
 
-        // Hiệu ứng nảy phản hồi khi server cấp lock ghế
+        // Hiệu ứng nảy phản hồi khi server xác nhận ghế còn bán được
         if (!reduced) {
             btn.classList.add('is-popping');
             setTimeout(function () { btn.classList.remove('is-popping'); }, 300);
@@ -211,7 +205,6 @@
         selected.set(btn, {
             label: btn.dataset.seatLabel,
             price: Number(btn.dataset.seatPrice) || 0,
-            expiresAt: Date.now() + (seconds || holdSeconds) * 1000,
             seatIds: unitIds(btn)
         });
         renderSelection();
@@ -261,46 +254,23 @@
         renderSelection();
     }
 
-    // Đồng hồ 5 phút của các ghế đang giữ. Chỉ vẽ lại khi có ghế hết hạn.
+    // Đồng hồ đếm ngược theo hạn cố định của server; hết hạn thì bỏ chọn (server cũng đã nhả ghế).
     setInterval(function () {
+        if (!timerEl) return;
         if (selected.size === 0) {
-            if (timerEl) {
-                timerEl.hidden = true;
-                timerEl.classList.remove('is-warning');
-            }
+            timerEl.hidden = true;
             return;
         }
-
-        var now = Date.now();
-        var soonest = Infinity;
-        var changed = false;
-
-        selected.forEach(function (item, btn) {
-            var left = item.expiresAt - now;
-            if (left <= 0) {
-                selected.delete(btn);
-                if (!isBooked(btn)) setState(btn, 'free');
-                toast('Ghế ' + item.label + ' đã hết thời gian giữ.', true);
-                changed = true;
-            } else if (left < soonest) {
-                soonest = left;
-            }
-        });
-
-        if (changed) renderSelection();
-        if (selected.size === 0) {
-            if (timerEl) {
-                timerEl.hidden = true;
-                timerEl.classList.remove('is-warning');
-            }
+        var left = holdDeadline - Date.now();
+        if (left <= 0) {
+            clearSelection();
+            timerEl.hidden = true;
+            toast('Đã hết thời gian giữ ghế. Vui lòng chọn lại.', true);
             return;
         }
-
-        if (timerEl) {
-            timerEl.hidden = false;
-            timerEl.classList.toggle('is-warning', soonest < 60000);
-            timerEl.textContent = '⏱ Giữ ghế còn ' + formatClock(soonest);
-        }
+        timerEl.hidden = false;
+        timerEl.classList.toggle('is-warning', left < 60000);
+        timerEl.textContent = '⏱ Giữ ghế còn ' + formatClock(left);
     }, 500);
 
     if (form) {
@@ -310,14 +280,9 @@
                 toast('Vui lòng chọn ít nhất một ghế.', true);
                 return;
             }
-            if (!connectionIdInput || !connectionIdInput.value) {
-                event.preventDefault();
-                toast('Chưa kết nối real-time, vui lòng thử lại.', true);
-                return;
-            }
             if (event.defaultPrevented) return;
 
-            // Chặn double-submit: lần gửi thứ hai sẽ thấy lock đã được chuyển sang hold-token.
+            // Chặn double-submit.
             if (continueBtn) {
                 continueBtn.disabled = true;
                 continueBtn.textContent = 'Đang chuyển sang thanh toán…';
@@ -336,15 +301,21 @@
         .build();
 
     connection.on('SeatSnapshot', function (held) {
-        // Snapshot là nguồn sự thật khi (tái) vào group: ghế đang bị giữ hiện tại.
+        // Snapshot là sự thật hiện tại: ghế nào không có trong đó mà đang hiện "giữ" (người khác nhả/hết hạn
+        // lúc mất kết nối) thì trả về trống, rồi mới áp snapshot.
+        seatButtons.forEach(function (btn) { if (isHeld(btn)) setState(btn, 'free'); });
+        var mineIds = {};
+        (held || []).forEach(function (item) { if (item.mine) mineIds[item.seatId] = true; });
         (held || []).forEach(function (item) {
-            if (item.mine) addMine(item.seatId, item.secondsLeft || holdSeconds);
+            // Ghế đôi: chỉ coi là của mình khi đủ cả hai nửa (một nửa lẻ không đặt được).
+            var btn = seatButtons.get(item.seatId);
+            if (item.mine && btn && unitIds(btn).every(function (id) { return mineIds[id]; })) addMine(item.seatId, item.secondsLeft);
             else markHeld(item.seatId);
         });
     });
 
-    connection.on('SeatHeldByMe', function (seatId, seconds) {
-        addMine(seatId, seconds);
+    connection.on('SeatHeldByMe', function (seatId, secondsLeft) {
+        addMine(seatId, secondsLeft);
     });
 
     connection.on('SeatLocked', function (seatId) {
@@ -356,8 +327,8 @@
     });
 
     connection.on('SeatRejected', function (seatId, message) {
-        // Ghế đôi gửi 2 yêu cầu: nếu nửa thứ hai bị từ chối thì nhả luôn nửa đã giữ được để
-        // không ai bị kẹt nửa cặp. Server bỏ qua ReleaseSeat của ghế không thuộc connection này.
+        // Ghế đôi gửi 2 yêu cầu: nếu nửa thứ hai bị từ chối thì bỏ chọn luôn nửa đã chọn được
+        // để không ai bị kẹt nửa cặp.
         var btn = seatButtons.get(seatId);
         if (btn) {
             unitIds(btn).forEach(function (id) {
@@ -365,7 +336,7 @@
             });
             removeSelected(Number((btn.dataset.seatIds || '').split(',')[0]));
         }
-        toast(message || 'Ghế đang được người khác chọn.', true);
+        toast(message || 'Không chọn được ghế này.', true);
     });
 
     // Worker/Booking phát khi ghế vừa được đặt xong; nếu server chưa phát thì
@@ -384,9 +355,8 @@
     });
 
     connection.onreconnected(function () {
-        if (connectionIdInput) connectionIdInput.value = connection.connectionId;
         joinShowtime();
-        toast('Đã kết nối lại. Vui lòng chọn lại ghế.');
+        toast('Đã kết nối lại. Ghế bạn đang giữ sẽ hiện lại nếu còn hạn.');
     });
 
     connection.onclose(function () {
@@ -401,7 +371,6 @@
     function start() {
         connection.start()
             .then(function () {
-                if (connectionIdInput) connectionIdInput.value = connection.connectionId;
                 return joinShowtime();
             })
             .catch(function () {
@@ -417,7 +386,7 @@
             if (isBooked(btn)) return;
 
             if (isHeld(btn)) {
-                toast('Ghế đang được người khác chọn.', true);
+                toast('Ghế đang được người khác giữ, thử lại sau ít phút.', true);
                 return;
             }
 
@@ -434,11 +403,19 @@
                 return;
             }
 
-            // Ghế trống: xin lock cho TỪNG ghế của khối (ghế đôi gửi cả 2 nửa).
+            var need = unitIds(btn).length;
+            var chosen = 0;
+            selected.forEach(function (item) { chosen += item.seatIds.length; });
+            if (chosen + need > MAX_SEATS) {
+                toast('Mỗi đơn chỉ đặt tối đa ' + MAX_SEATS + ' ghế.', true);
+                return;
+            }
+
+            // Ghế trống: xin kiểm tra cho TỪNG ghế của khối (ghế đôi gửi cả 2 nửa).
             // UI chỉ đổi khi server gửi SeatHeldByMe.
             unitIds(btn).forEach(function (id) {
                 connection.invoke('SelectSeat', showtimeId, id).catch(function () {
-                    toast('Không gửi được yêu cầu giữ ghế.', true);
+                    toast('Không gửi được yêu cầu chọn ghế.', true);
                 });
             });
         });

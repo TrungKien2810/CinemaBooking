@@ -4,15 +4,19 @@ using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Services;
 using CinemaBooking.Web.Hubs;
 using CinemaBooking.Web.Services;
+using CinemaBooking.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace CinemaBooking.Tests;
 
 /// <summary>
-/// Dựng SeatHub như SignalR dựng: mỗi invocation một instance hub mới, còn lock manager (Singleton),
-/// group membership và Context.Items (theo connection) thì sống xuyên suốt. Tin nhắn được "phát"
+/// Dựng SeatHub như SignalR dựng: mỗi invocation một instance hub mới (DbContext mới, cùng một DB SQLite
+/// in-memory có unique index thật), còn group membership và Context.Items (theo connection) thì sống xuyên suốt.
+/// Connection id cũng là user id của người dùng đó. Tin nhắn được "phát"
 /// tới từng connection theo đúng ngữ nghĩa Caller / Group / OthersInGroup để test đọc được ai nhận gì.
 /// </summary>
 internal sealed class SeatHubHarness
@@ -21,9 +25,24 @@ internal sealed class SeatHubHarness
     private readonly Dictionary<string, Dictionary<object, object?>> _items = new();
     private readonly Dictionary<string, List<SentMessage>> _inbox = new();
 
-    public InMemorySeatLockManager Locks { get; } = new();
+    private readonly SqliteConnection _connection = new("Filename=:memory:");
+
     public FakeSeatAvailability Availability { get; } = new();
-    public SeatHoldOptions Hold { get; } = new() { DurationMinutes = 5 };
+    public MutableTimeProvider Clock { get; } = new(new DateTime(2026, 11, 8, 12, 0, 0, DateTimeKind.Utc));
+
+    public SeatHubHarness()
+    {
+        _connection.Open();
+        using var db = NewDb();
+        db.Database.EnsureCreated();
+    }
+
+    public CinemaDbContext NewDb() =>
+        new(new DbContextOptionsBuilder<CinemaDbContext>().UseSqlite(_connection).Options);
+
+    /// <summary>Dịch vụ giữ ghế dùng chung DB/đồng hồ với hub — để test gọi trực tiếp (quét hết hạn, nhận ghế).</summary>
+    public SeatHoldService Holds(CinemaDbContext? db = null) =>
+        new(db ?? NewDb(), Clock, Options.Create(new SeatHoldOptions { DurationMinutes = 10 }));
 
     /// <summary>Tạo hub cho một lần gọi từ <paramref name="connectionId"/>.</summary>
     public SeatHub Hub(string connectionId)
@@ -31,7 +50,7 @@ internal sealed class SeatHubHarness
         if (!_items.ContainsKey(connectionId)) _items[connectionId] = new Dictionary<object, object?>();
         Inbox(connectionId);
 
-        return new SeatHub(Locks, Options.Create(Hold), Availability)
+        return new SeatHub(Availability, Holds())
         {
             Context = new FakeCallerContext(connectionId, _items[connectionId]),
             Clients = new FakeClients(this, connectionId),
@@ -157,7 +176,7 @@ internal sealed class SeatHubHarness
 
         public override string ConnectionId { get; }
         public override string? UserIdentifier => null;
-        public override ClaimsPrincipal? User => new(new ClaimsIdentity());
+        public override ClaimsPrincipal? User => new(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, ConnectionId) }, "test"));
         public override IDictionary<object, object?> Items { get; }
         public override IFeatureCollection Features { get; } = new FeatureCollection();
         public override CancellationToken ConnectionAborted => CancellationToken.None;
@@ -177,4 +196,16 @@ internal sealed class FakeSeatAvailability : ISeatAvailabilityQuery
 
     public Task<SeatAvailability> CheckAsync(int showtimeId, int seatId, CancellationToken ct = default) =>
         Task.FromResult(_overrides.GetValueOrDefault(new SeatKey(showtimeId, seatId), SeatAvailability.Available));
+}
+
+/// <summary>Đồng hồ test chỉnh được: "10 phút sau" là Advance, không phải ngủ thật.</summary>
+internal sealed class MutableTimeProvider : TimeProvider
+{
+    private DateTimeOffset _now;
+
+    public MutableTimeProvider(DateTime utcNow) => _now = new DateTimeOffset(utcNow, TimeSpan.Zero);
+
+    public void Advance(TimeSpan by) => _now += by;
+
+    public override DateTimeOffset GetUtcNow() => _now;
 }

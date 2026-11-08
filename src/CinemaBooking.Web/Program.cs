@@ -55,6 +55,7 @@ builder.Services.AddHostedService<SeatLockCleaner>();       // lock RAM hết h�
 builder.Services.AddHostedService<ExpiredBookingCleaner>(); // đơn Pending quá hạn thanh toán (mỗi 30s)
 
 // ── Dev B: luồng đặt vé (kiểm ghế + lock → ghi Booking trong một transaction → thu tiền → outbox) ──
+builder.Services.AddScoped<SeatHoldService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<BookingCancellationService>();
 
