@@ -5,13 +5,11 @@ using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
 using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
-using CinemaBooking.Web.Hubs;
 using CinemaBooking.Web.Models;
 using CinemaBooking.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -29,7 +27,7 @@ public class BookingController : Controller
     private readonly IBookingService _bookings;
     private readonly IQrCodeService _qr;
     private readonly IVnpayPaymentService _vnpay;
-    private readonly IHubContext<SeatHub, ISeatClient> _seats;
+    private readonly SeatBroadcaster _seats;
     private readonly DisplayTimeZone _tz;
     private readonly TimeProvider _clock;
     private readonly IOptions<VnpayOptions> _vnpayOptions;
@@ -44,7 +42,7 @@ public class BookingController : Controller
         IBookingService bookings,
         IQrCodeService qr,
         IVnpayPaymentService vnpay,
-        IHubContext<SeatHub, ISeatClient> seats,
+        SeatBroadcaster seats,
         IOptions<DisplayTimeZone> tz,
         TimeProvider clock,
         IOptions<VnpayOptions> vnpayOptions,
@@ -201,7 +199,7 @@ public class BookingController : Controller
             // đã chuyển từ "đang giữ" sang "đang thanh toán", nên báo các tab đang mở suất vẽ lại. Khách
             // cần được chuyển hướng sang cổng VNPAY để thanh toán. Quay về sau khi VNPAY xử lý
             // (qua ReturnUrl / IPN) sẽ gọi lại để xác nhận hoặc hủy đơn.
-            await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatBooked(selection.SeatIds.ToList());
+            await _seats.BookedAsync(selection.ShowtimeId, selection.SeatIds.ToList());
             return Redirect(result.PaymentUrl ?? string.Empty);
         }
 
@@ -212,7 +210,7 @@ public class BookingController : Controller
             // Không tạo được thanh toán: đơn đã huỷ và lượt giữ đã được dùng — ghế trống lại, báo các tab và bắt chọn lại.
             if (result.Kind == BookingResultKind.PaymentFailed)
             {
-                await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatFreed(selection.SeatIds.ToList());
+                await _seats.FreedAsync(selection.ShowtimeId, selection.SeatIds.ToList());
                 HttpContext.Session.ClearSeatSelection();
                 TempData["Error"] = result.Message + " Vui lòng chọn lại ghế.";
                 return RedirectToAction(nameof(SeatMap), new { id = selection.ShowtimeId });
@@ -222,7 +220,7 @@ public class BookingController : Controller
         }
 
         // Ghế đã được đặt: báo cho mọi máy đang mở suất này vẽ lại thành "đã đặt" (General.md §6.2 bước 5).
-        await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatBooked(selection.SeatIds.ToList());
+        await _seats.BookedAsync(selection.ShowtimeId, selection.SeatIds.ToList());
 
         HttpContext.Session.ClearSeatSelection();
         // Khách guest vừa đặt: nhớ mã vé trong phiên để trang xác nhận hiện thông tin đầy đủ của chính họ.
@@ -318,9 +316,9 @@ public class BookingController : Controller
 
             var seatIds = selection.SeatIds.ToList();
             if (result.IsSuccess)
-                await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatBooked(seatIds);
+                await _seats.BookedAsync(selection.ShowtimeId, seatIds);
             else
-                await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatFreed(seatIds);
+                await _seats.FreedAsync(selection.ShowtimeId, seatIds);
         }
 
         if (!result.IsSuccess)

@@ -1,8 +1,6 @@
 using CinemaBooking.Domain.Enums;
 using CinemaBooking.Infrastructure;
 using CinemaBooking.Infrastructure.Persistence;
-using CinemaBooking.Web.Hubs;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -26,14 +24,14 @@ public sealed class ExpiredBookingCleaner : BackgroundService
     private static readonly TimeSpan ScanInterval = TimeSpan.FromSeconds(30);
 
     private readonly IServiceScopeFactory _scopes;
-    private readonly IHubContext<SeatHub, ISeatClient> _hub;
+    private readonly SeatBroadcaster _hub;
     private readonly VnpayOptions _vnpay;
     private readonly TimeProvider _clock;
     private readonly ILogger<ExpiredBookingCleaner> _log;
 
     public ExpiredBookingCleaner(
         IServiceScopeFactory scopes,
-        IHubContext<SeatHub, ISeatClient> hub,
+        SeatBroadcaster hub,
         IOptions<VnpayOptions> vnpay,
         TimeProvider clock,
         ILogger<ExpiredBookingCleaner> log)
@@ -73,13 +71,13 @@ public sealed class ExpiredBookingCleaner : BackgroundService
         // Lượt giữ ghế hết hạn: nhả ghế và báo cho các tab đang mở suất để họ chọn được ngay (không đợi thao tác kế tiếp).
         var holds = scope.ServiceProvider.GetRequiredService<SeatHoldService>();
         foreach (var released in await holds.SweepExpiredAsync(ct))
-            await _hub.Clients.Group(SeatHub.GroupName(released.ShowtimeId)).SeatUnlocked(released.SeatIds);
+            await _hub.UnlockedAsync(released.ShowtimeId, released.SeatIds);
 
         var freed = await PendingExpiry.ExpireAsync(db, cutoff, null, 200, ct);
         if (freed.Count == 0) return;
 
         foreach (var showtime in freed)
-            await _hub.Clients.Group(SeatHub.GroupName(showtime.ShowtimeId)).SeatFreed(showtime.SeatIds);
+            await _hub.FreedAsync(showtime.ShowtimeId, showtime.SeatIds);
 
         _log.LogInformation("Đã hết hạn đơn chờ thanh toán ở {Count} suất chiếu và trả ghế.", freed.Count);
     }

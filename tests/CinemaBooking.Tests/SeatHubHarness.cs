@@ -189,13 +189,13 @@ internal sealed record SentMessage(string Method, object?[] Args);
 /// <summary>Mặc định mọi ghế còn trống; test đánh dấu từng ghế đã đặt / không bán.</summary>
 internal sealed class FakeSeatAvailability : ISeatAvailabilityQuery
 {
-    private readonly Dictionary<SeatKey, SeatAvailability> _overrides = new();
+    private readonly Dictionary<(int ShowtimeId, int SeatId), SeatAvailability> _overrides = new();
 
     public void Set(int showtimeId, int seatId, SeatAvailability value) =>
-        _overrides[new SeatKey(showtimeId, seatId)] = value;
+        _overrides[(showtimeId, seatId)] = value;
 
     public Task<SeatAvailability> CheckAsync(int showtimeId, int seatId, CancellationToken ct = default) =>
-        Task.FromResult(_overrides.GetValueOrDefault(new SeatKey(showtimeId, seatId), SeatAvailability.Available));
+        Task.FromResult(_overrides.GetValueOrDefault((showtimeId, seatId), SeatAvailability.Available));
 }
 
 /// <summary>Đồng hồ test chỉnh được: "10 phút sau" là Advance, không phải ngủ thật.</summary>

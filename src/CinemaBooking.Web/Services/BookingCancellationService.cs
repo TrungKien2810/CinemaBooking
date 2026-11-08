@@ -1,8 +1,6 @@
 using CinemaBooking.Domain.Entities;
 using CinemaBooking.Domain.Enums;
 using CinemaBooking.Infrastructure.Persistence;
-using CinemaBooking.Web.Hubs;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace CinemaBooking.Web.Services;
@@ -21,12 +19,12 @@ public sealed class BookingCancellationService
     private readonly CinemaDbContext _db;
     private readonly TimeProvider _clock;
     private readonly DisplayTimeZone _tz;
-    private readonly IHubContext<SeatHub, ISeatClient>? _hub;
+    private readonly SeatBroadcaster? _hub;
     private readonly ILogger<BookingCancellationService>? _log;
 
     public BookingCancellationService(
         CinemaDbContext db, TimeProvider clock, DisplayTimeZone tz,
-        IHubContext<SeatHub, ISeatClient>? hub = null, ILogger<BookingCancellationService>? log = null)
+        SeatBroadcaster? hub = null, ILogger<BookingCancellationService>? log = null)
     {
         _db = db;
         _clock = clock;
@@ -161,6 +159,6 @@ public sealed class BookingCancellationService
     private async Task NotifySeatsAsync(int showtimeId, List<int> seatIds, CancellationToken ct)
     {
         if (_hub is null || seatIds.Count == 0) return;
-        await _hub.Clients.Group(SeatHub.GroupName(showtimeId)).SeatFreed(seatIds);
+        await _hub.FreedAsync(showtimeId, seatIds);
     }
 }
