@@ -33,14 +33,18 @@ public sealed class VnpayOptions
 
     public string OrderType { get; set; } = "other";
 
-    public int ExpireMinutes { get; set; } = 15;
+    /// <summary>
+    /// Số phút VNPAY cho khách thanh toán kể từ lúc tạo đơn (<c>vnp_ExpireDate</c> = CreateDate + giá trị này),
+    /// quá hạn VNPAY tự từ chối. Cũng là thời gian ghế bị chặn sau khi khách bấm "Thanh toán".
+    /// </summary>
+    public int ExpireMinutes { get; set; } = 10;
 
     public string IpAddr { get; set; } = "127.0.0.1";
 
     /// <summary>
     /// Thời gian tối đa một đơn <c>Pending</c> được phép giữ ghế trong DB: thời gian VNPAY cho thanh
-    /// toán cộng 5 phút gia hạn. Quá hạn này (khách đóng tab / thanh toán lỗi không quay về) thì đơn
+    /// toán cộng 2 phút gia hạn (đệm cho độ trễ Return/IPN). Quá hạn này (khách đóng tab / thanh toán lỗi không quay về) thì đơn
     /// phải trả ghế — nếu không ghế sẽ bị khóa vĩnh viễn dù chưa ai trả tiền.
     /// </summary>
-    public TimeSpan PendingHoldWindow => TimeSpan.FromMinutes(ExpireMinutes + 5);
+    public TimeSpan PendingHoldWindow => TimeSpan.FromMinutes(ExpireMinutes + 2);
 }

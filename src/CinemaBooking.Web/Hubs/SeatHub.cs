@@ -1,38 +1,42 @@
 using CinemaBooking.Domain;
 using CinemaBooking.Domain.Abstractions;
-using CinemaBooking.Infrastructure;
 using CinemaBooking.Web.Services;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Options;
 
 namespace CinemaBooking.Web.Hubs;
 
 /// <summary>
-/// Mỗi suất chiếu là một SignalR group ("showtime-{id}"): tin nhắn giữ/nhả ghế chỉ đi tới những
-/// người đang mở cùng suất, không phát cho cả hệ thống. Client join group khi mở trang chọn ghế,
-/// SignalR tự gỡ khỏi mọi group khi connection đóng.
+/// Mỗi suất chiếu là một SignalR group ("showtime-{id}"): tin SeatLocked/SeatUnlocked/SeatBooked/SeatFreed
+/// chỉ đi tới những người đang mở cùng suất. Client join group khi mở trang chọn ghế, SignalR tự gỡ khỏi
+/// mọi group khi connection đóng.
+/// <para>
+/// Chọn ghế = giữ ghế trong DB (<see cref="SeatHoldService"/>) với hạn cố định, không gia hạn; phải đăng
+/// nhập, UserId lấy từ claims. Hạn hết thì <see cref="ExpiredBookingCleaner"/> nhả ghế và phát SeatUnlocked.
+/// Rớt mạng KHÔNG nhả ghế (giữ theo hạn, không theo connection) nên F5 không mất ghế.
+/// </para>
 /// </summary>
+[Authorize]
 public class SeatHub : Hub<ISeatClient>
 {
-    /// <summary>Hạn mức ghế một connection giữ cùng lúc trong một suất — chặn một người khóa cả phòng.</summary>
-    public const int MaxSeatsPerConnection = 8;
+    /// <summary>Hạn mức ghế một khách giữ cùng lúc trong một suất — bằng mức tối đa của một đơn.</summary>
+    public const int MaxSeatsPerConnection = BookingService.MaxSeatsPerOrder;
 
     private const string JoinedKey = "SeatHub.JoinedShowtimes";
 
-    private readonly ISeatLockManager _locks;
-    private readonly SeatHoldOptions _hold;
     private readonly ISeatAvailabilityQuery _availability;
+    private readonly SeatHoldService _holds;
 
     // Hub sống theo từng invocation trong scope riêng, nên inject service Scoped (DbContext) là an toàn.
-    public SeatHub(ISeatLockManager locks, IOptions<SeatHoldOptions> hold, ISeatAvailabilityQuery availability)
+    public SeatHub(ISeatAvailabilityQuery availability, SeatHoldService holds)
     {
-        _locks = locks;
-        _hold = hold.Value;
         _availability = availability;
+        _holds = holds;
     }
 
-    /// <summary>Thời gian giữ lấy từ section SeatHold — Worker dọn lock theo cùng cấu hình.</summary>
-    private int HoldSeconds => (int)_hold.Duration.TotalSeconds;
+    private string UserId => Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+        ?? throw new HubException("Vui lòng đăng nhập để chọn ghế.");
 
     public static string GroupName(int showtimeId) => $"showtime-{showtimeId}";
 
@@ -49,31 +53,14 @@ public class SeatHub : Hub<ISeatClient>
     {
         if (showtimeId <= 0) throw new HubException("Suất chiếu không hợp lệ.");
 
-        // Vào group TRƯỚC rồi mới chụp snapshot: một SeatLocked xảy ra giữa hai bước vẫn tới được
-        // client (có thể trùng với snapshot — vô hại). Làm ngược lại thì event đó rơi mất và ghế
-        // hiện trống trên máy này cho tới khi có event kế tiếp.
+        // Ghế ĐÃ ĐẶT / đang thanh toán lấy từ DB ở Controller và render sẵn vào trang; sau đó
+        // SeatBooked/SeatFreed cập nhật trực tiếp cho những ai đã vào group.
         await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(showtimeId));
         JoinedShowtimes.Add(showtimeId);
 
-        // Khách đã đăng nhập quay lại trong thời gian giữ ghế (đổi trang, tải lại, mở tab khác): nhận lại ghế đang giữ,
-        // đồng hồ đếm ngược chạy tiếp từ mốc cũ chứ không bắt chọn lại.
-        if (Context.UserIdentifier is { } userRef)
-            _locks.Adopt(showtimeId, userRef, Context.ConnectionId);
-
-        // Ghế ĐÃ ĐẶT lấy từ DB ở Controller và render sẵn vào trang, không đi qua hub.
-        await Clients.Caller.SeatSnapshot(Snapshot(showtimeId, DateTime.UtcNow));
+        var held = await _holds.SnapshotAsync(UserId, showtimeId, Context.ConnectionAborted);
+        await Clients.Caller.SeatSnapshot(held.Select(h => new HeldSeat(h.SeatId, h.Mine, h.Mine ? h.SecondsLeft : null)).ToList());
     }
-
-    private List<HeldSeat> Snapshot(int showtimeId, DateTime nowUtc) =>
-        _locks.GetLocksForShowtime(showtimeId)
-            .OrderBy(l => l.Key.SeatId)
-            .Select(l => l.ConnectionId == Context.ConnectionId
-                ? new HeldSeat(l.Key.SeatId, true, SecondsUntil(l.ExpiresUtc, nowUtc))
-                : new HeldSeat(l.Key.SeatId, false))
-            .ToList();
-
-    private static int SecondsUntil(DateTime expiresUtc, DateTime nowUtc) =>
-        Math.Max(0, (int)Math.Ceiling((expiresUtc - nowUtc).TotalSeconds));
 
     /// <summary>Rời trang chọn ghế mà vẫn giữ kết nối (SPA/back) — không nhận tin của suất này nữa.</summary>
     public Task LeaveShowtime(int showtimeId)
@@ -82,115 +69,65 @@ public class SeatHub : Hub<ISeatClient>
         return Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupName(showtimeId));
     }
 
-    // KHÔNG có method cho client tự phát SeatUnlocked: ai gọi được cũng sẽ bịa được "ghế đã trống"
-    // cho người khác. Việc dọn ghế hết hạn do SeatLockCleaner chạy trong process Web qua IHubContext
-    // (xem Services/SeatLockCleaner.cs) — không cần lối vào công khai nào.
+    // KHÔNG có method cho client tự phát SeatBooked/SeatFreed: ai gọi được cũng sẽ bịa được trạng thái
+    // ghế cho người khác. Các event đó chỉ do server phát (BookingController, ExpiredBookingCleaner...).
 
+    /// <summary>
+    /// Chọn ghế: ghế phải còn bán được (không nằm trong đơn Pending/Confirmed), rồi giữ ghế cho người gọi.
+    /// Người gọi nhận <c>SeatHeldByMe</c> kèm số giây còn lại của hạn cố định; người khác trong suất nhận
+    /// <c>SeatLocked</c>. Ai giữ trước được ghế; người sau nhận <c>SeatRejected</c>.
+    /// </summary>
     public async Task SelectSeat(int showtimeId, int seatId)
     {
-        // Admin/BranchAdmin chỉ xem sơ đồ; không giữ ghế (kể cả khi tự gọi hub bằng tay).
+        var userId = UserId;
+
+        // Admin/BranchAdmin chỉ xem sơ đồ; không chọn ghế (kể cả khi tự gọi hub bằng tay).
         if (Context.User?.IsInRole(AppRoles.Admin) == true || Context.User?.IsInRole(AppRoles.BranchAdmin) == true)
         {
             await Clients.Caller.SeatRejected(seatId, "Tài khoản quản trị không đặt vé.");
             return;
         }
 
-        // Chưa join thì client sẽ không nhận SeatUnlocked/SeatLocked của suất này — giữ ghế
-        // "mù" như vậy chỉ tạo ra ghế treo trên máy người khác.
+        // Chưa join thì client sẽ không nhận tin của suất này — chọn "mù" như vậy chỉ làm sơ đồ trên máy đó lệch.
         if (!JoinedShowtimes.Contains(showtimeId))
         {
             await Clients.Caller.SeatRejected(seatId, "Vui lòng tải lại trang chọn ghế.");
             return;
         }
 
-        var key = new SeatKey(showtimeId, seatId);
-        var mine = _locks.GetLocksForShowtime(showtimeId)
-            .Where(l => l.ConnectionId == Context.ConnectionId)
-            .Select(l => l.Key)
-            .ToList();
-
-        // Chọn lại ghế mình đang giữ = gia hạn, không tính thêm vào hạn mức.
-        if (!mine.Contains(key) && mine.Count >= MaxSeatsPerConnection)
-        {
-            await Clients.Caller.SeatRejected(seatId, $"Mỗi lần chỉ giữ tối đa {MaxSeatsPerConnection} ghế.");
-            return;
-        }
-
-        // Hỏi DB sau các kiểm tra rẻ ở trên. Đây không phải chốt chặn cuối — hai người vẫn có
-        // thể lọt qua cùng lúc — chốt cuối là unique index (ShowtimeId, SeatId) lúc ghi Booking.
         switch (await _availability.CheckAsync(showtimeId, seatId, Context.ConnectionAborted))
         {
             case SeatAvailability.Booked:
-                await Clients.Caller.SeatRejected(seatId, "Ghế đã có người đặt.");
+                await Clients.Caller.SeatRejected(seatId, "Ghế đã có người đặt hoặc đang thanh toán.");
                 return;
             case SeatAvailability.NotBookable:
                 await Clients.Caller.SeatRejected(seatId, "Ghế hoặc suất chiếu không còn mở bán.");
                 return;
         }
 
-        var result = _locks.TryLock(key, Context.ConnectionId, Context.UserIdentifier, _hold.Duration);
+        var result = await _holds.SelectAsync(userId, showtimeId, seatId, MaxSeatsPerConnection, Context.ConnectionAborted);
+        if (result.Released is { Count: > 0 })
+            await Clients.Group(GroupName(showtimeId)).SeatUnlocked(result.Released);
 
-        switch (result)
+        if (!result.Ok)
         {
-            case LockResult.Acquired:
-                await Clients.Caller.SeatHeldByMe(seatId, HoldSeconds);
-                // OthersInGroup chứ không phải Group: người chọn đã tô ghế "của mình" qua
-                // SeatHeldByMe, nhận thêm SeatLocked sẽ vẽ đè thành "người khác giữ".
-                // Kể cả khi lock vừa được cướp từ người giữ đã hết hạn, người đó cũng nằm trong
-                // "others" nên thấy ghế chuyển sang bị giữ.
-                await Clients.OthersInGroup(GroupName(showtimeId)).SeatLocked(seatId);
-                break;
-
-            case LockResult.AlreadyHeldBySelf:
-                // Lock đã được gia hạn; báo lại để client khởi động lại đồng hồ đếm ngược.
-                await Clients.Caller.SeatHeldByMe(seatId, HoldSeconds);
-                break;
-
-            case LockResult.AlreadyBooked:
-                await Clients.Caller.SeatRejected(seatId, "Ghế đã có người đặt.");
-                break;
-
-            default:
-                await Clients.Caller.SeatRejected(seatId, "Ghế đang được người khác chọn.");
-                break;
-        }
-    }
-
-    public async Task ReleaseSeat(int showtimeId, int seatId)
-    {
-        var key = new SeatKey(showtimeId, seatId);
-
-        if (_locks.Release(key, Context.ConnectionId))
-        {
-            // Cả group, kể cả người nhả: một event duy nhất để mọi máy tô lại ghế trống.
-            await Clients.Group(GroupName(showtimeId)).SeatUnlocked(new[] { seatId });
+            await Clients.Caller.SeatRejected(seatId, result.Reason!);
             return;
         }
 
-        // Không nhả được = lock không còn là của mình (đã hết hạn và bị dọn, hoặc người khác đã
-        // cướp sau khi hết hạn). Chỉ sửa lại màn hình người gọi, không làm phiền cả group.
-        var holder = _locks.GetLocksForShowtime(showtimeId).FirstOrDefault(l => l.Key == key);
-        if (holder is null)
-            await Clients.Caller.SeatUnlocked(new[] { seatId });
-        else if (holder.ConnectionId != Context.ConnectionId)
-            await Clients.Caller.SeatLocked(seatId);
+        await Clients.Caller.SeatHeldByMe(seatId, result.SecondsLeft);
+        if (result.IsNew) await Clients.OthersInGroup(GroupName(showtimeId)).SeatLocked(seatId);
+    }
+
+    /// <summary>Bỏ chọn ghế của chính mình (hạn giữ không đổi); báo người khác trong suất để họ chọn được.</summary>
+    public async Task ReleaseSeat(int showtimeId, int seatId)
+    {
+        if (await _holds.ReleaseAsync(UserId, showtimeId, seatId, Context.ConnectionAborted))
+            await Clients.Group(GroupName(showtimeId)).SeatUnlocked(new[] { seatId }); // cả tab khác của chính mình
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        // Khách đăng nhập: ghế vẫn được giữ tới hết hạn (5 phút) để người khác thấy "đang được giữ" và chính họ nhận lại được
-        // khi quay về; SeatLockCleaner sẽ nhả khi hết hạn. Khách vãng lai: nhả ngay. Giai đoạn thanh toán KHÔNG dựa vào
-        // connection này — booking đã Pending giữ chỗ bằng bản ghi DB, không bằng lock RAM.
-        // Gom theo suất: đóng tab đang giữ 6 ghế là 1 tin SeatUnlocked cho group, không phải 6.
-        var releasedByShowtime = _locks.DetachFor(Context.ConnectionId)
-            .GroupBy(k => k.ShowtimeId);
-
-        foreach (var showtime in releasedByShowtime)
-        {
-            var seatIds = showtime.Select(k => k.SeatId).OrderBy(id => id).ToList();
-            await Clients.Group(GroupName(showtime.Key)).SeatUnlocked(seatIds);
-        }
-
         // Group membership do SignalR tự gỡ khi connection đóng; chỉ cần dọn state của mình.
         Context.Items.Remove(JoinedKey);
         await base.OnDisconnectedAsync(exception);

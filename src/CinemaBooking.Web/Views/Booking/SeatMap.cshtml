@@ -30,7 +30,7 @@
         <div class="cb-alert cb-alert-info" role="status">
             <span>
                 <strong>Chế độ xem sơ đồ ghế.</strong> Tài khoản quản trị không đặt vé — đăng nhập bằng tài khoản khách để mua vé.
-                Ghế khách đang giữ và ghế vừa được đặt cập nhật trực tiếp trên sơ đồ.
+                Ghế vừa được đặt hoặc đang thanh toán cập nhật trực tiếp trên sơ đồ.
                 <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Về trang quản trị</a>
             </span>
         </div>
@@ -57,7 +57,6 @@
 
     <div class="seat-map-shell" id="seat-map"
          data-showtime-id="@Model.ShowtimeId"
-         data-hold-seconds="@Model.HoldSeconds"
          data-readonly="@(staffPreview ? "true" : "false")"
          aria-describedby="seat-map-legend">
 
@@ -127,9 +126,8 @@
 
         <ul class="seat-map-legend" id="seat-map-legend" aria-label="Chú thích trạng thái và loại ghế">
             <li><span class="seat-swatch is-free" aria-hidden="true"></span>Trống</li>
-            <li><span class="seat-swatch is-mine" aria-hidden="true"></span>Bạn đang giữ</li>
-            <li><span class="seat-swatch is-held" aria-hidden="true"></span>Người khác đang giữ</li>
-            <li><span class="seat-swatch is-booked" aria-hidden="true">✕</span>Đã đặt</li>
+            <li><span class="seat-swatch is-mine" aria-hidden="true"></span>Bạn đã chọn</li>
+            <li><span class="seat-swatch is-booked" aria-hidden="true">✕</span>Đã đặt / đang thanh toán</li>
             @if (hasVip)
             {
                 <li><span class="seat-swatch is-vip" aria-hidden="true">★</span>Ghế VIP</li>
@@ -148,7 +146,8 @@
     <div class="seat-summary-dock-inner">
         <div class="seat-summary-left">
             <div id="seat-selected-list" class="seat-selected-list cb-muted">Chưa chọn ghế nào</div>
-            <span id="seat-hold-timer" class="seat-timer" hidden></span>
+            <div id="seat-hold-timer" class="cb-hold-timer" role="timer" hidden></div>
+            <span id="seat-hold-note" class="cb-muted">Ghế chỉ được giữ từ lúc bạn bấm Thanh toán.</span>
         </div>
 
         <div class="seat-summary-right">
@@ -159,7 +158,6 @@
 
             <form asp-action="SelectSeats" method="post" id="seat-selection-form">
                 <input type="hidden" name="showtimeId" value="@Model.ShowtimeId" />
-                <input type="hidden" name="connectionId" id="seat-connection-id" />
                 <div id="seat-selected-inputs"></div>
                 <button type="submit" class="cb-btn cb-btn-primary cb-btn-lg seat-continue-btn" id="seat-continue" disabled>
                     Tiếp tục thanh toán

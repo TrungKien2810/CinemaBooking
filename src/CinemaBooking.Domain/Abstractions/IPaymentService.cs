@@ -19,7 +19,7 @@ public sealed record VnpayPaymentRequest(
     string IpAddr = "127.0.0.1",
     string Locale = "vn",
     string OrderType = "other",
-    int ExpireMinutes = 15);
+    int ExpireMinutes = 10);
 
 /// <summary>
 /// Kết quả tạo URL thanh toán VNPAY (cổng redirect: khách được đưa sang

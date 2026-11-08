@@ -4,14 +4,12 @@ namespace CinemaBooking.Web.Services;
 
 /// <summary>
 /// Giỏ ghế giữa trang chọn ghế và trang thanh toán. Lưu ở Session (server-side) để bước đặt vé
-/// không phải tin danh sách ghế client gửi lại (General.md §6.2). <see cref="ConnectionId"/> là
-/// owner token của lock — đã chuyển từ connection SignalR sang hold-token trong Session khi
-/// khách bấm "Tiếp tục thanh toán", để rời trang không làm mất ghế.
+/// không phải tin danh sách ghế client gửi lại (General.md §6.2). Ghế được giữ ở SeatHub (SeatHoldService);
+/// <see cref="ExpiresUtc"/> chỉ là hạn kỹ thuật của Session (không hiển thị như đồng hồ giữ ghế).
 /// </summary>
 public sealed record SeatSelection(
     int ShowtimeId,
     IReadOnlyList<int> SeatIds,
-    string ConnectionId,
     DateTime? ExpiresUtc = null);
 
 public static class SeatSelectionSessionExtensions

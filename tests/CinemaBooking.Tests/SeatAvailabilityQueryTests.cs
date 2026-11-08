@@ -103,7 +103,7 @@ public sealed class SeatAvailabilityQueryTests : IAsyncLifetime
     [Fact]
     public async Task Seat_held_by_an_abandoned_pending_booking_is_available_again()
     {
-        // Quá hạn chờ thanh toán (VNPAY 15 phút + 5 phút gia hạn): đơn chưa trả tiền không được giữ ghế.
+        // Quá hạn chờ thanh toán (VNPAY 10 phút + 2 phút gia hạn): đơn chưa trả tiền không được giữ ghế.
         _db.Bookings.Add(new Booking
         {
             BookingCode = "CB-T00003",

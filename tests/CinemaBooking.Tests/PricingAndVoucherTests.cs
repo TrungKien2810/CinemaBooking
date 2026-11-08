@@ -230,7 +230,6 @@ public class VoucherBookingFlowTests : IAsyncLifetime
 {
     private static readonly DateTime Now = new(2026, 10, 16, 0, 0, 0, DateTimeKind.Utc);
     private readonly Microsoft.Data.Sqlite.SqliteConnection _connection = new("Filename=:memory:");
-    private readonly CinemaBooking.Infrastructure.Services.InMemorySeatLockManager _locks = new();
     private CinemaDbContext _db = null!;
     private Room _room = null!;
     private Showtime _showtime = null!;
@@ -274,7 +273,7 @@ public class VoucherBookingFlowTests : IAsyncLifetime
     private BookingService Service() => new(
         _db,
         new CinemaBooking.Web.Services.BookedSeatQuery(_db, new FixedTimeProvider(Now), Options.Create(new CinemaBooking.Infrastructure.VnpayOptions())),
-        _locks, new SeatPricingService(), new PaymentStub(), new CinemaBooking.Infrastructure.Services.BookingCodeGenerator(),
+        new SeatPricingService(), new PaymentStub(), new CinemaBooking.Infrastructure.Services.BookingCodeGenerator(),
         new FixedTimeProvider(Now), Options.Create(new CinemaBooking.Infrastructure.VnpayOptions { SimulateWhenUnconfigured = false }), new DisplayTimeZone(),
         Microsoft.Extensions.Logging.Abstractions.NullLogger<BookingService>.Instance,
         new VoucherService(_db, new FixedTimeProvider(Now), Options.Create(new DisplayTimeZone())));
@@ -283,8 +282,7 @@ public class VoucherBookingFlowTests : IAsyncLifetime
     {
         var ids = await _db.Seats.Where(s => s.RoomId == _room.Id && s.RowNumber == 1 && s.ColumnNumber >= firstColumn)
             .OrderBy(s => s.ColumnNumber).Select(s => s.Id).Take(seatCount).ToListAsync();
-        foreach (var id in ids) _locks.TryLock(new SeatKey(_showtime.Id, id), "conn", null, TimeSpan.FromMinutes(5));
-        return await Service().PlaceAsync(new BookingRequest(_showtime.Id, ids, "conn", "Khách", email, "0900000000", null, code));
+        return await Service().PlaceAsync(new BookingRequest(_showtime.Id, ids, "Khách", email, "0900000000", null, code));
     }
 
     [Fact]
@@ -335,6 +333,9 @@ public class VoucherBookingFlowTests : IAsyncLifetime
     {
         AddVoucher("ONCE");
         Assert.True((await PlaceAsync(2, "ONCE", "same@example.com")).IsRedirectToPayment);
+        // Đơn đầu đã thanh toán xong (không còn Pending) — nếu không, giới hạn 1 đơn Pending/email sẽ chặn trước mã giảm giá.
+        (await _db.Bookings.OrderBy(b => b.Id).FirstAsync()).Status = BookingStatus.Confirmed;
+        await _db.SaveChangesAsync();
 
         var again = await PlaceAsync(2, "ONCE", "SAME@example.com", firstColumn: 3);   // khác hoa/thường vẫn là cùng khách
         Assert.Equal(BookingResultKind.VoucherInvalid, again.Kind);

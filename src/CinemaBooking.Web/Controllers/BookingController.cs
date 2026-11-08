@@ -19,13 +19,12 @@ namespace CinemaBooking.Web.Controllers;
 
 /// <summary>
 /// Luồng đặt vé phía khách. Trang chọn ghế trả về sơ đồ + ghế đã đặt (đọc từ DB);
-/// ghế ĐANG GIỮ thì client nhận qua SeatHub (SeatSnapshot), không đi qua controller.
+/// ghế được chọn chỉ là lựa chọn phía client — ghế chỉ bị chặn từ lúc khách bấm "Thanh toán" (đơn Pending).
 /// </summary>
 public class BookingController : Controller
 {
     private readonly CinemaDbContext _db;
     private readonly IBookedSeatQuery _bookedSeats;
-    private readonly ISeatLockManager _locks;
     private readonly ISeatPricingService _pricing;
     private readonly IBookingService _bookings;
     private readonly IQrCodeService _qr;
@@ -33,15 +32,14 @@ public class BookingController : Controller
     private readonly IHubContext<SeatHub, ISeatClient> _seats;
     private readonly DisplayTimeZone _tz;
     private readonly TimeProvider _clock;
-    private readonly SeatHoldOptions _hold;
     private readonly IOptions<VnpayOptions> _vnpayOptions;
     private readonly IBranchScope _branches;
     private readonly IVoucherService _vouchers;
+    private readonly SeatHoldService _holds;
 
     public BookingController(
         CinemaDbContext db,
         IBookedSeatQuery bookedSeats,
-        ISeatLockManager locks,
         ISeatPricingService pricing,
         IBookingService bookings,
         IQrCodeService qr,
@@ -49,16 +47,16 @@ public class BookingController : Controller
         IHubContext<SeatHub, ISeatClient> seats,
         IOptions<DisplayTimeZone> tz,
         TimeProvider clock,
-        IOptions<SeatHoldOptions> hold,
         IOptions<VnpayOptions> vnpayOptions,
         IBranchScope branches,
-        IVoucherService vouchers)
+        IVoucherService vouchers,
+        SeatHoldService holds)
     {
+        _holds = holds;
         _branches = branches;
         _vouchers = vouchers;
         _db = db;
         _bookedSeats = bookedSeats;
-        _locks = locks;
         _pricing = pricing;
         _bookings = bookings;
         _qr = qr;
@@ -66,7 +64,6 @@ public class BookingController : Controller
         _seats = seats;
         _tz = tz.Value;
         _clock = clock;
-        _hold = hold.Value;
         _vnpayOptions = vnpayOptions;
     }
 
@@ -81,6 +78,7 @@ public class BookingController : Controller
         return showtimeId is { } id ? RedirectToAction(nameof(SeatMap), new { id }) : RedirectToAction("Index", "Home");
     }
 
+    [Authorize]
     [HttpGet]
     public async Task<IActionResult> SeatMap(int id, CancellationToken ct)
     {
@@ -88,20 +86,10 @@ public class BookingController : Controller
         if (showtime is null) return NotFound();
         ViewData["StaffPreview"] = IsStaff;
 
-        // Quay lại sơ đồ ghế sau khi đã sang Checkout nghĩa là khách đổi ý: nhả hold cũ
-        // (đang thuộc hold-token trong Session) để ghế không hiện nhầm là "người khác giữ".
+        // Quay lại sơ đồ ghế sau khi đã sang Checkout nghĩa là khách đổi ý: bỏ giỏ cũ (lượt giữ ghế vẫn còn tới hết hạn; vào lại sơ đồ sẽ nhận lại qua snapshot).
         var previous = HttpContext.Session.GetSeatSelection();
         if (previous is not null && previous.ShowtimeId == id)
-        {
-            var released = previous.SeatIds
-                .Where(seatId => _locks.Release(new SeatKey(id, seatId), previous.ConnectionId))
-                .ToList();
-
             HttpContext.Session.ClearSeatSelection();
-
-            if (released.Count > 0)
-                await _seats.Clients.Group(SeatHub.GroupName(id)).SeatUnlocked(released);
-        }
 
         var booked = await _bookedSeats.GetBookedSeatIdsAsync(showtime.Id, ct);
         var startLocal = _tz.ToLocalTime(showtime.StartTimeUtc);
@@ -110,17 +98,18 @@ public class BookingController : Controller
         var surcharges = await PricingLoader.LoadSurchargesAsync(_db, showtime.Room.TheaterId, ct);
 
         return View(SeatMapViewModel.Build(
-            showtime, booked, _pricing, startLocal, (int)_hold.Duration.TotalSeconds, promotions, surcharges));
+            showtime, booked, _pricing, startLocal, promotions, surcharges));
     }
 
     /// <summary>
-    /// Chốt các ghế khách đang giữ vào Session rồi sang trang thanh toán. Kiểm tra lại toàn bộ
-    /// phía server: ghế thuộc đúng phòng của suất, chưa ai đặt, và đang bị CHÍNH connection này
-    /// giữ trong SeatLockManager — form có thể bị sửa để gửi ghế bất kỳ.
+    /// Chốt các ghế khách đã chọn vào Session rồi sang trang thanh toán (khách phải đang giữ đủ các ghế đó). Kiểm tra lại
+    /// toàn bộ phía server: ghế thuộc đúng phòng của suất, ghế đôi đủ cặp, chưa ai đặt, tối đa 8 ghế —
+    /// form có thể bị sửa để gửi ghế bất kỳ.
     /// </summary>
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SelectSeats(int showtimeId, int[] seatIds, string? connectionId, CancellationToken ct)
+    public async Task<IActionResult> SelectSeats(int showtimeId, int[] seatIds, CancellationToken ct)
     {
         if (IsStaff) return StaffCannotBuy(showtimeId);
 
@@ -128,37 +117,23 @@ public class BookingController : Controller
         if (showtime is null) return NotFound();
 
         var ids = seatIds.Distinct().ToList();
-        var error = await ValidateSelectionAsync(showtime, ids, connectionId, ct);
+        var error = await ValidateSelectionAsync(showtime, ids, ct);
         if (error is not null)
         {
             TempData["Error"] = error;
             return RedirectToAction(nameof(SeatMap), new { id = showtimeId });
         }
 
-        // Rời trang chọn ghế sẽ đóng connection SignalR. Chuyển lock sang một hold-token
-        // trong Session để disconnect không nhả ghế trước khi khách kịp thanh toán.
-        var holdToken = $"hold:{Guid.NewGuid():N}";
-        var keys = ids.Select(seatId => new SeatKey(showtimeId, seatId)).ToList();
-        if (!_locks.TransferOwnership(keys, connectionId!, holdToken, _hold.Duration))
+        // Khách phải đang giữ đủ các ghế này (giữ ở SeatHub); hạn của giỏ chính là hạn giữ ghế — đồng hồ ở Checkout.
+        var held = await _holds.SnapshotAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, showtimeId, ct);
+        var mine = held.Where(h => h.Mine).ToList();
+        if (ids.Any(id => mine.All(h => h.SeatId != id)))
         {
-            TempData["Error"] = "Thời gian giữ ghế đã hết hoặc ghế không còn do bạn giữ. Vui lòng chọn lại.";
+            TempData["Error"] = "Lượt giữ ghế đã hết hạn hoặc chưa giữ đủ ghế. Vui lòng chọn lại.";
             return RedirectToAction(nameof(SeatMap), new { id = showtimeId });
         }
-
-        // Đổi sang suất khác khi đang có ghế chờ thanh toán: giỏ chỉ giữ một suất, nên trả ghế cũ
-        // ngay thay vì để chúng khóa người khác cho tới khi hết hạn.
-        if (HttpContext.Session.GetSeatSelection() is { } previous && previous.ShowtimeId != showtimeId)
-        {
-            var released = previous.SeatIds
-                .Where(seatId => _locks.Release(new SeatKey(previous.ShowtimeId, seatId), previous.ConnectionId))
-                .ToList();
-            if (released.Count > 0)
-                await _seats.Clients.Group(SeatHub.GroupName(previous.ShowtimeId)).SeatUnlocked(released);
-        }
-
-        // Mốc hết hạn để trang thanh toán chạy đồng hồ đếm ngược — cùng một con số với lock.
-        var expiresUtc = _clock.GetUtcNow().UtcDateTime.Add(_hold.Duration);
-        HttpContext.Session.SetSeatSelection(new SeatSelection(showtimeId, ids, holdToken, expiresUtc));
+        var expiresUtc = _clock.GetUtcNow().UtcDateTime.AddSeconds(mine.Min(h => h.SecondsLeft));
+        HttpContext.Session.SetSeatSelection(new SeatSelection(showtimeId, ids, expiresUtc));
         return RedirectToAction(nameof(Checkout));
     }
 
@@ -166,6 +141,7 @@ public class BookingController : Controller
     /// Tóm tắt giỏ ghế trong Session + form liên hệ. Khách đã đăng nhập được điền sẵn
     /// họ tên/email để không phải gõ lại.
     /// </summary>
+    [Authorize]
     [HttpGet]
     public async Task<IActionResult> Checkout(CancellationToken ct)
     {
@@ -177,12 +153,11 @@ public class BookingController : Controller
         var page = await BuildCheckoutPageAsync(selection, await BuildCheckoutFormAsync(ct), ct);
         if (page is null) return RedirectToAction("Index", "Home");
 
-        // Hết hạn giữ ghế thì không cho điền form nữa: đưa về sơ đồ ghế kèm thông báo, tránh
-        // cảnh khách gõ xong mới bị báo "ghế đã hết hạn".
-        if (page.HoldSecondsRemaining <= 0)
+        // Phiên chọn ghế quá hạn kỹ thuật thì đưa về sơ đồ ghế chọn lại (lượt giữ ghế hết hạn thì bộ dọn đã nhả ghế).
+        if (selection.ExpiresUtc is { } sessionExpires && sessionExpires <= _clock.GetUtcNow().UtcDateTime)
         {
             HttpContext.Session.ClearSeatSelection();
-            TempData["Error"] = "Đã hết thời gian giữ ghế. Vui lòng chọn lại.";
+            TempData["Error"] = "Phiên chọn ghế đã hết hạn. Vui lòng chọn lại.";
             return RedirectToAction(nameof(SeatMap), new { id = selection.ShowtimeId });
         }
 
@@ -193,6 +168,7 @@ public class BookingController : Controller
     /// Chốt đơn: tạo Booking trong một transaction, thu tiền và xếp email xác nhận (xem
     /// <see cref="IBookingService"/>). Danh sách ghế lấy lại từ Session, không đọc từ form.
     /// </summary>
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Checkout(CheckoutFormModel form, CancellationToken ct)
@@ -213,7 +189,6 @@ public class BookingController : Controller
         var result = await _bookings.PlaceAsync(new BookingRequest(
             selection.ShowtimeId,
             selection.SeatIds,
-            selection.ConnectionId,
             form.CustomerName,
             form.CustomerEmail,
             form.CustomerPhone,
@@ -222,9 +197,11 @@ public class BookingController : Controller
 
         if (result.IsRedirectToPayment)
         {
-            // Luồng VNPAY: Booking + Payment đang ở trạng thái Pending (BookingSeats giữ ghế), khách
+            // Luồng VNPAY: Booking + Payment đang ở trạng thái Pending (BookingSeats giữ ghế) — từ giờ ghế
+            // đã chuyển từ "đang giữ" sang "đang thanh toán", nên báo các tab đang mở suất vẽ lại. Khách
             // cần được chuyển hướng sang cổng VNPAY để thanh toán. Quay về sau khi VNPAY xử lý
             // (qua ReturnUrl / IPN) sẽ gọi lại để xác nhận hoặc hủy đơn.
+            await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatBooked(selection.SeatIds.ToList());
             return Redirect(result.PaymentUrl ?? string.Empty);
         }
 
@@ -232,6 +209,14 @@ public class BookingController : Controller
         {
             // Mã giảm giá không còn dùng được (hết lượt, hết hạn...): bỏ mã để khách thanh toán tiếp giá thường hoặc nhập mã khác.
             if (result.Kind == BookingResultKind.VoucherInvalid) HttpContext.Session.ClearVoucherCode();
+            // Không tạo được thanh toán: đơn đã huỷ và lượt giữ đã được dùng — ghế trống lại, báo các tab và bắt chọn lại.
+            if (result.Kind == BookingResultKind.PaymentFailed)
+            {
+                await _seats.Clients.Group(SeatHub.GroupName(selection.ShowtimeId)).SeatFreed(selection.SeatIds.ToList());
+                HttpContext.Session.ClearSeatSelection();
+                TempData["Error"] = result.Message + " Vui lòng chọn lại ghế.";
+                return RedirectToAction(nameof(SeatMap), new { id = selection.ShowtimeId });
+            }
             TempData["Error"] = result.Message;
             return RedirectToAction(nameof(Checkout));
         }
@@ -249,6 +234,7 @@ public class BookingController : Controller
     /// Khách nhập mã giảm giá ở trang thanh toán. Chỉ LƯU mã vào Session; việc kiểm tra (hạn, chi nhánh, đơn tối thiểu, lượt dùng)
     /// diễn ra khi dựng lại trang thanh toán và lần nữa ở server lúc chốt đơn.
     /// </summary>
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult ApplyVoucher(string? code)
@@ -273,6 +259,7 @@ public class BookingController : Controller
         return RedirectToAction(nameof(Checkout));
     }
 
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult RemoveVoucher()
@@ -569,12 +556,10 @@ public class BookingController : Controller
             showtime.Room.RoomType.Label() + " · " + showtime.Language.Label(),
             voucherCode, voucherDiscount, voucherTitle);
 
-        var nowUtc = _clock.GetUtcNow().UtcDateTime;
-        var remaining = selection.ExpiresUtc is { } expiresUtc
-            ? (int)Math.Max(0, (expiresUtc - nowUtc).TotalSeconds)
-            : (int)_hold.Duration.TotalSeconds;
-
-        return new CheckoutPageViewModel(summary, form, remaining);
+        var holdSecondsRemaining = selection.ExpiresUtc is { } until
+            ? Math.Max(0, (int)(until - _clock.GetUtcNow().UtcDateTime).TotalSeconds)
+            : 0;
+        return new CheckoutPageViewModel(summary, form, holdSecondsRemaining);
     }
 
     /// <summary>
@@ -667,24 +652,20 @@ public class BookingController : Controller
         return theaterId is not null && await _branches.CanAccessTheaterAsync(theaterId.Value, ct);
     }
 
-    private async Task<string?> ValidateSelectionAsync(Showtime showtime, List<int> ids, string? connectionId, CancellationToken ct)
+    private async Task<string?> ValidateSelectionAsync(Showtime showtime, List<int> ids, CancellationToken ct)
     {
         if (ids.Count == 0) return "Chưa chọn ghế nào.";
-        if (string.IsNullOrWhiteSpace(connectionId)) return "Mất kết nối giữ ghế, vui lòng tải lại trang.";
+        if (ids.Count > BookingService.MaxSeatsPerOrder) return $"Mỗi đơn chỉ đặt tối đa {BookingService.MaxSeatsPerOrder} ghế.";
 
         var inRoom = showtime.Room!.Seats.Count(s => ids.Contains(s.Id));
         if (inRoom != ids.Count) return "Có ghế không thuộc phòng chiếu của suất này.";
 
-        // Ghế đôi phải đi theo cặp — kiểm tra trước khi chuyển lock sang hold-token.
+        // Ghế đôi phải đi theo cặp — kiểm tra trước khi lưu giỏ.
         var pairingError = SeatPairing.Validate(showtime.Room!.Seats, ids);
         if (pairingError is not null) return pairingError;
 
         var booked = await _bookedSeats.GetBookedSeatIdsAsync(showtime.Id, ct);
         if (ids.Any(booked.Contains)) return "Có ghế vừa được người khác đặt.";
-
-        var keys = ids.Select(seatId => new SeatKey(showtime.Id, seatId));
-        if (!_locks.ValidateLocks(keys, connectionId))
-            return "Thời gian giữ ghế đã hết hoặc ghế không còn do bạn giữ. Vui lòng chọn lại.";
 
         return null;
     }
