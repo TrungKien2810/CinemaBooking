@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hướng C — Bảng lịch | Prototype CineSmart</title>
+<meta name="description" content="Ghi chú hướng thiết kế C — Bảng lịch cho bản prototype giao diện CinemaBooking.Smart.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+<a class="skip-link" href="#noi-dung">Bỏ qua tới nội dung chính</a>
+
+<header class="masthead">
+  <div class="page masthead__inner">
+    <a class="brand" href="index.html">
+      <span class="brand__mark" aria-hidden="true"></span>
+      <span>CineSmart</span>
+    </a>
+    <nav class="masthead__nav" aria-label="Điều hướng chính">
+      <a href="home.html">Trang chủ</a>
+      <a href="movie.html">Lịch chiếu</a>
+      <a href="seatmap.html">Chọn ghế</a>
+      <a href="checkout.html">Thanh toán</a>
+      <a href="index.html" aria-current="page">Hướng thiết kế</a>
+      <a href="../index.html" title="Về trang so sánh 3 hướng">← So sánh hướng</a>
+    </nav>
+  </div>
+</header>
+
+<main id="noi-dung" class="protopage">
+  <section class="page section">
+    <div class="section__head">
+      <h1>Hướng C — Bảng lịch</h1>
+      <p>Nền giấy lạnh, mực đen, đường kẻ mảnh. Thông tin là chính: giờ chiếu đọc theo hàng như bảng lịch nhà ga.</p>
+    </div>
+
+    <div class="specimens">
+      <div>
+        <h2>Ý tưởng</h2>
+        <p class="lede">
+          Chọn suất chiếu là một <strong>bảng lịch</strong>, không phải lưới thẻ. Cột giờ lớn bên trái, các
+          chi nhánh là nhóm hàng, mỗi suất là một dòng kẻ hairline với phòng, giá và số ghế còn trống.
+          Bảng đọc được bằng mắt khi rải ghế: quét từ trái sang phải là thấy hết suất tối.
+        </p>
+        <ul class="speclist mt-4">
+          <li>Bo góc tối đa 4 px, không đổ bóng mềm, không gradient: bảng lịch phẳng, đường kẻ là ranh giới.</li>
+          <li>Cỡ chữ lớn ở đúng một chỗ: cột giờ. Mọi thứ khác nhỏ lại để không tranh với nó.</li>
+          <li>Số giờ và số tiền dùng tabular numerals để chúng thẳng cột khi so sánh nhiều suất.</li>
+          <li>Không nhãn ALL-CAPS, không mũi tên sau nút, không nối metadata bằng dấu chấm giữa.</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2>Bảng màu</h2>
+        <div class="swatchgrid mt-4">
+          <div class="swatch">
+            <div class="swatch__chip" style="background-color: var(--paper);"></div>
+            <div class="swatch__body"><span class="swatch__name">Nền giấy</span><span class="swatch__hex">#F7F7F5</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background-color: var(--paper-raised);"></div>
+            <div class="swatch__body"><span class="swatch__name">Nền nổi</span><span class="swatch__hex">#FFFFFF</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background-color: var(--ink);"></div>
+            <div class="swatch__body"><span class="swatch__name">Mực</span><span class="swatch__hex">#101418</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background-color: var(--text-muted);"></div>
+            <div class="swatch__body"><span class="swatch__name">Chữ mờ</span><span class="swatch__hex">#5B626B</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background-color: var(--rule-strong);"></div>
+            <div class="swatch__body"><span class="swatch__name">Đường kẻ mạnh</span><span class="swatch__hex">#B6B9BF</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background-color: var(--rule);"></div>
+            <div class="swatch__body"><span class="swatch__name">Đường kẻ mảnh</span><span class="swatch__hex">#DCDDE0</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background-color: var(--cobalt);"></div>
+            <div class="swatch__body"><span class="swatch__name">Cobalt</span><span class="swatch__hex">#1F3F8F</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background-color: var(--amber);"></div>
+            <div class="swatch__body"><span class="swatch__name">Hổ phách</span><span class="swatch__hex">#A15C00</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background-color: var(--green);"></div>
+            <div class="swatch__body"><span class="swatch__name">Xanh thành công</span><span class="swatch__hex">#1F6B4A</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch__chip" style="background-color: var(--brick);"></div>
+            <div class="swatch__body"><span class="swatch__name">Đỏ lỗi</span><span class="swatch__hex">#97281F</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2>Chữ</h2>
+        <div class="mt-4">
+          <div class="specimen__row">
+            <span class="specimen__label">Playfair Display 700</span>
+            <span class="specimen__display" style="font-size: var(--fs-xl); font-weight: 700;">Địa Đạo: Mặt Trời Trong Bóng Tối</span>
+          </div>
+          <div class="specimen__row">
+            <span class="specimen__label">Playfair Display 600</span>
+            <span class="specimen__display" style="font-size: var(--fs-lg); font-weight: 600;">Dune: Part Two</span>
+          </div>
+          <div class="specimen__row">
+            <span class="specimen__label">IBM Plex Sans</span>
+            <span class="specimen__sans" style="font-size: var(--fs-2xs);">Trang chủ, Lịch chiếu, Chọn ghế, Thanh toán</span>
+          </div>
+          <div class="specimen__row">
+            <span class="specimen__label">Số tabular</span>
+            <span class="specimen__sans" style="font-size: var(--fs-lg); font-variant-numeric: tabular-nums;">18:45 &nbsp; 19:15 &nbsp; 114.000 ₫</span>
+          </div>
+          <div class="specimen__row">
+            <span class="specimen__label">Cỡ chữ</span>
+            <span class="specimen__sans" style="font-size: var(--fs-3xs); color: var(--text-muted);">
+              34 / 28 / 24 / 20 / 16 / 15 / 13 / 12 px, tỷ lệ 1.25, khoảng cách dòng 1.5 cho nội dung và 1.15 cho tiêu đề.
+            </span>
+          </div>
+          <div class="specimen__row">
+            <span class="specimen__label">Khoảng cách</span>
+            <span class="specimen__sans" style="font-size: var(--fs-3xs); color: var(--text-muted);">
+              4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 px, ba mật độ: gọn (mảnh), vừa (mặc định), rộng (khối lớn).
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2>Cấu trúc bảng lịch</h2>
+        <table class="datatable mt-4">
+          <caption class="u-sr">Các cột của một dòng bảng lịch và ý nghĩa của chúng</caption>
+          <thead>
+            <tr><th>Cột</th><th>Ý nghĩa</th><th class="num">Căn</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Giờ</td><td>Giờ bắt đầu, cỡ lớn nhất trên màn hình</td><td class="num">Trái</td></tr>
+            <tr><td>Phòng</td><td>Tên phòng và số ghế, ví dụ Phòng 1 (8×12)</td><td class="num">Trái</td></tr>
+            <tr><td>Giá</td><td>Gá cơ bản của suất, đã gồm phụ thu</td><td class="num">Phải</td></tr>
+            <tr><td>Ghế trống</td><td>Số ghế còn lại, tắt dần theo mức độ kín</td><td class="num">Phải</td></tr>
+            <tr><td>Thao tác</td><td>Chọn suất này, một nút duy nhất</td><td class="num">Phải</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <h2>Bốn màn hình</h2>
+        <div class="linklist mt-4">
+          <a class="linkcard" href="home.html">
+            <span class="linkcard__name">Trang chủ</span>
+            <span class="linkcard__hint">Danh mục phim, lọc theo thể loại, bảng lịch tối nay</span>
+          </a>
+          <a class="linkcard" href="movie.html">
+            <span class="linkcard__name">Chi tiết phim và chọn suất</span>
+            <span class="linkcard__hint">Bảng lịch theo 7 ngày, lọc theo thành phố và chi nhánh</span>
+          </a>
+          <a class="linkcard" href="seatmap.html">
+            <span class="linkcard__name">Chọn ghế</span>
+            <span class="linkcard__hint">Lưới 8×12, 4 trạng thái ghế, giữ ghế 5 phút</span>
+          </a>
+          <a class="linkcard" href="checkout.html">
+            <span class="linkcard__name">Thanh toán</span>
+            <span class="linkcard__hint">Biểu mẫu khách vãng lai, kiểm tra dữ liệu, trạng thái lỗi</span>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <h2>Ba điều nên chú ý</h2>
+        <ol class="numlist mt-4">
+          <li>
+            <strong>Chọn suất là đọc bảng, không phải bấm thẻ.</strong> Giờ là cột lớn nhất, các suất
+            xếp theo giờ trong từng nhóm chi nhánh, và ô số ghế còn trống cho biết ngay suất nào
+            sắp hết. Không có hiệu ứng đổ bóng hay bo góc để làm giả "thẻ đẹp".
+          </li>
+          <li>
+            <strong>Trạng thái ghế không dựa vào màu.</strong> Ghế trống, ghế bạn giữ, ghế người
+            khác đang giữ và ghế đã đặt có ký hiệu riêng (✓, ●, ×) cùng chú thích chữ; ghế đã đặt
+            bị khoá thật nên không bấm được, kể cả bằng bàn phím.
+          </li>
+          <li>
+            <strong>Đồng hồ giữ ghế nằm cạnh sơ đồ.</strong> Thanh thời gian tụt dần trong 5 phút,
+            khi hết giờ ghế trả lại và màn hình báo rõ bằng một thông báo có nút chọn lại, thay vì
+            báo lỗi chung chung.
+          </li>
+        </ol>
+      </div>
+
+      <div>
+        <h2>Phạm vi bản prototype</h2>
+        <ul class="speclist mt-4">
+          <li>Dữ liệu phim, chi nhánh, suất chiếu và số ghế còn trống là dữ liệu mô phỏng, nằm trong app.js.</li>
+          <li>Thanh toán chỉ mô phỏng trạng thái gửi, lỗi máy chủ và thành công, không nối cổng thanh toán thật.</li>
+          <li>Chưa có đăng nhập, chưa có lịch sử đặt vé, chưa có phiên bản tối.</li>
+          <li>Phông chữ tải từ Google Fonts; khi mạng yếu, bản dự phòng hệ thống giữ nguyên bố cục.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="pagefoot">
+  <div class="page">
+    <p>Prototype hướng C — Bảng lịch. Mọi màu, khoảng cách và cỡ chữ lấy từ tokens.css.</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chọn ghế · Dune: Part Two — hướng B (Signal)</title>
+<meta name="description" content="Prototype giao diện chọn ghế với đồng hồ giữ ghế 5 phút — hướng B Signal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap&subset=latin-ext,vietnamese">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Bỏ qua tới nội dung chính</a>
+
+<header class="topbar">
+  <div class="shell topbar__inner">
+    <a class="wordmark" href="home.html">CineSmart<span class="wordmark__dot">.</span></a>
+    <nav class="topnav" aria-label="Điều hướng chính">
+      <a href="home.html" data-nav>Trang chủ</a>
+      <a href="movie.html" data-nav>Phim</a>
+      <a href="movie.html" data-nav>Rạp</a>
+      <a href="checkout.html" data-nav>Thanh toán</a>
+    </nav>
+    <form class="search" role="search" action="movie.html">
+      <label class="u-visually-hidden" for="q">Tìm phim theo tên hoặc thể loại</label>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.6-3.6"></path>
+      </svg>
+      <input id="q" name="q" type="search" placeholder="Tìm phim" autocomplete="off">
+    </form>
+    <a class="btn btn--ghost topbar__cta" href="checkout.html">Tra cứu vé</a>
+  </div>
+</header>
+
+<main id="main" class="page-body page--with-bar">
+  <div class="shell">
+
+    <nav class="crumbs" aria-label="Đường dẫn">
+      <a href="home.html">Trang chủ</a>
+      <span aria-hidden="true">/</span>
+      <a href="movie.html">Dune: Part Two</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">Chọn ghế</span>
+    </nav>
+
+    <div class="showtime-strip">
+      <div class="showtime-strip__main">
+        <span class="showtime-strip__title">Dune: Part Two</span>
+        <span class="showtime-strip__meta">CineSmart Nguyễn Huệ</span>
+        <span class="showtime-strip__meta">Phòng 1</span>
+      </div>
+      <div class="showtime-strip__when">
+        <span class="showtime-strip__time">18:45</span>
+        <span class="showtime-strip__meta">22/04/2025</span>
+      </div>
+      <span class="avail" data-level="open"><span class="avail__count" data-bind="free">43</span><span>ghế còn trống</span></span>
+    </div>
+
+    <div class="banner banner--warn" id="holdBanner" hidden></div>
+
+    <div class="seatmap-layout">
+      <!-- ================================================== sơ đồ ghế ==== -->
+      <section class="seatmap-main" aria-labelledby="seatmapTitle">
+        <div class="page-head">
+          <h1 class="page-head__title" id="seatmapTitle">Sơ đồ ghế phòng 1</h1>
+          <p class="page-head__note">Chọn tối đa 8 ghế. Ghế được giữ trong 5 phút kể từ lúc bạn bắt đầu chọn.</p>
+        </div>
+
+        <div class="screen">
+          <div class="screen__arc" aria-hidden="true"></div>
+          <p class="screen__label">Màn hình</p>
+        </div>
+
+        <div class="seatmap__scroll" tabindex="0" role="region" aria-label="Sơ đồ ghế, cuộn ngang để xem hết các cột">
+          <div class="seat-grid" id="seatGrid"></div>
+        </div>
+
+        <ul class="legend">
+          <li class="legend__item"><span class="seat seat--free seat--sample">A1</span> Còn trống</li>
+          <li class="legend__item"><span class="seat seat--mine seat--sample">C3<span class="seat__mark" aria-hidden="true">✓</span></span> Bạn đang giữ</li>
+          <li class="legend__item"><span class="seat seat--held seat--sample">D7<span class="seat__mark" aria-hidden="true">◐</span></span> Người khác đang giữ</li>
+          <li class="legend__item"><span class="seat seat--booked seat--sample">B2<span class="seat__mark" aria-hidden="true">×</span></span> Đã đặt</li>
+        </ul>
+      </section>
+
+      <!-- ================================================== tóm tắt ====== -->
+      <aside class="seatmap-side" aria-labelledby="summaryTitle">
+        <h2 class="u-visually-hidden" id="summaryTitle">Tóm tắt đơn đặt ghế</h2>
+
+        <div class="panel panel--raised">
+          <div class="timer" id="holdTimerBox">
+            <span class="timer__num" data-bind="timer">5:00</span>
+            <span class="timer__text">
+              <span class="timer__label">Giữ ghế trong</span>
+              <span class="timer__note">Ghế được giữ 5 phút</span>
+            </span>
+          </div>
+          <span class="pulse timer__pulse" data-level="open" aria-hidden="true">
+            <span class="pulse__fill" style="--pct:100%"></span>
+          </span>
+
+          <div class="summary-block">
+            <p class="summary-block__label">Ghế đã chọn</p>
+            <ul class="seatlist" id="seatList"></ul>
+          </div>
+
+          <div class="summary-block">
+            <div class="summary__row summary__row--total">
+              <dt>Tổng tiền</dt>
+              <dd class="summary__total-value" data-bind="total" aria-live="polite">190.000 ₫</dd>
+            </div>
+          </div>
+
+          <a class="btn btn--primary btn--block" id="ctaCheckout" href="checkout.html" disabled>Chọn ghế để tiếp tục</a>
+          <button type="button" class="btn btn--quiet btn--block" id="clearSeats">Bỏ chọn tất cả</button>
+        </div>
+
+        <div class="panel">
+          <p class="summary-block__label">Giá theo loại ghế</p>
+          <ul class="pricelist">
+            <li><span>Ghế thường</span><b>95.000 ₫</b></li>
+            <li><span>Ghế VIP</span><b>114.000 ₫</b></li>
+            <li><span>Ghế đôi</span><b>190.000 ₫</b></li>
+          </ul>
+          <p class="panel__note">Hàng A, B, C, G là ghế thường. Hàng D, E, F là ghế VIP. Hàng H là ghế đôi.</p>
+        </div>
+
+        <div class="sim-panel">
+          <p class="sim-panel__title">Mô phỏng</p>
+          <button type="button" class="btn btn--ghost btn--sm" id="simExpire">Hết 5 phút giữ ghế</button>
+          <p class="sim-panel__note">Bấm để xem trạng thái hết hạn: ghế được bỏ chọn và hệ thống báo người dùng.</p>
+        </div>
+      </aside>
+    </div>
+
+  </div>
+</main>
+
+<!-- ================================================== thanh hành động ==== -->
+<div class="bookbar">
+  <div class="bookbar__row">
+    <div class="timer timer--bar">
+      <span class="timer__num" data-bind="timer">5:00</span>
+      <span class="timer__text"><span class="timer__label">Giữ ghế</span></span>
+    </div>
+    <p class="bookbar__seats"><b data-bind="seats">C3, C4</b></p>
+  </div>
+  <div class="bookbar__row bookbar__row--total">
+    <p class="bookbar__total" aria-live="polite">
+      <span class="bookbar__total-label">Tổng tiền</span>
+      <span class="bookbar__total-value" data-bind="total">190.000 ₫</span>
+    </p>
+    <a class="btn btn--primary" id="ctaCheckoutMobile" href="checkout.html" disabled>Chọn ghế để tiếp tục</a>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="shell footer__cols">
+    <div>
+      <p class="footer__title">CineSmart</p>
+      <p>72 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh</p>
+      <p>08:00 — 22:30 hằng ngày</p>
+    </div>
+    <div>
+      <p class="footer__title">Rạp</p>
+      <p>CineSmart Nguyễn Huệ</p>
+      <p>CineSmart Thảo Điền</p>
+      <p>CineSmart Cầu Giấy</p>
+      <p>CineSmart Hoàn Kiếm</p>
+    </div>
+    <div>
+      <p class="footer__title">Hỗ trợ</p>
+      <p>Tra cứu vé đã mua</p>
+      <p>Đổi suất trong 24 giờ</p>
+      <p>Hoàn tiền trong 48 giờ</p>
+        <div>
+      <p class="footer__title">Prototype</p>
+      <p><a href="index.html">Giới thiệu hướng thiết kế</a></p>
+      <p><a href="../index.html">Về trang so sánh 3 hướng</a></p>
+    </div>
+</div>
+  </div>
+</footer>
+
+<script src="app.js" defer></script>
+</body>
+</html>

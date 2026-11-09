@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CineSmart · Trang chủ — hướng B (Signal)</title>
+<meta name="description" content="Prototype giao diện trang chủ đặt vé CineSmart — hướng thiết kế B Signal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap&subset=latin-ext,vietnamese">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Bỏ qua tới nội dung chính</a>
+
+<header class="topbar">
+  <div class="shell topbar__inner">
+    <a class="wordmark" href="home.html">CineSmart<span class="wordmark__dot">.</span></a>
+    <nav class="topnav" aria-label="Điều hướng chính">
+      <a href="home.html" data-nav>Trang chủ</a>
+      <a href="movie.html" data-nav>Phim</a>
+      <a href="movie.html" data-nav>Rạp</a>
+      <a href="checkout.html" data-nav>Thanh toán</a>
+    </nav>
+    <form class="search" role="search" action="movie.html">
+      <label class="u-visually-hidden" for="q">Tìm phim theo tên hoặc thể loại</label>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.6-3.6"></path>
+      </svg>
+      <input id="q" name="q" type="search" placeholder="Tìm phim" autocomplete="off">
+    </form>
+    <a class="btn btn--ghost topbar__cta" href="checkout.html">Tra cứu vé</a>
+  </div>
+</header>
+
+<main id="main" class="page-body">
+  <div class="shell">
+
+    <!-- ================================================== phim nổi bật -->
+    <section class="hero" aria-labelledby="heroTitle">
+      <div class="hero__poster">
+        <div class="poster poster--3">
+          <div class="poster__genre">Khoa học viễn tưởng</div>
+          <div class="poster__title">Dune: Part Two</div>
+          <div class="poster__foot">
+            <span class="poster__minutes">166&nbsp;phút</span>
+            <span class="meter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__body">
+        <div class="hero__tags">
+          <span class="tag tag--live">Đang chiếu</span>
+          <span class="tag">Khởi chiếu 01/03/2024</span>
+        </div>
+        <h1 class="hero__title" id="heroTitle">Dune: Part Two</h1>
+        <p class="hero__lede">Paul Atreides liên minh với người Fremen để trả thù những kẻ đã hủy diệt gia tộc mình.</p>
+
+        <dl class="meta-row hero__meta">
+          <div class="meta-item"><dt>Thể loại</dt><dd>Khoa học viễn tưởng</dd></div>
+          <div class="meta-item"><dt>Thời lượng</dt><dd>166&nbsp;phút</dd></div>
+          <div class="meta-item"><dt>Giá từ</dt><dd>80.000&nbsp;₫</dd></div>
+          <div class="meta-item"><dt>Suất hôm nay</dt><dd>5&nbsp;suất</dd></div>
+        </dl>
+
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="movie.html">Xem suất chiếu</a>
+          <a class="btn btn--ghost" href="seatmap.html">Mở sơ đồ ghế</a>
+        </div>
+
+        <!-- Seat pulse: thứ còn trống được nhấn mạnh nhất -->
+        <div class="hero__signal">
+          <div class="readout">
+            <span class="readout__num">43</span>
+            <span class="readout__unit">ghế còn trống</span>
+          </div>
+          <span class="pulse" data-level="open" aria-hidden="true">
+            <span class="pulse__fill" style="--pct:45%"></span>
+          </span>
+          <p class="hero__signal-note">Suất 18:45 tối nay tại CineSmart Nguyễn Huệ, Phòng 1</p>
+          <a class="btn btn--quiet" href="seatmap.html">Xem sơ đồ ghế</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================== bộ lọc ====== -->
+    <section class="section" aria-labelledby="filterTitle">
+      <h2 class="u-visually-hidden" id="filterTitle">Tìm phim theo tên và thể loại</h2>
+      <div class="filterbar">
+        <div class="filterbar__group">
+          <label class="filterbar__legend" for="qFilter">Tìm theo tên</label>
+          <input class="input" id="qFilter" type="search" placeholder="Ví dụ: Dune, Nhà Bà Nữ" autocomplete="off">
+        </div>
+        <div class="filterbar__group">
+          <p class="filterbar__legend" id="genreLabel">Thể loại</p>
+          <div class="chip-row" role="group" aria-labelledby="genreLabel">
+            <button type="button" class="chip" data-filter="genre" data-value="Tình cảm" aria-pressed="false">Tình cảm</button>
+            <button type="button" class="chip" data-filter="genre" data-value="Hài" aria-pressed="false">Hài</button>
+            <button type="button" class="chip" data-filter="genre" data-value="Khoa học viễn tưởng" aria-pressed="false">Khoa học viễn tưởng</button>
+            <button type="button" class="chip" data-filter="genre" data-value="Hoạt hình" aria-pressed="false">Hoạt hình</button>
+            <button type="button" class="chip" data-filter="genre" data-value="Chiến tranh" aria-pressed="false">Chiến tranh</button>
+          </div>
+          <p class="filterbar__legend" id="statusLabel">Trạng thái</p>
+          <div class="chip-row" role="group" aria-labelledby="statusLabel">
+            <button type="button" class="chip" data-filter="status" data-value="now" aria-pressed="false">Đang chiếu</button>
+            <button type="button" class="chip" data-filter="status" data-value="soon" aria-pressed="false">Sắp chiếu</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================== đang chiếu ==== -->
+    <section class="section" aria-labelledby="nowTitle">
+      <div class="section__head">
+        <h2 class="section__title" id="nowTitle">Đang chiếu</h2>
+        <p class="section__note">Số ghế còn trống tính theo suất sớm nhất trong ngày</p>
+      </div>
+      <div class="rail">
+        <article class="rail-item">
+          <a class="rail-item__poster" href="movie.html" aria-label="Xem Dune: Part Two">
+            <span class="poster poster--3">
+              <span class="poster__title">Dune: Part Two</span>
+              <span class="poster__foot"><span class="poster__minutes">166&nbsp;phút</span></span>
+            </span>
+          </a>
+          <div class="rail-item__body">
+            <h3 class="rail-item__title">Dune: Part Two</h3>
+            <p class="rail-item__meta"><span>Khoa học viễn tưởng</span><span>166&nbsp;phút</span></p>
+            <div class="rail-item__foot">
+              <span class="avail" data-level="open"><span class="avail__count">43</span><span>ghế còn trống</span></span>
+              <span class="rail-item__price">từ 80.000&nbsp;₫</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="rail-item">
+          <a class="rail-item__poster" href="movie.html" aria-label="Xem Mắt Biếc">
+            <span class="poster poster--1">
+              <span class="poster__title">Mắt Biếc</span>
+              <span class="poster__foot"><span class="poster__minutes">117&nbsp;phút</span></span>
+            </span>
+          </a>
+          <div class="rail-item__body">
+            <h3 class="rail-item__title">Mắt Biếc</h3>
+            <p class="rail-item__meta"><span>Tình cảm</span><span>117&nbsp;phút</span></p>
+            <div class="rail-item__foot">
+              <span class="avail" data-level="tight"><span class="avail__count">9</span><span>ghế còn trống</span></span>
+              <span class="rail-item__price">từ 80.000&nbsp;₫</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="rail-item">
+          <a class="rail-item__poster" href="movie.html" aria-label="Xem Nhà Bà Nữ">
+            <span class="poster poster--2">
+              <span class="poster__title">Nhà Bà Nữ</span>
+              <span class="poster__foot"><span class="poster__minutes">106&nbsp;phút</span></span>
+            </span>
+          </a>
+          <div class="rail-item__body">
+            <h3 class="rail-item__title">Nhà Bà Nữ</h3>
+            <p class="rail-item__meta"><span>Hài</span><span>106&nbsp;phút</span></p>
+            <div class="rail-item__foot">
+              <span class="avail" data-level="last"><span class="avail__count">3</span><span>ghế còn trống</span></span>
+              <span class="rail-item__price">từ 80.000&nbsp;₫</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="rail-item">
+          <a class="rail-item__poster" href="movie.html" aria-label="Xem Inside Out 2">
+            <span class="poster poster--4">
+              <span class="poster__title">Inside Out 2</span>
+              <span class="poster__foot"><span class="poster__minutes">96&nbsp;phút</span></span>
+            </span>
+          </a>
+          <div class="rail-item__body">
+            <h3 class="rail-item__title">Inside Out 2</h3>
+            <p class="rail-item__meta"><span>Hoạt hình</span><span>96&nbsp;phút</span></p>
+            <div class="rail-item__foot">
+              <span class="avail" data-level="tight"><span class="avail__count">12</span><span>ghế còn trống</span></span>
+              <span class="rail-item__price">từ 80.000&nbsp;₫</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================================================== tất cả phim ==== -->
+    <section class="section" aria-labelledby="allTitle">
+      <div class="section__head">
+        <h2 class="section__title" id="allTitle">Tất cả phim</h2>
+        <p class="section__note" id="resultCount" aria-live="polite">5/5 phim</p>
+      </div>
+      <div class="movie-grid" id="movieGrid"></div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="shell footer__cols">
+    <div>
+      <p class="footer__title">CineSmart</p>
+      <p>72 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh</p>
+      <p>08:00 — 22:30 hằng ngày</p>
+    </div>
+    <div>
+      <p class="footer__title">Rạp</p>
+      <p>CineSmart Nguyễn Huệ</p>
+      <p>CineSmart Thảo Điền</p>
+      <p>CineSmart Cầu Giấy</p>
+      <p>CineSmart Hoàn Kiếm</p>
+    </div>
+    <div>
+      <p class="footer__title">Hỗ trợ</p>
+      <p>Tra cứu vé đã mua</p>
+      <p>Đổi suất trong 24 giờ</p>
+      <p>Hoàn tiền trong 48 giờ</p>
+        <div>
+      <p class="footer__title">Prototype</p>
+      <p><a href="index.html">Giới thiệu hướng thiết kế</a></p>
+      <p><a href="../index.html">Về trang so sánh 3 hướng</a></p>
+    </div>
+</div>
+  </div>
+</footer>
+
+<script src="app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thanh toán — CineSmart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body data-page="checkout">
+<a class="skip" href="#main">Bỏ qua điều hướng</a>
+
+<header class="mast">
+  <div class="wrap mast__in">
+    <a class="wordmark" href="index.html">Cine<span class="wordmark__b">Smart</span></a>
+    <nav class="mast__nav" aria-label="Chính">
+      <a href="home.html">Hôm nay</a>
+      <a href="movie.html">Phim</a>
+    </nav>
+    <p class="mast__where" id="mast-where">
+      <a href="home.html"><span class="mast__where-k">Đang ở</span><span data-branch-name>CineSmart Nguyễn Huệ</span></a>
+    </p>
+  </div>
+</header>
+
+<main id="main">
+
+  <div class="wrap checkout-head">
+    <a class="link link--back" href="seatmap.html">Quay lại chọn ghế</a>
+    <h1 class="checkout-head__title">Thanh toán</h1>
+  </div>
+
+  <div class="wrap checkout">
+
+    <section class="order" aria-labelledby="order-title">
+      <h2 class="vh" id="order-title">Đơn của bạn</h2>
+
+      <p class="order__address">Bạn sẽ đến <strong data-order-addr>72 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh</strong> <span data-order-where>— Phòng 1, 19:15</span></p>
+
+      <dl class="order__rows">
+        <div class="order__row"><dt>Phim</dt><dd>Dune: Part Two</dd></div>
+        <div class="order__row"><dt>Ngày</dt><dd data-order-date>22/10</dd></div>
+        <div class="order__row"><dt>Ghế</dt><dd data-order-seats>C3, C4</dd></div>
+        <div class="order__row order__row--total"><dt>Tạm tính</dt><dd data-order-total>190.000 ₫</dd></div>
+      </dl>
+
+      <p class="order__note">Giá vé chưa gồm bắp nước; sản phẩm khác mua tại quầy.</p>
+    </section>
+
+    <form class="pay" id="pay-form" novalidate>
+
+      <fieldset class="pay__set">
+        <legend class="pay__legend">Thông tin liên hệ</legend>
+
+        <div class="field">
+          <label class="field__label" for="name">Họ và tên</label>
+          <input class="field__input" id="name" name="name" type="text" autocomplete="name"
+                 required aria-describedby="name-err">
+          <p class="field__err" id="name-err" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="email">Email</label>
+          <input class="field__input" id="email" name="email" type="email" autocomplete="email"
+                 inputmode="email" required aria-describedby="email-err">
+          <p class="field__err" id="email-err" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="phone">Số điện thoại</label>
+          <input class="field__input" id="phone" name="phone" type="tel" autocomplete="tel"
+                 inputmode="numeric" required aria-describedby="phone-err">
+          <p class="field__err" id="phone-err" hidden></p>
+        </div>
+      </fieldset>
+
+      <fieldset class="pay__set">
+        <legend class="pay__legend">Phương thức thanh toán</legend>
+
+        <label class="method">
+          <input class="method__radio" type="radio" name="method" value="wallet" checked>
+          <span class="method__body">
+            <span class="method__name">Ví điện tử</span>
+            <span class="method__hint">Thanh toán bằng ví, xác nhận ngay trên ứng dụng.</span>
+          </span>
+        </label>
+
+        <label class="method">
+          <input class="method__radio" type="radio" name="method" value="card">
+          <span class="method__body">
+            <span class="method__name">Thẻ quốc tế</span>
+            <span class="method__hint">Visa, Mastercard, JCB. Cổng thẻ mở ở bước cuối.</span>
+          </span>
+        </label>
+
+        <label class="method">
+          <input class="method__radio" type="radio" name="method" value="counter">
+          <span class="method__body">
+            <span class="method__name">Thanh toán tại quầy</span>
+            <span class="method__hint">Ghế giữ đến 19:15, trả tiền mặt tại quầy trước giờ chiếu.</span>
+          </span>
+        </label>
+      </fieldset>
+
+      <div class="banner" id="server-error" role="alert" hidden>
+        <p class="banner__title">Cổng thanh toán không phản hồi</p>
+        <p class="banner__body">Ghế của bạn vẫn được giữ thêm 5 phút. Thử lại, hoặc chọn thanh toán tại quầy.</p>
+      </div>
+
+      <button class="cta cta--wide" type="submit" id="pay-submit">Thanh toán 190.000 ₫</button>
+
+      <p class="pay__fine">Bấm thanh toán nghĩa là bạn đồng ý giữ ghế đến 19:15 ngày 22/10 tại phòng 1, CineSmart Nguyễn Huệ.</p>
+    </form>
+
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <p>CineSmart — rạp là thứ được chọn trước, phim là thứ lọc sau.</p>
+    <p class="foot__note">Prototype tĩnh, dữ liệu demo từ CatalogSeeder.</p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

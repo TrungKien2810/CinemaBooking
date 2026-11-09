@@ -1,0 +1,167 @@
+/* ==========================================================================
+   E — BUỔI TỐI / design tokens
+   CinemaBooking.Smart — static prototype, direction E (time-first)
+
+   One idea runs the whole set: a showtime is a BLOCK OF TIME, not a clock
+   reading. The evening axis (17:00 → 23:30, with a late tail) is the only
+   illustrated object in the system; everything else is type and 1px rules.
+
+   Contrast, measured with the WCAG 2.1 relative-luminance formula
+   (normal text needs 4.5:1, large text 3:1, non-text 3:1):
+
+     --ink        #F4EBE4 on --ground   #171316 → 15.64 : 1   AAA
+     --ink        #F4EBE4 on --surface  #221C21 → 14.21 : 1   AAA
+     --ink        #F4EBE4 on --sunk     #1C1719 → 15.05 : 1   AAA
+     --ink-muted  #A99695 on --ground            →  6.56 : 1   AA
+     --ink-muted  #A99695 on --surface           →  5.96 : 1   AA
+     --accent     #D2603E on --ground            →  4.80 : 1   AA (chữ nhỏ)
+     --accent     #D2603E on --surface           →  4.37 : 1   AA large only
+     --ground     #171316 on --accent            →  4.80 : 1   AA
+     --ink        #F4EBE4 on --accent            →  3.26 : 1   FAIL nhỏ — cấm
+     --ink-gone   #6E5A5A on --ground            →  2.87 : 1   (xem luật bên dưới)
+     --rule       #3A3035 on --ground            →  1.45 : 1   (đường kẻ, không phải chữ)
+
+   LUẬT DÙNG MÀU
+   · --accent (#D2603E) CHỈ xuất hiện ở ba chỗ: khối suất đang chọn, vạch
+     "bây giờ"/giờ đang xét, và CTA. Không dùng cho badge, icon, viền trang trí.
+     Chữ nằm TRÊN nền accent luôn là --accent-ink (4.80:1), không bao giờ --ink.
+   · --ink-gone chỉ dùng cho suất "hết chỗ" và ghế đã đặt: thành phần không hoạt
+     động (WCAG 1.4.3 miễn trừ), và luôn kèm chữ "hết chỗ"/ký hiệu × + gạch ngang,
+     không bao giờ là tín hiệu duy nhất.
+   · Nền chỉ có MỘT vệt sáng radial mỗi màn (--lamp), độ đậm 4,5%: ánh đèn phòng
+     chiếu hắt từ trên xuống. Không gradient thứ hai, không gradient trên thẻ.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* ---------------------------------------------------------------------
+     1. NỀN & MẶT — than mận, không đen tuyệt đối
+     --------------------------------------------------------------------- */
+  --ground:        #171316;   /* nền trang                                  */
+  --surface:        #221C21;  /* mặt phẳng nổi: khối suất, thanh tóm tắt     */
+  --surface-raised: #272026;  /* khối suất khi rê chuột                      */
+  --surface-sunk:   #1C1719;  /* ô nhập, rãnh lưới ghế                      */
+  --surface-quiet:  #1E191C;  /* nền phụ, hàng bảng                         */
+
+  /* ---------------------------------------------------------------------
+     2. CHỮ
+     --------------------------------------------------------------------- */
+  --ink:        #F4EBE4;      /* chữ chính                                */
+  --ink-muted:  #A99695;      /* chữ phụ: nhãn, địa chỉ, ghi chú          */
+  --ink-gone:   #6E5A5A;      /* hết chỗ / đã đặt — chỉ trạng thái tắt    */
+
+  /* ---------------------------------------------------------------------
+     3. ĐƯỜNG KẺ — cơ chế phân tách duy nhất của hệ
+     --------------------------------------------------------------------- */
+  --rule:       #3A3035;      /* kẻ 1px chính                             */
+  --rule-soft:  #2A2226;      /* kẻ trong bảng, vạch giờ trên trục        */
+  --rule-ink:   #6B585C;      /* kẻ khi cần mạnh hơn (ô lỗi)              */
+
+  /* ---------------------------------------------------------------------
+     4. NHẤN DUY NHẤT — đỏ gạch
+     --------------------------------------------------------------------- */
+  --accent:       #D2603E;
+  --accent-hover: #DE7050;
+  --accent-ink:   #171316;    /* chữ trên nền accent — 4.80:1             */
+  --accent-veil:  rgba(210, 96, 62, 0.14);   /* nền khối đang chọn mờ  */
+  --accent-line:  rgba(210, 96, 62, 0.55);   /* vạch "bây giờ"          */
+  --lamp:         rgba(210, 96, 62, 0.045);  /* vệt đèn phòng chiếu     */
+
+  /* ---------------------------------------------------------------------
+     5. NỀN POSTER — mỗi phim một sắc, tất cả đều tối và lệch khỏi accent
+     --------------------------------------------------------------------- */
+  --poster-dune:   #1F282B;
+  --poster-mat:    #2A2027;
+  --poster-nha:    #24261E;
+  --poster-inside: #1E2230;
+  --poster-dia:    #2B2320;
+
+  /* ---------------------------------------------------------------------
+     6. CHỮ — Newsreader (serif, giờ & tên phim) + Work Sans (thân)
+     Cả hai có subset vietnamese trên Google Fonts; fallback hệ thống để
+     mở offline vẫn đọc được.
+     --------------------------------------------------------------------- */
+  --font-display: 'Newsreader', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-body: 'Work Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --fs-hero:    clamp(2.5rem, 5vw, 4rem);      /* 40 → 64px  tên phim      */
+  --fs-h1:      clamp(1.875rem, 3.4vw, 2.625rem);
+  --fs-h2:      clamp(1.375rem, 2.1vw, 1.75rem);
+  --fs-h3:      1.0625rem;                     /* 17px                     */
+  --fs-lead:    1.0625rem;                     /* 17px                     */
+  --fs-body:    1rem;                          /* 16px                     */
+  --fs-small:   0.8125rem;                     /* 13px                     */
+  --fs-tiny:    0.6875rem;                     /* 11px — nhãn trục, giá    */
+  --fs-clock:   clamp(2rem, 3.6vw, 2.75rem);   /* 32 → 44px — đồng hồ      */
+  --fs-slot:    1.0625rem;                     /* 17px — giờ trong khối    */
+
+  --lh-tight:   1.03;
+  --lh-heading: 1.16;
+  --lh-body:    1.6;
+
+  --ls-hero:    -0.025em;
+  --ls-heading: -0.012em;
+  --ls-body:    0;
+  --ls-num:     0.005em;
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+
+  --measure:      44ch;
+  --measure-wide: 64ch;
+
+  /* ---------------------------------------------------------------------
+     7. KHOẢNG CÁCH
+     --------------------------------------------------------------------- */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.5rem;
+  --space-6:  2rem;
+  --space-7:  3rem;
+  --space-8:  4rem;
+  --space-9:  5rem;
+
+  /* ---------------------------------------------------------------------
+     8. HÌNH KHỐI — tối đa 4px. Không đổ bóng ở bất kỳ đâu.
+     --------------------------------------------------------------------- */
+  --radius-1: 2px;
+  --radius-2: 4px;
+  --radius-round: 50%;
+
+  --border:      1px solid var(--rule);
+  --border-soft: 1px solid var(--rule-soft);
+  --border-ink:  1px solid var(--rule-ink);
+  --border-tap:  2px solid var(--ink);
+
+  /* ---------------------------------------------------------------------
+     9. CHUYỂN ĐỘNG
+     --------------------------------------------------------------------- */
+  --dur-fast: 90ms;
+  --dur-base: 160ms;
+  --ease:     cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  /* ---------------------------------------------------------------------
+     10. BỐ CỤC & TRỤC BUỔI TỐI
+     --axis-* là % của khung 17:00 → 01:30 (510 phút). Khối suất đặt bằng
+     --s (bắt đầu) và --w (độ dài), nên một phim 166 phút luôn rộng
+     32.55% khung — đúng tỉ lệ thời lượng.
+     --------------------------------------------------------------------- */
+  --shell:       1200px;
+  --gutter:      clamp(1.25rem, 4vw, 2.5rem);
+  --tap:         44px;
+  --lane-label:  178px;     /* cột tên chi nhánh (desktop)                  */
+  --lane-gap:    28px;
+  --lane-h:      86px;      /* chiều cao một làn trên trục ngang            */
+  --lane-h-sm:   72px;      /* làn rút gọn ở trang chủ                      */
+  --ruler-h:     30px;
+  --track-h:     260px;     /* chiều cao trục dọc ở màn hẹp                 */
+  --track-gutter: 46px;     /* cột nhãn giờ của trục dọc                    */
+  --seat:        44px;
+  --strip-h:     18px;
+
+  --focus-ring:   2px solid var(--ink);
+  --focus-offset: 2px;
+}

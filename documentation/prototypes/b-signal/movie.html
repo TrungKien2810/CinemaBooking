@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dune: Part Two · Chọn suất chiếu — hướng B (Signal)</title>
+<meta name="description" content="Prototype giao diện chi tiết phim và chọn suất chiếu — hướng B Signal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap&subset=latin-ext,vietnamese">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Bỏ qua tới nội dung chính</a>
+
+<header class="topbar">
+  <div class="shell topbar__inner">
+    <a class="wordmark" href="home.html">CineSmart<span class="wordmark__dot">.</span></a>
+    <nav class="topnav" aria-label="Điều hướng chính">
+      <a href="home.html" data-nav>Trang chủ</a>
+      <a href="movie.html" data-nav>Phim</a>
+      <a href="movie.html" data-nav>Rạp</a>
+      <a href="checkout.html" data-nav>Thanh toán</a>
+    </nav>
+    <form class="search" role="search" action="movie.html">
+      <label class="u-visually-hidden" for="q">Tìm phim theo tên hoặc thể loại</label>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.6-3.6"></path>
+      </svg>
+      <input id="q" name="q" type="search" placeholder="Tìm phim" autocomplete="off">
+    </form>
+    <a class="btn btn--ghost topbar__cta" href="checkout.html">Tra cứu vé</a>
+  </div>
+</header>
+
+<main id="main" class="page-body">
+  <div class="shell">
+
+    <nav class="crumbs" aria-label="Đường dẫn">
+      <a href="home.html">Trang chủ</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">Dune: Part Two</span>
+    </nav>
+
+    <!-- ================================================== đầu phim ====== -->
+    <section class="movie-head" aria-labelledby="movieTitle">
+      <div class="movie-head__poster">
+        <div class="poster poster--3">
+          <div class="poster__genre">Khoa học viễn tưởng</div>
+          <div class="poster__title">Dune: Part Two</div>
+          <div class="poster__foot">
+            <span class="poster__minutes">166&nbsp;phút</span>
+            <span class="meter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="movie-head__body">
+        <div class="hero__tags">
+          <span class="tag tag--live">Đang chiếu</span>
+          <span class="tag">Từ 80.000&nbsp;₫</span>
+        </div>
+        <h1 class="movie-head__title" id="movieTitle">Dune: Part Two</h1>
+        <p class="movie-head__lede">Paul Atreides liên minh với người Fremen để trả thù những kẻ đã hủy diệt gia tộc mình.</p>
+
+        <dl class="fact-list">
+          <div class="fact-row"><dt>Thể loại</dt><dd>Khoa học viễn tưởng</dd></div>
+          <div class="fact-row"><dt>Thời lượng</dt><dd>166 phút</dd></div>
+          <div class="fact-row"><dt>Khởi chiếu</dt><dd>01/03/2024</dd></div>
+          <div class="fact-row"><dt>Giá ghế thường</dt><dd>Từ 80.000 ₫ đến 95.000 ₫</dd></div>
+          <div class="fact-row"><dt>Giá ghế VIP</dt><dd>Từ 96.000 ₫ đến 114.000 ₫</dd></div>
+          <div class="fact-row"><dt>Giá ghế đôi</dt><dd>Từ 160.000 ₫ đến 190.000 ₫</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- ================================================== chọn ngày ===== -->
+    <section class="section" aria-labelledby="dateTitle">
+      <div class="section__head">
+        <h2 class="section__title" id="dateTitle">Chọn ngày</h2>
+        <p class="section__note">Lịch chiếu mở trước 7 ngày</p>
+      </div>
+      <div class="daybar" role="group" aria-label="Chọn ngày chiếu">
+        <button type="button" class="day" aria-pressed="true"><span class="day__dow">T2</span><span class="day__date">21/04</span></button>
+        <button type="button" class="day" aria-pressed="false"><span class="day__dow">T3</span><span class="day__date">22/04</span></button>
+        <button type="button" class="day" aria-pressed="false"><span class="day__dow">T4</span><span class="day__date">23/04</span></button>
+        <button type="button" class="day" aria-pressed="false"><span class="day__dow">T5</span><span class="day__date">24/04</span></button>
+        <button type="button" class="day" aria-pressed="false"><span class="day__dow">T6</span><span class="day__date">25/04</span></button>
+        <button type="button" class="day" aria-pressed="false"><span class="day__dow">T7</span><span class="day__date">26/04</span></button>
+        <button type="button" class="day" aria-pressed="false"><span class="day__dow">CN</span><span class="day__date">27/04</span></button>
+      </div>
+    </section>
+
+    <!-- ================================================== lọc địa điểm == -->
+    <section class="section" aria-labelledby="placeTitle">
+      <div class="section__head">
+        <h2 class="section__title" id="placeTitle">Chọn rạp</h2>
+        <p class="section__note" id="slotCount" aria-live="polite">16 suất chiếu</p>
+      </div>
+
+      <div class="filterbar filterbar--places">
+        <div class="filterbar__group">
+          <p class="filterbar__legend" id="cityLabel">Thành phố</p>
+          <div class="chip-row" role="group" aria-labelledby="cityLabel">
+            <button type="button" class="chip" data-filter="city" data-value="TP. Hồ Chí Minh" aria-pressed="false">TP. Hồ Chí Minh</button>
+            <button type="button" class="chip" data-filter="city" data-value="Hà Nội" aria-pressed="false">Hà Nội</button>
+          </div>
+        </div>
+        <div class="filterbar__group">
+          <p class="filterbar__legend" id="branchLabel">Chi nhánh</p>
+          <div class="chip-row" role="group" aria-labelledby="branchLabel">
+            <button type="button" class="chip" data-filter="branch" data-value="nguyen-hue" aria-pressed="false">CineSmart Nguyễn Huệ</button>
+            <button type="button" class="chip" data-filter="branch" data-value="thao-dien" aria-pressed="false">CineSmart Thảo Điền</button>
+            <button type="button" class="chip" data-filter="branch" data-value="cau-giay" aria-pressed="false">CineSmart Cầu Giấy</button>
+            <button type="button" class="chip" data-filter="branch" data-value="hoan-kiem" aria-pressed="false">CineSmart Hoàn Kiếm</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================== lịch suất ===== -->
+    <section class="section" aria-labelledby="schedTitle">
+      <div class="section__head">
+        <h2 class="section__title" id="schedTitle">Suất chiếu ngày 21/04/2025</h2>
+        <p class="section__note">Số ghế còn trống cập nhật tại thời điểm mở trang</p>
+      </div>
+      <div id="schedule"></div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="shell footer__cols">
+    <div>
+      <p class="footer__title">CineSmart</p>
+      <p>72 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh</p>
+      <p>08:00 — 22:30 hằng ngày</p>
+    </div>
+    <div>
+      <p class="footer__title">Rạp</p>
+      <p>CineSmart Nguyễn Huệ</p>
+      <p>CineSmart Thảo Điền</p>
+      <p>CineSmart Cầu Giấy</p>
+      <p>CineSmart Hoàn Kiếm</p>
+    </div>
+    <div>
+      <p class="footer__title">Hỗ trợ</p>
+      <p>Tra cứu vé đã mua</p>
+      <p>Đổi suất trong 24 giờ</p>
+      <p>Hoàn tiền trong 48 giờ</p>
+        <div>
+      <p class="footer__title">Prototype</p>
+      <p><a href="index.html">Giới thiệu hướng thiết kế</a></p>
+      <p><a href="../index.html">Về trang so sánh 3 hướng</a></p>
+    </div>
+</div>
+  </div>
+</footer>
+
+<script src="app.js" defer></script>
+</body>
+</html>

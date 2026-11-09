@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B — Signal · hướng thiết kế — CinemaBooking.Smart</title>
+<meta name="description" content="Giới thiệu hướng thiết kế B Signal cho prototype giao diện CinemaBooking.Smart.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap&subset=latin-ext,vietnamese">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Bỏ qua tới nội dung chính</a>
+
+<header class="topbar">
+  <div class="shell topbar__inner">
+    <a class="wordmark" href="index.html">CineSmart<span class="wordmark__dot">.</span></a>
+    <nav class="topnav" aria-label="Điều hướng chính">
+      <a href="home.html" data-nav>Trang chủ</a>
+      <a href="movie.html" data-nav>Phim</a>
+      <a href="movie.html" data-nav>Rạp</a>
+      <a href="checkout.html" data-nav>Thanh toán</a>
+      <a href="../index.html" data-nav title="Về trang so sánh 3 hướng">← So sánh hướng</a>
+    </nav>
+    <a class="btn btn--ghost topbar__cta" href="home.html">Xem prototype</a>
+  </div>
+</header>
+
+<main id="main" class="page-body">
+  <div class="shell">
+
+    <section class="intro" aria-labelledby="introTitle">
+      <p class="intro__index">Hướng B</p>
+      <h1 class="intro__title" id="introTitle">Signal</h1>
+      <p class="intro__lede">
+        Giao diện đặt vé coi dữ liệu “còn bao nhiêu chỗ” là thông tin chính. Mọi mức khan hiếm dùng
+        chung một ngôn ngữ hình ảnh — một thanh tín hiệu mảnh, một con số, một màu — nên người dùng
+        đọc được sức chứa của một suất chiếu ngay ở hàng đầu màn hình, không cần bấm vào từng thẻ.
+      </p>
+      <p class="intro__lede">
+        Nền than, chữ sáng, nhấn xanh điện. Chữ hiển thị Chivo đậm, chữ nội dung Manrope. Mọi con số
+        dùng chữ số đều đặc (tabular) để chúng không nhảy khi đồng hồ đếm ngược.
+      </p>
+    </section>
+
+    <!-- ================================================== quyết định ====== -->
+    <section class="section" aria-labelledby="decisionTitle">
+      <div class="section__head">
+        <h2 class="section__title" id="decisionTitle">Quyết định dẫn dắt</h2>
+        <p class="section__note">Seat pulse</p>
+      </div>
+      <div class="decision">
+        <div class="decision__demo" aria-hidden="true">
+          <div class="decision__row">
+            <span class="decision__name">Còn nhiều</span>
+            <span class="pulse" data-level="open"><span class="pulse__fill" style="--pct:72%"></span></span>
+            <span class="decision__num">62</span>
+          </div>
+          <div class="decision__row">
+            <span class="decision__name">Còn ít</span>
+            <span class="pulse" data-level="tight"><span class="pulse__fill" style="--pct:28%"></span></span>
+            <span class="decision__num">24</span>
+          </div>
+          <div class="decision__row">
+            <span class="decision__name">Sắp hết</span>
+            <span class="pulse" data-level="last"><span class="pulse__fill" style="--pct:9%"></span></span>
+            <span class="decision__num">9</span>
+          </div>
+          <div class="decision__row">
+            <span class="decision__name">Hết chỗ</span>
+            <span class="pulse" data-level="none"><span class="pulse__fill" style="--pct:0%"></span></span>
+            <span class="decision__num">0</span>
+          </div>
+        </div>
+        <div class="decision__text">
+          <p>
+            Thanh tín hiệu lặp lại ở ba nơi: mỗi thẻ suất chiếu, mỗi hàng ghế, và thanh hành động
+            dính đáy trên điện thoại. Cùng một hình dạng, cùng một cách đo, nên người dùng học được
+            ngay một lần rồi đọc được mọi nơi.
+          </p>
+          <p>
+            Màu không đứng một mình: mỗi mức khan hiếm có một nhãn chữ đi kèm (“còn nhiều”, “còn ít”,
+            “sắp hết”, “hết chỗ”), nên người không phân biệt được màu vẫn đọc đúng.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================== bảng màu ====== -->
+    <section class="section" aria-labelledby="paletteTitle">
+      <div class="section__head">
+        <h2 class="section__title" id="paletteTitle">Bảng màu</h2>
+        <p class="section__note">Nền tối, sáng dần theo độ cao, một màu nhấn chính</p>
+      </div>
+      <div class="swatches">
+        <div class="swatch"><span class="swatch__chip swatch__chip--bg"></span><span class="swatch__name">Nền than</span><span class="swatch__hex">#0D0F14</span></div>
+        <div class="swatch"><span class="swatch__chip swatch__chip--surface"></span><span class="swatch__name">Bề mặt</span><span class="swatch__hex">#161A22</span></div>
+        <div class="swatch"><span class="swatch__chip swatch__chip--raised"></span><span class="swatch__name">Bề mặt nâng</span><span class="swatch__hex">#1E232D</span></div>
+        <div class="swatch"><span class="swatch__chip swatch__chip--border"></span><span class="swatch__name">Viền</span><span class="swatch__hex">#2A3140</span></div>
+        <div class="swatch"><span class="swatch__chip swatch__chip--text"></span><span class="swatch__name">Chữ chính</span><span class="swatch__hex">#EEF1F6</span></div>
+        <div class="swatch"><span class="swatch__chip swatch__chip--muted"></span><span class="swatch__name">Chữ mờ</span><span class="swatch__hex">#98A2B3</span></div>
+        <div class="swatch"><span class="swatch__chip swatch__chip--accent"></span><span class="swatch__name">Nhấn điện</span><span class="swatch__hex">#3B6BFF</span></div>
+        <div class="swatch"><span class="swatch__chip swatch__chip--warn"></span><span class="swatch__name">Hổ phách</span><span class="swatch__hex">#FFB020</span></div>
+        <div class="swatch"><span class="swatch__chip swatch__chip--ok"></span><span class="swatch__name">Xanh lá</span><span class="swatch__hex">#2DD4A7</span></div>
+        <div class="swatch"><span class="swatch__chip swatch__chip--danger"></span><span class="swatch__name">Lỗi</span><span class="swatch__hex">#F2736B</span></div>
+      </div>
+      <p class="section__note">
+        Màu nhấn chỉ dùng cho hành động chính và cho tín hiệu “còn trống”. Màu hổ phách chỉ dành cho
+        “sắp hết” và “người khác đang giữ”. Màu xanh lá chỉ dành cho ghế bạn đang giữ và trạng thái thành công.
+      </p>
+    </section>
+
+    <!-- ================================================== chữ ============ -->
+    <section class="section" aria-labelledby="typeTitle">
+      <div class="section__head">
+        <h2 class="section__title" id="typeTitle">Chữ</h2>
+        <p class="section__note">Chivo cho tiêu đề, Manrope cho nội dung</p>
+      </div>
+
+      <div class="specimen">
+        <div class="specimen__block">
+          <p class="specimen__label">Chivo 900 — tiêu đề</p>
+          <p class="specimen__display">Chọn ghế trong 5 phút</p>
+          <p class="specimen__display specimen__display--sm">Địa Đạo: Mặt Trời Trong Bóng Tối</p>
+        </div>
+        <div class="specimen__block">
+          <p class="specimen__label">Manrope 400 — nội dung</p>
+          <p class="specimen__body">
+            Paul Atreides liên minh với người Fremen để trả thù những kẻ đã hủy diệt gia tộc mình.
+            Ghế thường 95.000 ₫, ghế VIP 114.000 ₫, ghế đôi 190.000 ₫.
+          </p>
+          <p class="specimen__label">Manrope 700 — nhãn và nút</p>
+          <p class="specimen__label-strong">Tiếp tục thanh toán</p>
+        </div>
+      </div>
+
+      <dl class="scalescale">
+        <div class="spec-row"><dt class="spec-row__label">Hiển thị lớn</dt><dd class="spec-row__value spec-row__value--display">72 px / 900</dd></div>
+        <div class="spec-row"><dt class="spec-row__label">Tiêu đề trang</dt><dd class="spec-row__value spec-row__value--h1">34 px / 800</dd></div>
+        <div class="spec-row"><dt class="spec-row__label">Tiêu đề khối</dt><dd class="spec-row__value spec-row__value--h2">24 px / 800</dd></div>
+        <div class="spec-row"><dt class="spec-row__label">Chữ thân</dt><dd class="spec-row__value">16 px / 400</dd></div>
+        <div class="spec-row"><dt class="spec-row__label">Chữ phụ</dt><dd class="spec-row__value spec-row__value--sm">14 px / 400</dd></div>
+        <div class="spec-row"><dt class="spec-row__label">Nhãn nhỏ</dt><dd class="spec-row__value spec-row__value--xs">12 px / 700</dd></div>
+      </dl>
+    </section>
+
+    <!-- ================================================== màn hình ======= -->
+    <section class="section" aria-labelledby="screensTitle">
+      <div class="section__head">
+        <h2 class="section__title" id="screensTitle">Bốn màn hình</h2>
+        <p class="section__note">Mở bằng trình duyệt, không cần máy chủ</p>
+      </div>
+      <div class="screen-links">
+        <a class="screen-link" href="home.html">
+          <b>Trang chủ</b>
+          <span>Phim nổi bật, băng phim đang chiếu, lưới toàn bộ danh mục</span>
+        </a>
+        <a class="screen-link" href="movie.html">
+          <b>Chi tiết phim</b>
+          <span>Lịch 7 ngày, lọc theo thành phố và chi nhánh, số ghế còn trống từng suất</span>
+        </a>
+        <a class="screen-link" href="seatmap.html">
+          <b>Chọn ghế</b>
+          <span>Sơ đồ 8 × 12, bốn trạng thái ghế, đồng hồ giữ ghế 5 phút</span>
+        </a>
+        <a class="screen-link" href="checkout.html">
+          <b>Thanh toán</b>
+          <span>Thông tin khách, phương thức trả tiền, tóm tắt đơn dính</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ================================================== lưu ý ========== -->
+    <section class="section" aria-labelledby="notesTitle">
+      <div class="section__head">
+        <h2 class="section__title" id="notesTitle">Ba điều nên chú ý</h2>
+        <p class="section__note">Vì sao hướng này khác hai hướng còn lại</p>
+      </div>
+      <ol class="note-list">
+        <li>
+          <b>Thứ còn trống là thứ được nhấn mạnh nhất</b>
+          <span>Ở ba hướng còn lại, số ghế trống là dòng chữ phụ trong thẻ suất chiếu. Ở hướng này nó là
+            thứ đầu tiên mắt chạm tới: con số lớn ở trang chủ, thanh tín hiệu trên từng suất, nhịp còn
+            trống theo từng hàng ghế.</span>
+        </li>
+        <li>
+          <b>Ghế phân biệt bằng hình dạng, không chỉ bằng màu</b>
+          <span>Ghế trống viền liền, ghế bạn giữ viền sáng có dấu tích, ghế người khác giữ viền đứt có
+            nửa vòng, ghế đã đặt sọc chéo có dấu nhân. Người mù màu vẫn đọc đúng sơ đồ.</span>
+        </li>
+        <li>
+          <b>Thông tin tức thì, không phô trương</b>
+          <span>Không gradient trang trí, không thẻ bóng đổ mềm ở mọi nơi, không nhãn viết hoa. Một nền
+            than, một đường viền mảnh làm cơ chế tách bề mặt, một màu nhấn cho hành động chính.</span>
+        </li>
+      </ol>
+    </section>
+
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="shell footer__cols">
+    <div>
+      <p class="footer__title">CineBooking.Smart</p>
+      <p>Prototype tĩnh, hướng B — Signal</p>
+      <p>Dữ liệu lấy từ CatalogSeeder.cs</p>
+    </div>
+    <div>
+      <p class="footer__title">Tệp</p>
+      <p>tokens.css — hệ thiết kế</p>
+      <p>screens.css — bố cục và thành phần</p>
+      <p>app.js — tương tác</p>
+    </div>
+    <div>
+      <p class="footer__title">Ghi chú</p>
+      <p>Không dùng thư viện ngoài</p>
+      <p>Không có tài nguyên ngoài, không cần build</p>
+      <p>Font Google tải qua mạng, không có mạng thì dùng font hệ thống</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

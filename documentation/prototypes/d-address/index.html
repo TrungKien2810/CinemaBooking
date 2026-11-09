@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hướng D — Địa chỉ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body data-page="index">
+<a class="skip" href="#main">Bỏ qua điều hướng</a>
+
+<header class="mast">
+  <div class="wrap mast__in">
+    <a class="wordmark" href="index.html">Cine<span class="wordmark__b">Smart</span></a>
+    <nav class="mast__nav" aria-label="Chính">
+      <a href="home.html">Hôm nay</a>
+      <a href="movie.html">Phim</a>
+    </nav>
+    <p class="mast__where">
+      <span class="mast__where-k">Hướng</span>
+      <span>D — Địa chỉ</span>
+    </p>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="wrap intro">
+    <p class="hero__date">Hướng D, venue-first</p>
+    <h1 class="intro__title">Địa chỉ</h1>
+    <p class="intro__lede">Rạp là thứ được chọn trước, phim là thứ lọc sau. Ứng dụng hiện tại bắt đầu bằng danh sách phim; hướng này bắt đầu bằng câu hỏi “tối nay tôi đi rạp nào”.</p>
+    <p class="intro__fix">Vá <strong>K1</strong> bằng cột thời lượng và giá từ trên từng dòng phim. Vá <strong>K3</strong> bằng một câu trạng thái luôn nói bạn đang ở cửa nào, ở mọi màn hình.</p>
+  </section>
+
+  <section class="wrap toc-block" aria-labelledby="toc-title">
+    <h2 class="section-title" id="toc-title">Bốn màn</h2>
+    <ol class="toc">
+      <li class="toc__row">
+        <a class="toc__link" href="home.html">
+          <span class="toc__no">01</span>
+          <span class="toc__name">Trang chủ — bảng cửa</span>
+          <span class="toc__note">Bốn cửa thật, chọn cửa rồi phim lọc theo</span>
+        </a>
+      </li>
+      <li class="toc__row">
+        <a class="toc__link" href="movie.html">
+          <span class="toc__no">02</span>
+          <span class="toc__name">Chi tiết phim — cửa lặp theo chiều dọc</span>
+          <span class="toc__note">7 ngày, lọc thành phố, 4 khối chi nhánh có bậu cửa</span>
+        </a>
+      </li>
+      <li class="toc__row">
+        <a class="toc__link" href="seatmap.html">
+          <span class="toc__no">03</span>
+          <span class="toc__name">Chọn ghế — 8×12, bốn trạng thái</span>
+          <span class="toc__note">Đồng hồ 5:00, tổng tiền, tóm tắt dính đáy ở 375</span>
+        </a>
+      </li>
+      <li class="toc__row">
+        <a class="toc__link" href="checkout.html">
+          <span class="toc__no">04</span>
+          <span class="toc__name">Thanh toán — đơn bắt đầu bằng địa chỉ</span>
+          <span class="toc__note">Validate tại chỗ, ba phương thức, lỗi server</span>
+        </a>
+      </li>
+    </ol>
+  </section>
+
+  <section class="wrap rules" aria-labelledby="rules-title">
+    <h2 class="section-title" id="rules-title">Luật của hướng này</h2>
+
+    <dl class="rules__list">
+      <div class="rules__row">
+        <dt>Signature</dt>
+        <dd>Bảng cửa rạp: bốn tile ngang, mỗi tile là một chi nhánh thật, có địa chỉ, phòng, ba suất kế tiếp và một đường bậu cửa 2px ở đáy. Cửa đang chọn đổi bậu cửa sang xanh rêu và giữ lựa chọn sang các màn khác qua <code>?branch=</code>.</dd>
+      </div>
+      <div class="rules__row">
+        <dt>Restraint</dt>
+        <dd>Chỉ bảng cửa được nổi: nền <code>#FFFCF6</code>, viền 1px, bậu cửa 2px. Mọi thứ khác là chữ trên nền giấy, bo góc 0 hoặc 2px, không đổ bóng, không nâng thẻ khi hover.</dd>
+      </div>
+      <div class="rules__row">
+        <dt>Màu nhấn</dt>
+        <dd><code>#1F5B4A</code> chỉ dùng cho ba việc: chi nhánh đang chọn, CTA, gạch chân trạng thái. Không gradient, không kính mờ, không bóng mềm.</dd>
+      </div>
+    </dl>
+
+    <h3 class="rules__sub">Bảng màu và tương phản đo được</h3>
+    <ul class="swatches">
+      <li class="swatch"><span class="swatch__chip swatch__chip--paper" aria-hidden="true"></span><span class="swatch__name">Nền</span><span class="swatch__hex">#F3EDE3</span></li>
+      <li class="swatch"><span class="swatch__chip swatch__chip--surface" aria-hidden="true"></span><span class="swatch__name">Mặt cửa</span><span class="swatch__hex">#FFFCF6</span></li>
+      <li class="swatch"><span class="swatch__chip swatch__chip--ink" aria-hidden="true"></span><span class="swatch__name">Chữ chính</span><span class="swatch__hex">#1B1A15 (14,96:1)</span></li>
+      <li class="swatch"><span class="swatch__chip swatch__chip--muted" aria-hidden="true"></span><span class="swatch__name">Chữ phụ</span><span class="swatch__hex">#6C6A5E (4,67:1)</span></li>
+      <li class="swatch"><span class="swatch__chip swatch__chip--rule" aria-hidden="true"></span><span class="swatch__name">Đường kẻ</span><span class="swatch__hex">#D9D1C2 (1,30:1)</span></li>
+      <li class="swatch"><span class="swatch__chip swatch__chip--accent" aria-hidden="true"></span><span class="swatch__name">Nhấn</span><span class="swatch__hex">#1F5B4A (6,80:1)</span></li>
+      <li class="swatch"><span class="swatch__chip swatch__chip--soldout" aria-hidden="true"></span><span class="swatch__name">Hết chỗ</span><span class="swatch__hex">#8C2F2F (7,04:1)</span></li>
+    </ul>
+    <p class="rules__warn">Đường kẻ 1,30:1 không bao giờ dùng cho chữ. Chữ phụ 4,67:1 chỉ dùng từ 13px trở lên.</p>
+
+    <h3 class="rules__sub">Kiểm dấu tiếng Việt</h3>
+    <p class="specimen">Hệ thống giữ ghế, gỡ ghế bằng một cú bấm; sản phẩm bắp nước trả tại quầy.</p>
+    <p class="specimen specimen--display">Dune: Part Two — Địa Đạo</p>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <p>Prototype tĩnh, không build, không phụ thuộc mạng. Dữ liệu demo lấy từ CatalogSeeder.</p>
+    <p class="foot__note">CinemaBooking.Smart, lab so sánh bốn hướng thiết kế</p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Prototype UI/UX — CinemaBooking.Smart (11 hướng)</title>
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#0c0e12; --surface:#14171d; --surface-2:#1b1f27; --line:#272d38;
+    --text:#e9edf4; --muted:#98a2b3; --accent:#7aa2ff; --warn:#ffb020;
+    --radius:10px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.6;font-size:16px}
+  a{color:var(--accent)}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 24px 80px}
+  header{padding:56px 0 32px;border-bottom:1px solid var(--line)}
+  h1{font-size:clamp(28px,4vw,44px);margin:0 0 10px;letter-spacing:-.02em;line-height:1.15}
+  .lede{color:var(--muted);max-width:72ch;margin:0}
+  .meta{color:var(--muted);font-size:14px;margin-top:14px}
+  h2{font-size:22px;margin:56px 0 6px;letter-spacing:-.01em}
+  h2+.sub{color:var(--muted);margin:0 0 24px;font-size:15px}
+  h3{font-size:17px;margin:0}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media(max-width:900px){.grid3{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .card .pad{padding:18px 20px 22px}
+  .card h3{margin:0 0 4px;font-size:19px}
+  .kicker{color:var(--muted);font-size:13px;letter-spacing:.04em}
+  .idea{color:var(--muted);font-size:14px;margin:10px 0 16px}
+  .swatches{display:flex;gap:6px;margin-bottom:14px}
+  .sw{width:30px;height:30px;border-radius:6px;border:1px solid rgba(255,255,255,.12)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .btn{display:inline-flex;align-items:center;min-height:40px;padding:8px 14px;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);color:var(--text);text-decoration:none;font-size:13px}
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#0b1020;font-weight:600}
+  /* desktop preview: 1440-wide page scaled down */
+  .frame{position:relative;width:100%;overflow:hidden;background:#000;border-bottom:1px solid var(--line)}
+  .frame iframe{border:0;transform-origin:top left;display:block}
+  .frame .label{position:absolute;left:0;bottom:0;background:rgba(0,0,0,.65);color:#fff;font-size:12px;padding:3px 8px;border-top-right-radius:6px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:13px}
+  td strong{font-weight:600}
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius)}
+  /* bảng 7 cột: cho cuộn ngang thay vì bóp cột */
+  .tblwrap--wide table{min-width:1900px;font-size:13px}
+  .tblwrap--measure table{min-width:860px}
+  .tblwrap--docs table{min-width:640px}
+  .hint{color:var(--muted);font-size:13px;margin:8px 0 0}
+  .tblwrap td a,.tblwrap th a{display:inline-flex;align-items:center;min-height:44px}
+  .problems{columns:2;column-gap:32px;padding-left:18px}
+  @media(max-width:700px){.problems{columns:1}}
+  .problems li{margin-bottom:10px;break-inside:avoid}
+  .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+  /* bản đồ màn hình */
+  .map{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media(max-width:900px){.map{grid-template-columns:1fr}}
+  .map__col h3{font-size:15px;margin:0 0 2px}
+  .map__col .kicker{margin:0 0 12px}
+  .map__list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+  .map__list li{border-bottom:1px solid var(--line)}
+  .map__list a{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 2px;text-decoration:none;color:var(--text);font-size:14px}
+  .map__list a:hover{color:var(--accent)}
+  .map__list code{color:var(--muted);font-size:12px;margin-left:auto}
+  .map__list .arrow{color:var(--muted);font-size:12px}
+  .map__list a:hover .arrow{color:var(--accent)}
+  /* thanh mở nhanh */
+  .quick{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 0;padding:14px 0 0;border-top:1px solid var(--line)}
+  .quick a{display:inline-flex;align-items:center;min-height:44px;font-size:13px;padding:0 12px;border:1px solid var(--line);border-radius:6px;text-decoration:none;color:var(--muted)}
+  .quick a:hover{color:var(--text);border-color:var(--accent)}
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+  code{background:var(--surface-2);padding:2px 6px;border-radius:5px;font-size:13px}
+  .verdict{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px}
+  .verdict p{margin:0 0 10px}
+  .verdict p:last-child{margin:0}
+  .round{display:inline-block;font-size:12px;padding:3px 10px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted);margin-bottom:8px}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<header>
+  <h1>Sáu hướng thiết kế — cùng một bộ 4 màn hình</h1>
+  <p class="lede">Hai vòng lab trên cùng một <code>CONTENT-SPEC.md</code> đóng băng (5 phim, 4 chi nhánh, giá ghế,
+  sơ đồ 8×12, 4 màn, 3 bề rộng). Vòng 1 đổi <em>cách trình bày</em>. Vòng 2 đổi <em>thứ tự quyết định</em>:
+  đi rạp nào (D) · vào lúc nào (E) · ngồi ở đâu (F).</p>
+  <p class="meta">Base <code>dev @ 1c95a08</code> · 2026-10-22 · 11 hướng (A–K) · đặc tả: <code>CONTENT-SPEC.md</code></p>
+  <nav class="quick" aria-label="Mở nhanh">
+    <a href="#vong1">Vòng 1 · A/B/C</a>
+    <a href="#vong2">Vòng 2 · D/E/F</a>
+    <a href="#vong3">Vòng 3 · G–K</a>
+    <a href="#so-sanh">Bảng so sánh</a>
+    <a href="#do-duoc">Đo được gì</a>
+    <a href="#hoi-tu">Hội tụ</a>
+    <a href="d-address/index.html">D · Tổng quan</a>
+    <a href="e-evening/index.html">E · Tổng quan</a>
+    <a href="f-plan/index.html">F · Tổng quan</a>
+  </nav>
+</header>
+
+<h2>Vấn đề UI/UX đang có</h2>
+<p class="sub">Tóm tắt audit mã nguồn hiện tại — mỗi hướng nhắm xử lý một phần của danh sách này.</p>
+<ul class="problems">
+  <li><strong>Không có font token, không có type scale</strong> — <code>site.css</code> không khai báo <code>font-family</code>; cỡ chữ hardcode rải rác ~40 chỗ.</li>
+  <li><strong>Ghế chỉ phân biệt bằng màu</strong> — “người khác giữ” <code>#8a5a12</code> và “đã đặt” <code>#3a2227</code> quá gần nhau (WCAG 1.4.1).</li>
+  <li><strong>Touch target ghế 2.1rem ≈ 34px</strong> — dưới ngưỡng 44px, dễ bấm nhầm trên điện thoại.</li>
+  <li><strong>Chọn suất thiếu số ghế còn trống</strong> — phải vào sâu mới biết còn chỗ hay không.</li>
+  <li><strong>Card phim quá cơ bản</strong> — thiếu thời lượng, giá từ, trạng thái chiếu.</li>
+  <li><strong>Bộ lọc ngày/thành phố/chi nhánh là link rời</strong> — không thấy mình đang lọc gì.</li>
+  <li><strong>Thời lượng không xuất hiện ở chỗ quyết định</strong> — chọn 19:15 mà không biết mấy giờ tan.</li>
+  <li><strong>Đồng hồ giữ ghế bị ẩn</strong> cho tới khi chọn ghế — áp lực thời gian hiện sai lúc.</li>
+</ul>
+
+<h2 id="vong1">Vòng 1 — ba hướng theo cách trình bày</h2>
+<p class="sub">Khung xem bên dưới render trang chủ ở khổ 1440px, thu nhỏ 28% để so cùng lúc. Đã chọn <strong>B</strong> làm nền.</p>
+
+<div class="grid3">
+
+  <section class="card">
+    <div class="frame" style="height:calc(900px * .28)">
+      <iframe src="a-marquee/home.html" width="1440" height="900" style="transform:scale(.28)" title="Hướng A — Marquee"></iframe>
+      <span class="label">1440px</span>
+    </div>
+    <div class="pad">
+      <p class="kicker">Hướng A</p>
+      <h3>Marquee</h3>
+      <div class="swatches">
+        <span class="sw" style="background:#0B0E13"></span><span class="sw" style="background:#151A22"></span>
+        <span class="sw" style="background:#E3B23C"></span><span class="sw" style="background:#F4EFE6"></span>
+        <span class="sw" style="background:#C0392B"></span>
+      </div>
+      <p class="idea">Rạp phim cổ điển: nền mực, đèn rìn vàng, chữ biển hiệu. Suất chiếu là <strong>vé xé có đường rách</strong>.</p>
+      <p class="kicker">Chữ: Bungee + Be Vietnam Pro</p>
+      <div class="row">
+        <a class="btn" href="a-marquee/index.html">Tổng quan</a>
+        <a class="btn" href="a-marquee/home.html">Trang chủ</a>
+        <a class="btn" href="a-marquee/movie.html">Chi tiết phim</a>
+        <a class="btn" href="a-marquee/seatmap.html">Chọn ghế</a>
+        <a class="btn" href="a-marquee/checkout.html">Thanh toán</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="frame" style="height:calc(900px * .28)">
+      <iframe src="b-signal/home.html" width="1440" height="900" style="transform:scale(.28)" title="Hướng B — Signal"></iframe>
+      <span class="label">1440px</span>
+    </div>
+    <div class="pad">
+      <p class="kicker">Hướng B · đang là nền của vòng 1</p>
+      <h3>Signal</h3>
+      <div class="swatches">
+        <span class="sw" style="background:#0D0F14"></span><span class="sw" style="background:#161A22"></span>
+        <span class="sw" style="background:#3B6BFF"></span><span class="sw" style="background:#FFB020"></span>
+        <span class="sw" style="background:#2DD4A7"></span>
+      </div>
+      <p class="idea">Sản phẩm số tốc độ cao. <strong>“Còn bao nhiêu chỗ” là thứ được nhấn mạnh nhất</strong>: thanh sức chứa, nhịp ghế theo hàng, thanh hành động dính đáy.</p>
+      <p class="kicker">Chữ: Chivo + Manrope</p>
+      <div class="row">
+        <a class="btn" href="b-signal/index.html">Tổng quan</a>
+        <a class="btn" href="b-signal/home.html">Trang chủ</a>
+        <a class="btn" href="b-signal/movie.html">Chi tiết phim</a>
+        <a class="btn" href="b-signal/seatmap.html">Chọn ghế</a>
+        <a class="btn" href="b-signal/checkout.html">Thanh toán</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="frame" style="height:calc(900px * .28)">
+      <iframe src="c-schedule/home.html" width="1440" height="900" style="transform:scale(.28)" title="Hướng C — Bảng lịch"></iframe>
+      <span class="label">1440px</span>
+    </div>
+    <div class="pad">
+      <p class="kicker">Hướng C</p>
+      <h3>Bảng lịch</h3>
+      <div class="swatches">
+        <span class="sw" style="background:#F7F7F5"></span><span class="sw" style="background:#101418"></span>
+        <span class="sw" style="background:#1F3F8F"></span><span class="sw" style="background:#A15C00"></span>
+        <span class="sw" style="background:#1F6B4A"></span>
+      </div>
+      <p class="idea">Sáng, thông tin là chính. Chọn suất là <strong>bảng lịch</strong> giống bảng lịch nhà ga: giờ lớn bên trái, kẻ hairline, số ghế còn trống hiện ngay.</p>
+      <p class="kicker">Chữ: Playfair Display + IBM Plex Sans</p>
+      <div class="row">
+        <a class="btn" href="c-schedule/index.html">Tổng quan</a>
+        <a class="btn" href="c-schedule/home.html">Trang chủ</a>
+        <a class="btn" href="c-schedule/movie.html">Chi tiết phim</a>
+        <a class="btn" href="c-schedule/seatmap.html">Chọn ghế</a>
+        <a class="btn" href="c-schedule/checkout.html">Thanh toán</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<h2 id="vong2">Vòng 2 — ba hướng theo thứ tự quyết định</h2>
+<p class="sub">Cùng dữ liệu, cùng 4 màn, cùng 3 bề rộng. Khác ở chỗ: hướng nào bắt người dùng quyết định <em>trước</em>.</p>
+
+<div class="grid3">
+
+  <section class="card">
+    <div class="frame" style="height:calc(900px * .28)">
+      <iframe src="d-address/home.html" width="1440" height="900" style="transform:scale(.28)" title="Hướng D — Địa chỉ"></iframe>
+      <span class="label">1440px</span>
+    </div>
+    <div class="pad">
+      <p class="kicker">Hướng D · vòng 2</p>
+      <h3>Địa chỉ</h3>
+      <div class="swatches">
+        <span class="sw" style="background:#F3EDE3"></span><span class="sw" style="background:#FFFCF6"></span>
+        <span class="sw" style="background:#1B1A15"></span><span class="sw" style="background:#1F5B4A"></span>
+        <span class="sw" style="background:#8C2F2F"></span>
+      </div>
+      <p class="idea"><strong>Chọn rạp trước, phim sau.</strong> Bốn “cửa” chi nhánh thật mở đầu trang chủ; chọn cửa nào thì
+      phim, giá, suất lọc theo cửa đó — và lựa chọn đi theo người dùng sang cả 4 màn.</p>
+      <p class="kicker">Chữ: Archivo + Public Sans · Giải: K1, K3</p>
+      <div class="row">
+        <a class="btn" href="d-address/index.html">Tổng quan</a>
+        <a class="btn" href="d-address/home.html">Trang chủ</a>
+        <a class="btn" href="d-address/movie.html">Chi tiết phim</a>
+        <a class="btn" href="d-address/seatmap.html">Chọn ghế</a>
+        <a class="btn" href="d-address/checkout.html">Thanh toán</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="frame" style="height:calc(900px * .28)">
+      <iframe src="e-evening/home.html" width="1440" height="900" style="transform:scale(.28)" title="Hướng E — Buổi tối"></iframe>
+      <span class="label">1440px</span>
+    </div>
+    <div class="pad">
+      <p class="kicker">Hướng E · vòng 2</p>
+      <h3>Buổi tối</h3>
+      <div class="swatches">
+        <span class="sw" style="background:#171316"></span><span class="sw" style="background:#221C21"></span>
+        <span class="sw" style="background:#F4EBE4"></span><span class="sw" style="background:#D2603E"></span>
+      </div>
+      <p class="idea"><strong>Suất chiếu là một khối thời gian có độ dài.</strong> Trục 17:00 → 01:30, khối dài đúng bằng phút
+      của phim, ghi “vào 19:15 · ra 22:01”; chọn giờ là chọn cả buổi tối.</p>
+      <p class="kicker">Chữ: Newsreader + Work Sans · Giải: K2, K6, V4</p>
+      <div class="row">
+        <a class="btn" href="e-evening/index.html">Tổng quan</a>
+        <a class="btn" href="e-evening/home.html">Trang chủ</a>
+        <a class="btn" href="e-evening/movie.html">Chi tiết phim</a>
+        <a class="btn" href="e-evening/seatmap.html">Chọn ghế</a>
+        <a class="btn" href="e-evening/checkout.html">Thanh toán</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="frame" style="height:calc(900px * .28)">
+      <iframe src="f-plan/home.html" width="1440" height="900" style="transform:scale(.28)" title="Hướng F — Sơ đồ"></iframe>
+      <span class="label">1440px</span>
+    </div>
+    <div class="pad">
+      <p class="kicker">Hướng F · vòng 2</p>
+      <h3>Sơ đồ</h3>
+      <div class="swatches">
+        <span class="sw" style="background:#F2F4F3"></span><span class="sw" style="background:#FFFFFF"></span>
+        <span class="sw" style="background:#101417"></span><span class="sw" style="background:#D0202F"></span>
+      </div>
+      <p class="idea"><strong>Bán vị trí, không bán con số.</strong> Sơ đồ ghế là bản vẽ kỹ thuật có đường kích thước
+      8 hàng × 12 cột; “còn 12 ghế” được vẽ thành vạch chia độ thay vì một con số.</p>
+      <p class="kicker">Chữ: Inter + Space Mono · Giải: K2, K4, K5</p>
+      <div class="row">
+        <a class="btn" href="f-plan/index.html">Tổng quan</a>
+        <a class="btn" href="f-plan/home.html">Trang chủ</a>
+        <a class="btn" href="f-plan/movie.html">Chi tiết phim</a>
+        <a class="btn" href="f-plan/seatmap.html">Chọn ghế</a>
+        <a class="btn" href="f-plan/checkout.html">Thanh toán</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<h2 id="vong3">Vòng 3 — năm hướng mới (không dựa trên UI hiện tại)</h2>
+<p class="sub">Năm bản thiết kế thêm, cùng bộ 4 màn hình và CONTENT-SPEC. Mỗi hướng một bản sắc riêng.</p>
+
+<div class="grid3">
+
+  <section class="card">
+    <div class="pad">
+      <p class="kicker">Hướng G · vòng 3</p>
+      <h3>Biên nhận</h3>
+      <div class="swatches">
+        <span class="sw" style="background:#f5f0e6"></span><span class="sw" style="background:#fffdf7"></span>
+        <span class="sw" style="background:#1a1a1a"></span><span class="sw" style="background:#b91c1c"></span>
+      </div>
+      <p class="idea">Giấy nhiệt, toàn bộ monospace, đường phân cách chấm chấm, bo góc 0. Cảm giác biên lai in từ máy.</p>
+      <p class="kicker">Chữ: IBM Plex Mono</p>
+      <div class="row">
+        <a class="btn" href="g-receipt/index.html">Tổng quan</a>
+        <a class="btn" href="g-receipt/home.html">Trang chủ</a>
+        <a class="btn" href="g-receipt/movie.html">Chi tiết phim</a>
+        <a class="btn" href="g-receipt/seatmap.html">Chọn ghế</a>
+        <a class="btn" href="g-receipt/checkout.html">Thanh toán</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="pad">
+      <p class="kicker">Hướng H · vòng 3</p>
+      <h3>Đèn neon</h3>
+      <div class="swatches">
+        <span class="sw" style="background:#0a0a14"></span><span class="sw" style="background:#12121f"></span>
+        <span class="sw" style="background:#ff2d95"></span>
+      </div>
+      <p class="idea">Nền tối, hồng neon, chữ Rajdhani/Orbitron, đổ bóng phát sáng. Rạp đêm thành phố.</p>
+      <p class="kicker">Chữ: Rajdhani + Orbitron</p>
+      <div class="row">
+        <a class="btn" href="h-neon/index.html">Tổng quan</a>
+        <a class="btn" href="h-neon/home.html">Trang chủ</a>
+        <a class="btn" href="h-neon/movie.html">Chi tiết phim</a>
+        <a class="btn" href="h-neon/seatmap.html">Chọn ghế</a>
+        <a class="btn" href="h-neon/checkout.html">Thanh toán</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="pad">
+      <p class="kicker">Hướng I · vòng 3</p>
+      <h3>Tạp chí</h3>
+      <div class="swatches">
+        <span class="sw" style="background:#faf6f0"></span><span class="sw" style="background:#ffffff"></span>
+        <span class="sw" style="background:#1c1a16"></span><span class="sw" style="background:#8b1a1a"></span>
+      </div>
+      <p class="idea">Editorial: serif lớn, giấy ấm, khoảng trắng rộng, burgundy làm nhấn. Như trang tạp chí.</p>
+      <p class="kicker">Chữ: Cormorant Garamond</p>
+      <div class="row">
+        <a class="btn" href="i-magazine/index.html">Tổng quan</a>
+        <a class="btn" href="i-magazine/home.html">Trang chủ</a>
+        <a class="btn" href="i-magazine/movie.html">Chi tiết phim</a>
+        <a class="btn" href="i-magazine/seatmap.html">Chọn ghế</a>
+        <a class="btn" href="i-magazine/checkout.html">Thanh toán</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="pad">
+      <p class="kicker">Hướng J · vòng 3</p>
+      <h3>Bê tông</h3>
+      <div class="swatches">
+        <span class="sw" style="background:#ffffff"></span><span class="sw" style="background:#f2f2f2"></span>
+        <span class="sw" style="background:#000000"></span><span class="sw" style="background:#ffcc00"></span>
+      </div>
+      <p class="idea">Brutalist: đen trắng thuần, viền dày 2–4px, bo góc 0, chữ Helvetica, vàng làm duy nhất nhấn.</p>
+      <p class="kicker">Chữ: Helvetica Neue</p>
+      <div class="row">
+        <a class="btn" href="j-concrete/index.html">Tổng quan</a>
+        <a class="btn" href="j-concrete/home.html">Trang chủ</a>
+        <a class="btn" href="j-concrete/movie.html">Chi tiết phim</a>
+        <a class="btn" href="j-concrete/seatmap.html">Chọn ghế</a>
+        <a class="btn" href="j-concrete/checkout.html">Thanh toán</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="pad">
+      <p class="kicker">Hướng K · vòng 3</p>
+      <h3>Bong bóng</h3>
+      <div class="swatches">
+        <span class="sw" style="background:#f4f0fa"></span><span class="sw" style="background:#ffffff"></span>
+        <span class="sw" style="background:#2b2340"></span><span class="sw" style="background:#e879a9"></span>
+      </div>
+      <p class="idea">Pastel mềm, bo góc lớn, hồng accent, chữ Nunito tròn. Thân thiện, dễ tiếp cận.</p>
+      <p class="kicker">Chữ: Nunito</p>
+      <div class="row">
+        <a class="btn" href="k-bubble/index.html">Tổng quan</a>
+        <a class="btn" href="k-bubble/home.html">Trang chủ</a>
+        <a class="btn" href="k-bubble/movie.html">Chi tiết phim</a>
+        <a class="btn" href="k-bubble/seatmap.html">Chọn ghế</a>
+        <a class="btn" href="k-bubble/checkout.html">Thanh toán</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<h2 id="ban-do">Bản đồ màn hình</h2>
+<p class="sub">Toàn bộ trang của cả 11 hướng (A–K), theo đúng đường dẫn tệp. Mở trực tiếp bằng trình duyệt — không cần build.</p>
+<div class="map">
+
+  <section class="map__col">
+    <p class="kicker">Hướng A — Marquee</p>
+    <h3><code>a-marquee/</code></h3>
+    <ul class="map__list">
+      <li><a href="a-marquee/index.html">Tổng quan hướng thiết kế <span class="arrow">›</span> <code>index.html</code></a></li>
+      <li><a href="a-marquee/home.html">Trang chủ — lưới phim đang chiếu <span class="arrow">›</span> <code>home.html</code></a></li>
+      <li><a href="a-marquee/movie.html">Chi tiết phim + chọn suất <span class="arrow">›</span> <code>movie.html</code></a></li>
+      <li><a href="a-marquee/seatmap.html">Chọn ghế — sơ đồ 8×12 <span class="arrow">›</span> <code>seatmap.html</code></a></li>
+      <li><a href="a-marquee/checkout.html">Thanh toán — biểu mẫu + tóm tắt <span class="arrow">›</span> <code>checkout.html</code></a></li>
+      <li><a href="a-marquee/tokens.css">Hệ thiết kế: màu, chữ, khoảng cách <span class="arrow">›</span> <code>tokens.css</code></a></li>
+      <li><a href="a-marquee/screens.css">Bố cục + thành phần <span class="arrow">›</span> <code>screens.css</code></a></li>
+      <li><a href="a-marquee/app.js">Chọn ghế, đồng hồ 5 phút, tổng tiền <span class="arrow">›</span> <code>app.js</code></a></li>
+    </ul>
+  </section>
+
+  <section class="map__col">
+    <p class="kicker">Hướng B — Signal</p>
+    <h3><code>b-signal/</code></h3>
+    <ul class="map__list">
+      <li><a href="b-signal/index.html">Tổng quan hướng thiết kế <span class="arrow">›</span> <code>index.html</code></a></li>
+      <li><a href="b-signal/home.html">Trang chủ — băng phim ngang + lưới <span class="arrow">›</span> <code>home.html</code></a></li>
+      <li><a href="b-signal/movie.html">Chi tiết phim + bảng suất <span class="arrow">›</span> <code>movie.html</code></a></li>
+      <li><a href="b-signal/seatmap.html">Chọn ghế — seat pulse, thanh dính đáy <span class="arrow">›</span> <code>seatmap.html</code></a></li>
+      <li><a href="b-signal/checkout.html">Thanh toán — 2 cột, tóm tắt dính <span class="arrow">›</span> <code>checkout.html</code></a></li>
+      <li><a href="b-signal/tokens.css">Hệ thiết kế: màu, chữ, khoảng cách <span class="arrow">›</span> <code>tokens.css</code></a></li>
+      <li><a href="b-signal/screens.css">Bố cục + thành phần <span class="arrow">›</span> <code>screens.css</code></a></li>
+      <li><a href="b-signal/app.js">Chọn ghế, đồng hồ 5 phút, tổng tiền <span class="arrow">›</span> <code>app.js</code></a></li>
+    </ul>
+  </section>
+
+  <section class="map__col">
+    <p class="kicker">Hướng C — Bảng lịch</p>
+    <h3><code>c-schedule/</code></h3>
+    <ul class="map__list">
+      <li><a href="c-schedule/index.html">Tổng quan hướng thiết kế <span class="arrow">›</span> <code>index.html</code></a></li>
+      <li><a href="c-schedule/home.html">Trang chủ — lục phim đánh số <span class="arrow">›</span> <code>home.html</code></a></li>
+      <li><a href="c-schedule/movie.html">Chi tiết phim + bảng lịch suất <span class="arrow">›</span> <code>movie.html</code></a></li>
+      <li><a href="c-schedule/seatmap.html">Chọn ghế — lưới kẻ hairline <span class="arrow">›</span> <code>seatmap.html</code></a></li>
+      <li><a href="c-schedule/checkout.html">Thanh toán — biểu mẫu cổ điển <span class="arrow">›</span> <code>checkout.html</code></a></li>
+      <li><a href="c-schedule/tokens.css">Hệ thiết kế: màu, chữ, khoảng cách <span class="arrow">›</span> <code>tokens.css</code></a></li>
+      <li><a href="c-schedule/screens.css">Bố cục + thành phần <span class="arrow">›</span> <code>screens.css</code></a></li>
+      <li><a href="c-schedule/app.js">Chọn ghế, đồng hồ 5 phút, tổng tiền <span class="arrow">›</span> <code>app.js</code></a></li>
+    </ul>
+  </section>
+
+  <section class="map__col">
+    <p class="kicker">Hướng D — Địa chỉ</p>
+    <h3><code>d-address/</code></h3>
+    <ul class="map__list">
+      <li><a href="d-address/index.html">Tổng quan hướng thiết kế <span class="arrow">›</span> <code>index.html</code></a></li>
+      <li><a href="d-address/home.html">Trang chủ — bảng cửa rạp <span class="arrow">›</span> <code>home.html</code></a></li>
+      <li><a href="d-address/movie.html">Chi tiết phim — cửa theo chiều dọc <span class="arrow">›</span> <code>movie.html</code></a></li>
+      <li><a href="d-address/seatmap.html">Chọn ghế — 4 trạng thái khác hình <span class="arrow">›</span> <code>seatmap.html</code></a></li>
+      <li><a href="d-address/checkout.html">Thanh toán — địa chỉ lên trước <span class="arrow">›</span> <code>checkout.html</code></a></li>
+      <li><a href="d-address/tokens.css">Hệ thiết kế: màu, chữ, khoảng cách <span class="arrow">›</span> <code>tokens.css</code></a></li>
+      <li><a href="d-address/screens.css">Bố cục + thành phần <span class="arrow">›</span> <code>screens.css</code></a></li>
+      <li><a href="d-address/app.js">Trạng thái cửa rạp, chọn ghế, đồng hồ <span class="arrow">›</span> <code>app.js</code></a></li>
+    </ul>
+  </section>
+
+  <section class="map__col">
+    <p class="kicker">Hướng E — Buổi tối</p>
+    <h3><code>e-evening/</code></h3>
+    <ul class="map__list">
+      <li><a href="e-evening/index.html">Tổng quan hướng thiết kế <span class="arrow">›</span> <code>index.html</code></a></li>
+      <li><a href="e-evening/home.html">Trang chủ — “Tối nay” rút gọn <span class="arrow">›</span> <code>home.html</code></a></li>
+      <li><a href="e-evening/movie.html">Chi tiết phim — trục buổi tối <span class="arrow">›</span> <code>movie.html</code></a></li>
+      <li><a href="e-evening/seatmap.html">Chọn ghế — đồng hồ là chữ lớn <span class="arrow">›</span> <code>seatmap.html</code></a></li>
+      <li><a href="e-evening/checkout.html">Thanh toán — dải thời gian trong đơn <span class="arrow">›</span> <code>checkout.html</code></a></li>
+      <li><a href="e-evening/tokens.css">Hệ thiết kế: màu, chữ, khoảng cách <span class="arrow">›</span> <code>tokens.css</code></a></li>
+      <li><a href="e-evening/screens.css">Bố cục + thành phần <span class="arrow">›</span> <code>screens.css</code></a></li>
+      <li><a href="e-evening/app.js">Trục thời gian, chọn ghế, đồng hồ <span class="arrow">›</span> <code>app.js</code></a></li>
+    </ul>
+  </section>
+
+  <section class="map__col">
+    <p class="kicker">Hướng F — Sơ đồ</p>
+    <h3><code>f-plan/</code></h3>
+    <ul class="map__list">
+      <li><a href="f-plan/index.html">Tổng quan hướng thiết kế <span class="arrow">›</span> <code>index.html</code></a></li>
+      <li><a href="f-plan/home.html">Trang chủ — vạch chia độ còn trống <span class="arrow">›</span> <code>home.html</code></a></li>
+      <li><a href="f-plan/movie.html">Chi tiết phim — suất + vạch ghế <span class="arrow">›</span> <code>movie.html</code></a></li>
+      <li><a href="f-plan/seatmap.html">Chọn ghế — bản vẽ có kích thước <span class="arrow">›</span> <code>seatmap.html</code></a></li>
+      <li><a href="f-plan/checkout.html">Thanh toán — phiếu kẻ dòng <span class="arrow">›</span> <code>checkout.html</code></a></li>
+      <li><a href="f-plan/tokens.css">Hệ thiết kế: màu, chữ, khoảng cách <span class="arrow">›</span> <code>tokens.css</code></a></li>
+      <li><a href="f-plan/screens.css">Bố cục + thành phần <span class="arrow">›</span> <code>screens.css</code></a></li>
+      <li><a href="f-plan/app.js">Vạch chia độ, chọn ghế, đồng hồ <span class="arrow">›</span> <code>app.js</code></a></li>
+    </ul>
+  </section>
+
+  <section class="map__col">
+    <p class="kicker">Vòng 3 — G–K</p>
+    <h3><code>g-receipt/ … k-bubble/</code></h3>
+    <ul class="map__list">
+      <li><a href="g-receipt/index.html">G Biên nhận — tổng quan <span class="arrow">›</span></a></li>
+      <li><a href="h-neon/index.html">H Đèn neon — tổng quan <span class="arrow">›</span></a></li>
+      <li><a href="i-magazine/index.html">I Tạp chí — tổng quan <span class="arrow">›</span></a></li>
+      <li><a href="j-concrete/index.html">J Bê tông — tổng quan <span class="arrow">›</span></a></li>
+      <li><a href="k-bubble/index.html">K Bong bóng — tổng quan <span class="arrow">›</span></a></li>
+      <li><a href="g-receipt/home.html">G home <span class="arrow">›</span> <code>home.html</code></a> · <a href="h-neon/home.html">H</a> · <a href="i-magazine/home.html">I</a> · <a href="j-concrete/home.html">J</a> · <a href="k-bubble/home.html">K</a></li>
+      <li><a href="g-receipt/seatmap.html">G seatmap <span class="arrow">›</span></a> · <a href="h-neon/seatmap.html">H</a> · <a href="i-magazine/seatmap.html">I</a> · <a href="j-concrete/seatmap.html">J</a> · <a href="k-bubble/seatmap.html">K</a></li>
+      <li><a href="g-receipt/checkout.html">G checkout <span class="arrow">›</span></a> · <a href="h-neon/checkout.html">H</a> · <a href="i-magazine/checkout.html">I</a> · <a href="j-concrete/checkout.html">J</a> · <a href="k-bubble/checkout.html">K</a></li>
+    </ul>
+  </section>
+
+</div>
+
+<h2 id="so-sanh">So sánh</h2>
+<p class="sub">Cùng nội dung, khác hệ màu / kiểu chữ / bố cục / <strong>một quyết định gốc domain</strong>.</p>
+<div class="tblwrap tblwrap--wide">
+<table>
+  <thead><tr><th>Tiêu chí</th><th>A — Marquee</th><th>B — Signal</th><th>C — Bảng lịch</th><th>D — Địa chỉ</th><th>E — Buổi tối</th><th>F — Sơ đồ</th></tr></thead>
+  <tbody>
+    <tr><td>Bắt đầu bằng</td><td>cảm giác “đi rạp”</td><td>mật độ còn trống</td><td>thông tin lịch</td><td><strong>rạp nào</strong></td><td><strong>giờ nào</strong></td><td><strong>chỗ nào</strong></td></tr>
+    <tr><td>Nền</td><td>Mực <code>#0B0E13</code></td><td>Than <code>#0D0F14</code></td><td>Giấy lạnh <code>#F7F7F5</code></td><td>Giấy ấm <code>#F3EDE3</code></td><td>Than mận <code>#171316</code></td><td>Sứ lạnh <code>#F2F4F3</code></td></tr>
+    <tr><td>Nhấn</td><td>Vàng marquee <code>#E3B23C</code></td><td>Xanh điện <code>#3B6BFF</code></td><td>Cobalt <code>#1F3F8F</code></td><td>Xanh rêu <code>#1F5B4A</code></td><td>Đỏ gạch <code>#D2603E</code></td><td>Đỏ ghế <code>#D0202F</code></td></tr>
+    <tr><td>Chữ tiêu đề</td><td>Bungee</td><td>Chivo</td><td>Playfair Display</td><td>Archivo</td><td>Newsreader</td><td>Inter</td></tr>
+    <tr><td>Chữ nội dung</td><td>Be Vietnam Pro</td><td>Manrope</td><td>IBM Plex Sans</td><td>Public Sans</td><td>Work Sans</td><td>Inter + Space Mono</td></tr>
+    <tr><td>Quyết định đặc trưng</td><td>Suất chiếu là vé xé rách</td><td>“Còn bao nhiêu chỗ” là thứ to nhất</td><td>Bảng lịch chọn suất</td><td>Rạp là cửa, chọn cửa trước</td><td>Suất là khối thời gian có độ dài</td><td>Ghế là vị trí trên bản vẽ</td></tr>
+    <tr><td>Giải vấn đề audit</td><td>K1 một phần</td><td>K2 (bằng con số)</td><td>K2, K3</td><td>K1, K3</td><td>K2, K6, V4</td><td>K2, K4, K5</td></tr>
+    <tr><td>Rủi ro</td><td>Vàng + serif dễ thành “rạp hài” nếu dùng quá tay</td><td>Con số không nói được chỗ nào; card dễ vỡ chữ</td><td>Sáng + kẻ mảnh dễ cứng, thiếu cảm giác “rạp”</td><td>“Bảng cửa” dễ bị đọc thành thanh lọc chi nhánh</td><td>Trang rất dài ở 375; 14 bước khoảng cách</td><td>Dễ thành “bản vẽ cho vui” nếu kích thước không mang thông tin</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="hint">Bảng rộng hơn 1440px một chút — kéo ngang trong khung. Trên điện thoại nên mở từng hướng.</p>
+
+<h2 id="do-duoc">Đo được gì</h2>
+<p class="sub">Ba scanner sẵn có của <code>frontend-craft</code> — <code>a11y-scan</code> (axe-core + focus),
+<code>craft-probe</code> (cỡ chữ, bước khoảng cách, vùng chạm, hàng lệch), <code>responsive-shots</code>
+(tràn ngang, khối bị bóp, console, ảnh 375/768/1440). Không viết harness mới.</p>
+<div class="tblwrap tblwrap--measure">
+<table>
+  <thead><tr><th>Kiểm tra</th><th>Vòng 1 (A/B/C)</th><th>Vòng 2 (D/E/F)</th></tr></thead>
+  <tbody>
+    <tr><td>Tràn ngang 375 / 768 / 1440</td><td>0 / 36</td><td><strong>0 / 36</strong> — sơ đồ ghế cuộn trong khung riêng</td></tr>
+    <tr><td>Lỗi console</td><td>0 / 36</td><td><strong>0 / 36</strong></td></tr>
+    <tr><td>Khối bị bóp (squeeze)</td><td>0 / 36</td><td><strong>0 / 36</strong></td></tr>
+    <tr><td>axe-core: trang có vi phạm</td><td><strong>6 / 12</strong> — <code>link-name</code>, <code>dlitem</code>, <code>color-contrast</code>, <code>heading-order</code></td><td><strong>0 / 12</strong></td></tr>
+    <tr><td>Control thiếu focus indicator</td><td>8 lượt trên 5 trang (B: 2–4 mỗi trang)</td><td><strong>0</strong></td></tr>
+    <tr><td>Vùng chạm &lt; 44px (craft-probe)</td><td>11 control (B 1–4/trang, C checkout 5)</td><td><strong>0</strong></td></tr>
+    <tr><td>Ghế (đo hộp thật)</td><td>—</td><td>≥ 44×44 (F: 46×46 trên cả 96 ghế)</td></tr>
+    <tr><td>Bộ dấu tiếng Việt</td><td>đã kiểm <code>unicode-range</code> (Bodoni Moda trượt)</td><td>đã kiểm cho cả 6 font mới; ảnh render đọc được <code>ệ ữ ỡ ằ ẩ</code></td></tr>
+  </tbody>
+</table>
+</div>
+<p class="sub"><strong>Cách đo lại:</strong></p>
+<pre style="overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;font-size:13px;line-height:1.7"><code>cd D:\Edu\Project\frontend-craft
+node scripts/a11y-scan.mjs    &lt;12 URL .html&gt; --json
+node scripts/craft-probe.mjs  &lt;12 URL .html&gt; --json
+node scripts/responsive-shots.mjs &lt;12 URL .html&gt; --out %TEMP%\shots --widths 375,768,1440 --light-only</code></pre>
+<p class="sub">Đợt này relay ảnh đã hoạt động, nên khác vòng 1: <strong>đã mở PNG ra nhìn</strong> (không chỉ đọc số) —
+12 ảnh ở 1440 và một số ảnh 375/768 cho từng hướng, và cả ba hướng đều sửa lỗi thị giác tìm được bằng mắt
+(chữ vỡ trong thẻ, thanh dính che lưới, khối “hết chỗ” bị gạch giờ, ghế thứ 7 rơi vào lối đi, poster vỡ trong ô 44px).</p>
+
+<h2 id="hoi-tu">Hội tụ</h2>
+<div class="verdict">
+  <p><span class="round">S8</span> <strong>Nền: F — Sơ đồ.</strong> Nó là hướng duy nhất trả lời K2 bằng
+  <em>vị trí</em> thay vì thêm một con số (đúng chỗ B hụt — V2), và giải trọn K4/K5 ở tầng cấu trúc:
+  4 trạng thái khác nhau về hình, ghế 46×46 đo được, 0 vi phạm axe, 0 vùng chạm nhỏ. Về mặt triển khai,
+  hệ của nó rẻ nhất để đưa vào Razor: một màu nhấn, hai cỡ kẻ, không ảnh, không đổ bóng.</p>
+  <p><strong>Mượn từ D:</strong> “Đang ở cửa nào” — địa chỉ chi nhánh là một dòng cố định trên mọi màn
+  và là dòng đầu tiên của tóm tắt đơn ở checkout. Nó thay dòng meta mờ “CineSmart Nguyễn Huệ · Phòng 1”
+  của F bằng thứ người dùng thật sự cần lúc ra khỏi nhà.</p>
+  <p><strong>Mượn từ E:</strong> cặp “vào 19:15 → ra 22:01” trên từng suất. Rẻ (một dòng chữ, không cần trục),
+  và nó vá đúng V4 — F hiện chỉ có giờ bắt đầu.</p>
+  <p><strong>Bỏ:</strong> trục buổi tối đầy đủ của E (ở 375 trang dài 9.338px và cần 14 bước khoảng cách;
+  một bảng giờ đã làm được việc đó rẻ hơn), và bảng cửa 4 ô chiếm trọn màn đầu của D (nó biến trang chủ
+  thành màn chọn rạp, trong khi sản phẩm bán phim).</p>
+  <p><strong>Còn phải do người dùng quyết:</strong> tiêu chí (a) của lab — có ít nhất một hướng mới được
+  xếp trên B hay không. Mở hub này, xem 3 khung 1440 ở mục “Vòng 2”, rồi nói hướng nào đứng trên B.</p>
+</div>
+
+<h2>Tài liệu</h2>
+<div class="tblwrap tblwrap--docs">
+<table>
+  <thead><tr><th>Tệp</th><th>Nội dung</th></tr></thead>
+  <tbody>
+    <tr><td><a href="research.md"><code>research.md</code></a></td><td>Audit UI/UX hiện trạng (có <code>path:line</code>), pattern ngành, 3 hướng vòng 1</td></tr>
+    <tr><td><a href="research-round2.md"><code>research-round2.md</code></a></td><td>Vòng 2: cái A/B/C để lại (V1–V5), pattern chưa dùng, 3 ứng viên D/E/F</td></tr>
+    <tr><td><a href="CONTENT-SPEC.md"><code>CONTENT-SPEC.md</code></a></td><td>Đặc tả nội dung dùng chung — <strong>đóng băng</strong>, không sửa giữa hai vòng</td></tr>
+    <tr><td><a href="README.md"><code>README.md</code></a></td><td>Hướng dẫn xem, bảng kết quả kiểm tra, giới hạn và mâu thuẫn trong spec</td></tr>
+  </tbody>
+</table>
+</div>
+
+<footer>
+  Mở <code>documentation/prototypes/index.html</code> bằng trình duyệt. Không cần build, không cần mạng
+  (font Google tải được thì dùng, không có thì rơi về font hệ thống).
+  <span class="tag">Chưa sửa gì trong src/</span> <span class="tag">Chỉ là prototype tĩnh</span>
+  <span class="tag">Dữ liệu lấy từ seed thật</span>
+</footer>
+
+</main>
+</body>
+</html>

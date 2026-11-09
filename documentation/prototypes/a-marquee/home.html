@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CineSmart — Trang chủ (Hướng A Marquee)</title>
+<meta name="description" content="Prototype giao diện hướng A — Marquee cho CinemaBooking.Smart: rạp phim cổ điển, mực sâu và vàng marquee.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&amp;family=Be+Vietnam+Pro:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="shell masthead__inner">
+    <a class="wordmark" href="home.html">CINE<b>SMART</b></a>
+    <nav class="masthead__nav" aria-label="Điều hướng chính">
+      <a href="home.html" aria-current="page">Trang chủ</a>
+      <a href="movie.html">Lịch chiếu</a>
+      <a href="seatmap.html">Chọn ghế</a>
+      <a href="checkout.html">Thanh toán</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ======================= PHIM CHỦ ĐẠO ======================= -->
+  <section class="shell hero" aria-labelledby="hero-title">
+    <a class="poster-link" href="movie.html" aria-label="Xem chi tiết phim Dune: Part Two">
+      <div class="poster poster--dune poster--hero">
+        <span class="poster__rule"></span>
+        <p class="poster__title">Dune: Part Two</p>
+        <div class="poster__foot">
+          <span class="poster__genre">Khoa học viễn tưởng</span>
+          <span>166 phút</span>
+        </div>
+      </div>
+    </a>
+
+    <div class="hero__copy">
+      <p class="hero__kicker">Phim dài nhất trong tuần này</p>
+      <h1 class="hero__title sign" id="hero-title">Dune: Part Two</h1>
+      <p class="lead">Paul Atreides liên minh với người Fremen để trả thù những kẻ đã hủy diệt gia tộc mình.</p>
+
+      <dl class="spec">
+        <div class="spec__item">
+          <dt class="spec__key">Thể loại</dt>
+          <dd class="spec__val">Khoa học viễn tưởng</dd>
+        </div>
+        <div class="spec__item">
+          <dt class="spec__key">Thời lượng</dt>
+          <dd class="spec__val">166 phút</dd>
+        </div>
+        <div class="spec__item">
+          <dt class="spec__key">Khởi chiếu</dt>
+          <dd class="spec__val">01/03/2024</dd>
+        </div>
+        <div class="spec__item">
+          <dt class="spec__key">Giá từ</dt>
+          <dd class="spec__val">80.000 ₫</dd>
+        </div>
+      </dl>
+
+      <div class="hero__cta">
+        <a class="btn btn--primary" href="movie.html">Chọn suất chiếu</a>
+        <a class="btn btn--ghost" href="checkout.html">Thanh toán (mẫu)</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= ĐÈN RÌN ======================= -->
+  <div class="shell" aria-hidden="true">
+    <div class="bulbs">
+      <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+      <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+      <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+      <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+      <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+    </div>
+  </div>
+
+  <!-- ======================= TÌM & LỌC ======================= -->
+  <section class="shell band--tight" aria-labelledby="loc-title">
+    <h2 class="tiny" id="loc-title" hidden>Tìm phim</h2>
+    <div class="toolbar">
+      <div class="toolbar__group">
+        <label class="toolbar__label" for="search-film">Tìm theo tên phim</label>
+        <input class="input" id="search-film" type="search" placeholder="Ví dụ: Dune, Mắt Biếc" autocomplete="off">
+      </div>
+      <div class="toolbar__group">
+        <span class="toolbar__label" id="genre-label">Thể loại</span>
+        <div class="chipset" role="group" aria-labelledby="genre-label">
+          <button class="chip" type="button" data-genre="all" aria-pressed="true">Tất cả</button>
+          <button class="chip" type="button" data-genre="Tình cảm" aria-pressed="false">Tình cảm</button>
+          <button class="chip" type="button" data-genre="Hài" aria-pressed="false">Hài</button>
+          <button class="chip" type="button" data-genre="Khoa học viễn tưởng" aria-pressed="false">Khoa học viễn tưởng</button>
+          <button class="chip" type="button" data-genre="Hoạt hình" aria-pressed="false">Hoạt hình</button>
+          <button class="chip" type="button" data-genre="Chiến tranh" aria-pressed="false">Chiến tranh</button>
+        </div>
+        <button class="btn btn--ghost btn--demo" type="button" id="reset-filters">Xóa bộ lọc</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= DANH SÁCH PHIM ======================= -->
+  <section class="shell band" aria-labelledby="films-title">
+    <div class="section-head">
+      <h2 class="h2" id="films-title">Phim đang chiếu</h2>
+      <p class="section-head__note" id="result-count">Hiển thị 5 phim</p>
+    </div>
+
+    <div class="film-band">
+
+      <article class="film-card film-card--wide" data-title="Dune: Part Two" data-genre="Khoa học viễn tưởng">
+        <a class="poster-link" href="movie.html" aria-label="Xem chi tiết Dune: Part Two">
+          <div class="poster poster--dune">
+            <span class="poster__rule"></span>
+            <p class="poster__title">Dune: Part Two</p>
+            <div class="poster__foot">
+              <span class="poster__genre">Khoa học viễn tưởng</span>
+              <span>166 phút</span>
+            </div>
+          </div>
+        </a>
+        <div class="film-card__body">
+          <h3 class="film-card__title"><a href="movie.html">Dune: Part Two</a></h3>
+          <div class="film-card__row">
+            <span class="badge badge--playing">Đang chiếu</span>
+            <span>Khoa học viễn tưởng</span>
+          </div>
+        </div>
+        <div class="film-card__foot">
+          <span class="film-card__price">Từ 80.000 ₫</span>
+          <a class="stub__link" href="movie.html">Chọn suất</a>
+        </div>
+      </article>
+
+      <article class="film-card film-card--mid" data-title="Mắt Biếc" data-genre="Tình cảm">
+        <a class="poster-link" href="movie.html" aria-label="Xem chi tiết Mắt Biếc">
+          <div class="poster poster--matbiec">
+            <span class="poster__rule"></span>
+            <p class="poster__title">Mắt Biếc</p>
+            <div class="poster__foot">
+              <span class="poster__genre">Tình cảm</span>
+              <span>117 phút</span>
+            </div>
+          </div>
+        </a>
+        <div class="film-card__body">
+          <h3 class="film-card__title"><a href="movie.html">Mắt Biếc</a></h3>
+          <div class="film-card__row">
+            <span class="badge badge--playing">Đang chiếu</span>
+            <span>Tình cảm</span>
+          </div>
+        </div>
+        <div class="film-card__foot">
+          <span class="film-card__price">Từ 80.000 ₫</span>
+          <a class="stub__link" href="movie.html">Chọn suất</a>
+        </div>
+      </article>
+
+      <article class="film-card film-card--narrow" data-title="Nhà Bà Nữ" data-genre="Hài">
+        <a class="poster-link" href="movie.html" aria-label="Xem chi tiết Nhà Bà Nữ">
+          <div class="poster poster--nhabanu">
+            <span class="poster__rule"></span>
+            <p class="poster__title">Nhà Bà Nữ</p>
+            <div class="poster__foot">
+              <span class="poster__genre">Hài</span>
+              <span>106 phút</span>
+            </div>
+          </div>
+        </a>
+        <div class="film-card__body">
+          <h3 class="film-card__title"><a href="movie.html">Nhà Bà Nữ</a></h3>
+          <div class="film-card__row">
+            <span class="badge badge--playing">Đang chiếu</span>
+            <span>Hài</span>
+          </div>
+        </div>
+        <div class="film-card__foot">
+          <span class="film-card__price">Từ 80.000 ₫</span>
+          <a class="stub__link" href="movie.html">Chọn suất</a>
+        </div>
+      </article>
+
+      <article class="film-card film-card--narrow" data-title="Inside Out 2" data-genre="Hoạt hình">
+        <a class="poster-link" href="movie.html" aria-label="Xem chi tiết Inside Out 2">
+          <div class="poster poster--inside">
+            <span class="poster__rule"></span>
+            <p class="poster__title">Inside Out 2</p>
+            <div class="poster__foot">
+              <span class="poster__genre">Hoạt hình</span>
+              <span>96 phút</span>
+            </div>
+          </div>
+        </a>
+        <div class="film-card__body">
+          <h3 class="film-card__title"><a href="movie.html">Inside Out 2</a></h3>
+          <div class="film-card__row">
+            <span class="badge badge--playing">Đang chiếu</span>
+            <span>Hoạt hình</span>
+          </div>
+        </div>
+        <div class="film-card__foot">
+          <span class="film-card__price">Từ 80.000 ₫</span>
+          <a class="stub__link" href="movie.html">Chọn suất</a>
+        </div>
+      </article>
+
+      <article class="film-card film-card--narrow" data-title="Địa Đạo: Mặt Trời Trong Bóng Tối" data-genre="Chiến tranh">
+        <a class="poster-link" href="movie.html" aria-label="Xem chi tiết Địa Đạo: Mặt Trời Trong Bóng Tối">
+          <div class="poster poster--diadao">
+            <span class="poster__rule"></span>
+            <p class="poster__title">Địa Đạo: Mặt Trời Trong Bóng Tối</p>
+            <div class="poster__foot">
+              <span class="poster__genre">Chiến tranh</span>
+              <span>128 phút</span>
+            </div>
+          </div>
+        </a>
+        <div class="film-card__body">
+          <h3 class="film-card__title"><a href="movie.html">Địa Đạo: Mặt Trời Trong Bóng Tối</a></h3>
+          <div class="film-card__row">
+            <span class="badge badge--soon">Sắp chiếu</span>
+            <span>Chiến tranh</span>
+          </div>
+        </div>
+        <div class="film-card__foot">
+          <span class="film-card__price">Từ 80.000 ₫</span>
+          <a class="stub__link" href="movie.html">Chọn suất</a>
+        </div>
+      </article>
+
+    </div>
+
+    <p class="notice notice--info" id="film-empty" hidden>Không có phim nào khớp bộ lọc. Bấm “Xóa bộ lọc” để xem lại toàn bộ danh mục.</p>
+  </section>
+
+</main>
+
+<footer class="colophon">
+  <div class="shell colophon__inner">
+    <p>CineSmart, prototype hướng A — Marquee. Dữ liệu mẫu lấy từ CatalogSeeder.</p>
+    <p><a href="index.html">Giới thiệu hướng thiết kế</a></p>
+    <p><a href="../index.html">Về trang so sánh 3 hướng</a></p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

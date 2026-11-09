@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CinemaBooking.Smart — Phim (Biên nhận)</title>
+<meta name="description" content="Hướng G — Biên nhận">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="home.html">CinemaBooking.Smart</a>
+  <nav class="topnav">
+    <a href="home.html">Trang chủ</a>
+    <a href="movie.html" aria-current="page">Phim</a>
+    <a href="seatmap.html">Chỗ ngồi</a>
+    <a href="checkout.html">Thanh toán</a>
+  </nav>
+</header>
+
+<main class="main">
+  <h1 class="h1">Phim đang chiếu</h1>
+  <p class="lead">Biên nhận: mọi thứ in trên giấy nhiệt, mực đen, monospace.</p>
+
+  <section class="receipt">
+    <div class="receipt__row receipt__row--head">
+      <span>STT</span><span>Phim</span><span>Suất</span><span>Giá</span>
+    </div>
+    <div class="receipt__row">
+      <span>01</span><span>Dune: Part Two</span><span>19:30</span><span>95.000₫</span>
+    </div>
+    <div class="receipt__row">
+      <span>02</span><span>Oppenheimer</span><span>20:00</span><span>95.000₫</span>
+    </div>
+    <div class="receipt__row">
+      <span>03</span><span>Inside Out 2</span><span>14:00</span><span>75.000₫</span>
+    </div>
+    <div class="receipt__row receipt__row--total">
+      <span></span><span>Tổng</span><span>3 suất</span><span>265.000₫</span>
+    </div>
+  </section>
+
+  <div class="actions">
+    <a class="btn btn--primary" href="seatmap.html">Chọn chỗ ngồi →</a>
+  </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

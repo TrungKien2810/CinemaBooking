@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CinemaBooking.Smart — Chỗ ngồi (Đèn neon)</title>
+<meta name="description" content="Hướng H — Đèn neon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+<header class="hero hero--small">
+  <h1 class="hero__title">CHỖ NGỒI</h1>
+  <nav class="tabbar">
+    <a href="home.html">Trang chủ</a>
+    <a href="movie.html">Phim</a>
+    <a href="seatmap.html" aria-current="page">Chỗ ngồi</a>
+    <a href="checkout.html">Thanh toán</a>
+  </nav>
+</header>
+
+<main class="main">
+  <div class="screen-glow">MÀN HÌNH</div>
+  <div class="seat-grid">
+    <div class="seat-row">
+      <span class="row-label">1</span>
+      <button class="seat seat--free">A1</button>
+      <button class="seat seat--free">A2</button>
+      <button class="seat seat--taken">A3</button>
+      <button class="seat seat--free">A4</button>
+      <button class="seat seat--mine">A5</button>
+    </div>
+    <div class="seat-row">
+      <span class="row-label">2</span>
+      <button class="seat seat--free">B1</button>
+      <button class="seat seat--taken">B2</button>
+      <button class="seat seat--free">B3</button>
+      <button class="seat seat--free">B4</button>
+      <button class="seat seat--free">B5</button>
+    </div>
+  </div>
+  <div class="legend">
+    <span><i class="dot dot--free"></i> Trống</span>
+    <span><i class="dot dot--taken"></i> Đã bán</span>
+    <span><i class="dot dot--mine"></i> Đang chọn</span>
+  </div>
+  <div class="actions">
+    <a class="btn btn--primary" href="checkout.html">Tiếp tục →</a>
+  </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

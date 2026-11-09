@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CinemaBooking.Smart — Buổi tối nay</title>
+  <meta name="description" content="Chọn phim và suất chiếu theo buổi tối: mỗi suất là một khối thời gian dài đúng bằng thời lượng phim.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Work+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="screens.css">
+</head>
+<body class="page page--home">
+  <a class="skip" href="#main">Bỏ qua điều hướng</a>
+  <header class="topbar">
+    <div class="shell topbar__inner">
+      <a class="brand" href="index.html">CinemaBooking<span class="brand__dot">.</span>Smart</a>
+      <nav class="nav" aria-label="Điều hướng chính">
+        <a href="home.html" aria-current="page">Trang chủ</a>
+        <a href="movie.html">Phim</a>
+        <a href="seatmap.html">Chọn ghế</a>
+        <a href="checkout.html">Thanh toán</a>
+      </nav>
+    </div>
+  </header>
+<main id="main" class="main">
+    <section class="hero shell" aria-labelledby="hero-title">
+      <div class="hero__copy">
+        <p class="kicker">Phim nổi bật</p>
+        <h1 class="hero__title" id="hero-title">Dune: <em>Part Two</em></h1>
+        <p class="hero__meta">Khoa học viễn tưởng, 166 phút, khởi chiếu 01/03/2024</p>
+        <p class="hero__lede">Paul Atreides liên minh với người Fremen để trả thù những kẻ đã hủy diệt gia tộc mình.</p>
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="movie.html">Xem suất tối nay</a>
+          <a class="link-quiet" href="seatmap.html">Chọn ghế cho suất 19:15</a>
+        </div>
+        <p class="hero__note">Suất sớm nhất tối nay lúc 18:45, còn 81 ghế. Tan lúc 21:31.</p>
+      </div>
+      <div class="hero__poster"><div class="poster poster--dune poster--hero" role="img" aria-label="Poster phim Dune: Part Two">
+      <span class="poster__genre">Khoa học viễn tưởng</span>
+      <span class="poster__lockup">
+        <span class="poster__title">Dune</span>
+        <span class="poster__sub">Part Two</span>
+      </span>
+      <span class="poster__foot">166 phút<br>2024</span>
+    </div></div>
+    </section>
+    <section class="section shell" aria-labelledby="tonight-title">
+      <div class="section__head">
+        <h2 id="tonight-title">Tối nay</h2>
+        <p class="section__note">Ba suất sớm nhất. Mỗi khối dài đúng bằng thời lượng phim, đặt đúng chỗ nó bắt đầu trong buổi tối.</p>
+      </div>
+      <div class="axis axis--compact" role="group" aria-labelledby="tonight-title">
+      <div class="axis__ruler" aria-hidden="true"><div class="axis__ruler-inner"><span class="tick is-first" style="--t:0" aria-hidden="true">17:00</span><span class="tick is-minor" style="--t:11.76" aria-hidden="true">18:00</span><span class="tick " style="--t:23.53" aria-hidden="true">19:00</span><span class="tick is-minor" style="--t:35.29" aria-hidden="true">20:00</span><span class="tick " style="--t:47.06" aria-hidden="true">21:00</span><span class="tick is-minor" style="--t:58.82" aria-hidden="true">22:00</span><span class="tick " style="--t:70.59" aria-hidden="true">23:00</span><span class="tick is-edge" style="--t:76.47" aria-hidden="true">23:30</span><span class="tick is-minor is-late" style="--t:82.35" aria-hidden="true">00:00</span><span class="tick is-minor is-late is-last" style="--t:94.12" aria-hidden="true">01:00</span></div></div>
+      <ol class="axis__lanes" aria-label="Suất chiếu theo chi nhánh">
+        
+      <li class="lane lane--compact" data-city="hn" data-branch="hoan-kiem">
+        <div class="lane__id">
+          <span class="lane__name">CineSmart Hoàn Kiếm</span>
+          <span class="lane__addr">8 Tràng Tiền</span>
+          <span class="lane__price">80.000 ₫ một ghế</span>
+        </div>
+        <div class="lane__track">
+          <div class="track__hours" aria-hidden="true"><span class="track__hour is-first" style="--t:0">17:00</span><span class="track__hour is-minor" style="--t:11.76">18:00</span><span class="track__hour " style="--t:23.53">19:00</span><span class="track__hour is-minor" style="--t:35.29">20:00</span><span class="track__hour " style="--t:47.06">21:00</span><span class="track__hour is-minor" style="--t:58.82">22:00</span><span class="track__hour " style="--t:70.59">23:00</span><span class="track__hour is-edge" style="--t:76.47">23:30</span><span class="track__hour is-minor is-late" style="--t:82.35">00:00</span><span class="track__hour is-minor is-late is-last" style="--t:94.12">01:00</span></div>
+          <span class="gridline" style="--t:11.76" aria-hidden="true"></span><span class="gridline" style="--t:23.53" aria-hidden="true"></span><span class="gridline" style="--t:35.29" aria-hidden="true"></span><span class="gridline" style="--t:47.06" aria-hidden="true"></span><span class="gridline" style="--t:58.82" aria-hidden="true"></span><span class="gridline" style="--t:70.59" aria-hidden="true"></span><span class="gridline gridline--edge" style="--t:76.47" aria-hidden="true"></span><span class="gridline" style="--t:82.35" aria-hidden="true"></span><span class="gridline" style="--t:94.12" aria-hidden="true"></span>
+          <a class="slot slot--mini" style="--s:0;--w:25.10" href="seatmap.html" aria-label="Địa Đạo: Mặt Trời Trong Bóng Tối, suất 17:00 tại CineSmart Hoàn Kiếm, tan lúc 19:08, còn 44 ghế.">
+        <span class="slot__time slot__time--range"><time datetime="17:00">17:00</time> <span class="slot__arrow">→</span> <time datetime="19:08">19:08</time></span>
+        <span class="slot__seats">còn 44 ghế</span>
+        <span class="slot__film">Địa Đạo: Mặt Trời Trong Bóng Tối</span></a>
+        </div>
+      </li>
+      <li class="lane lane--compact" data-city="hcm" data-branch="nguyen-hue">
+        <div class="lane__id">
+          <span class="lane__name">CineSmart Nguyễn Huệ</span>
+          <span class="lane__addr">72 Nguyễn Huệ, Quận 1</span>
+          <span class="lane__price">95.000 ₫ một ghế</span>
+        </div>
+        <div class="lane__track">
+          <div class="track__hours" aria-hidden="true"><span class="track__hour is-first" style="--t:0">17:00</span><span class="track__hour is-minor" style="--t:11.76">18:00</span><span class="track__hour " style="--t:23.53">19:00</span><span class="track__hour is-minor" style="--t:35.29">20:00</span><span class="track__hour " style="--t:47.06">21:00</span><span class="track__hour is-minor" style="--t:58.82">22:00</span><span class="track__hour " style="--t:70.59">23:00</span><span class="track__hour is-edge" style="--t:76.47">23:30</span><span class="track__hour is-minor is-late" style="--t:82.35">00:00</span><span class="track__hour is-minor is-late is-last" style="--t:94.12">01:00</span></div>
+          <span class="gridline" style="--t:11.76" aria-hidden="true"></span><span class="gridline" style="--t:23.53" aria-hidden="true"></span><span class="gridline" style="--t:35.29" aria-hidden="true"></span><span class="gridline" style="--t:47.06" aria-hidden="true"></span><span class="gridline" style="--t:58.82" aria-hidden="true"></span><span class="gridline" style="--t:70.59" aria-hidden="true"></span><span class="gridline gridline--edge" style="--t:76.47" aria-hidden="true"></span><span class="gridline" style="--t:82.35" aria-hidden="true"></span><span class="gridline" style="--t:94.12" aria-hidden="true"></span>
+          <a class="slot slot--mini" style="--s:20.59;--w:32.55" href="seatmap.html" aria-label="Dune: Part Two, suất 18:45 tại CineSmart Nguyễn Huệ, tan lúc 21:31, còn 81 ghế.">
+        <span class="slot__time slot__time--range"><time datetime="18:45">18:45</time> <span class="slot__arrow">→</span> <time datetime="21:31">21:31</time></span>
+        <span class="slot__seats">còn 81 ghế</span>
+        <span class="slot__film">Dune: Part Two</span></a>
+        </div>
+      </li>
+      <li class="lane lane--compact" data-city="hcm" data-branch="thao-dien">
+        <div class="lane__id">
+          <span class="lane__name">CineSmart Thảo Điền</span>
+          <span class="lane__addr">12 Quốc Hương, Thảo Điền</span>
+          <span class="lane__price">85.000 ₫ một ghế</span>
+        </div>
+        <div class="lane__track">
+          <div class="track__hours" aria-hidden="true"><span class="track__hour is-first" style="--t:0">17:00</span><span class="track__hour is-minor" style="--t:11.76">18:00</span><span class="track__hour " style="--t:23.53">19:00</span><span class="track__hour is-minor" style="--t:35.29">20:00</span><span class="track__hour " style="--t:47.06">21:00</span><span class="track__hour is-minor" style="--t:58.82">22:00</span><span class="track__hour " style="--t:70.59">23:00</span><span class="track__hour is-edge" style="--t:76.47">23:30</span><span class="track__hour is-minor is-late" style="--t:82.35">00:00</span><span class="track__hour is-minor is-late is-last" style="--t:94.12">01:00</span></div>
+          <span class="gridline" style="--t:11.76" aria-hidden="true"></span><span class="gridline" style="--t:23.53" aria-hidden="true"></span><span class="gridline" style="--t:35.29" aria-hidden="true"></span><span class="gridline" style="--t:47.06" aria-hidden="true"></span><span class="gridline" style="--t:58.82" aria-hidden="true"></span><span class="gridline" style="--t:70.59" aria-hidden="true"></span><span class="gridline gridline--edge" style="--t:76.47" aria-hidden="true"></span><span class="gridline" style="--t:82.35" aria-hidden="true"></span><span class="gridline" style="--t:94.12" aria-hidden="true"></span>
+          <span class="slot slot--gone slot--mini" style="--s:23.53;--w:22.94" aria-label="Mắt Biếc, suất 19:00 tại CineSmart Thảo Điền, tan lúc 20:57, hết chỗ.">
+        <span class="slot__time slot__time--range"><time datetime="19:00">19:00</time> <span class="slot__arrow">→</span> <time datetime="20:57">20:57</time></span>
+        <span class="slot__seats">hết chỗ</span>
+        <span class="slot__film">Mắt Biếc</span></span>
+        </div>
+      </li>
+      </ol>
+      <p class="axis__caption">Trục chạy từ 17:00 tới 23:30; khối nằm ngoài khoảng đó là suất muộn chạy qua nửa đêm.</p>
+    </div>
+    </section>
+    <section class="section shell" aria-labelledby="catalog-title">
+      <div class="section__head">
+        <h2 id="catalog-title">Phim</h2>
+        <p class="section__note" id="catalog-count" aria-live="polite">5 phim</p>
+      </div>
+      <form class="filters" role="search" aria-label="Tìm phim">
+        <div class="field field--search">
+          <label for="q">Tìm theo tên phim</label>
+          <input id="q" name="q" type="search" autocomplete="off" placeholder="Dune, Mắt Biếc, Địa Đạo…">
+        </div>
+        <div class="chips" role="group" aria-label="Lọc theo thể loại">
+          <button class="chip" type="button" data-genre="all" aria-pressed="true">Tất cả</button>
+          <button class="chip" type="button" data-genre="Tình cảm" aria-pressed="false">Tình cảm</button>
+          <button class="chip" type="button" data-genre="Hài" aria-pressed="false">Hài</button>
+          <button class="chip" type="button" data-genre="Khoa học viễn tưởng" aria-pressed="false">Khoa học viễn tưởng</button>
+          <button class="chip" type="button" data-genre="Hoạt hình" aria-pressed="false">Hoạt hình</button>
+          <button class="chip" type="button" data-genre="Chiến tranh" aria-pressed="false">Chiến tranh</button>
+        </div>
+      </form>
+      <ul class="films" id="films">
+        <li class="film" data-genre="Tình cảm" data-title="mắt biếc">
+          <a class="film__link" href="movie.html">
+            <span class="poster poster--mat poster--sm" aria-hidden="true"><span class="poster__mono">MB</span></span>
+            <span class="film__body">
+              <span class="film__title">Mắt Biếc</span>
+              <span class="film__meta">Tình cảm, 117 phút</span>
+              <span class="film__desc">Chuyện tình đơn phương của Ngạn dành cho Hà Lan, từ làng Đo Đo lên thành phố.</span>
+            </span>
+            <span class="film__price"><span class="film__from">từ</span> 80.000 ₫</span>
+            <span class="film__status">Đang chiếu</span>
+          </a>
+        </li>
+        <li class="film" data-genre="Hài" data-title="nhà bà nữ">
+          <a class="film__link" href="movie.html">
+            <span class="poster poster--nha poster--sm" aria-hidden="true"><span class="poster__mono">NB</span></span>
+            <span class="film__body">
+              <span class="film__title">Nhà Bà Nữ</span>
+              <span class="film__meta">Hài, 106 phút</span>
+              <span class="film__desc">Bi hài kịch gia đình ba thế hệ quanh một quán bánh canh nhỏ.</span>
+            </span>
+            <span class="film__price"><span class="film__from">từ</span> 80.000 ₫</span>
+            <span class="film__status">Đang chiếu</span>
+          </a>
+        </li>
+        <li class="film" data-genre="Khoa học viễn tưởng" data-title="dune: part two">
+          <a class="film__link" href="movie.html">
+            <span class="poster poster--dune poster--sm" aria-hidden="true"><span class="poster__mono">DP</span></span>
+            <span class="film__body">
+              <span class="film__title">Dune: Part Two</span>
+              <span class="film__meta">Khoa học viễn tưởng, 166 phút</span>
+              <span class="film__desc">Paul Atreides liên minh với người Fremen để trả thù những kẻ đã hủy diệt gia tộc mình.</span>
+            </span>
+            <span class="film__price"><span class="film__from">từ</span> 80.000 ₫</span>
+            <span class="film__status">Đang chiếu</span>
+          </a>
+        </li>
+        <li class="film" data-genre="Hoạt hình" data-title="inside out 2">
+          <a class="film__link" href="movie.html">
+            <span class="poster poster--inside poster--sm" aria-hidden="true"><span class="poster__mono">IO</span></span>
+            <span class="film__body">
+              <span class="film__title">Inside Out 2</span>
+              <span class="film__meta">Hoạt hình, 96 phút</span>
+              <span class="film__desc">Riley bước vào tuổi dậy thì và bộ não cô bé đón thêm những cảm xúc mới.</span>
+            </span>
+            <span class="film__price"><span class="film__from">từ</span> 80.000 ₫</span>
+            <span class="film__status">Đang chiếu</span>
+          </a>
+        </li>
+        <li class="film" data-genre="Chiến tranh" data-title="địa đạo: mặt trời trong bóng tối">
+          <a class="film__link" href="movie.html">
+            <span class="poster poster--dia poster--sm" aria-hidden="true"><span class="poster__mono">ĐĐ</span></span>
+            <span class="film__body">
+              <span class="film__title">Địa Đạo: Mặt Trời Trong Bóng Tối</span>
+              <span class="film__meta">Chiến tranh, 128 phút</span>
+              <span class="film__desc">Một đội du kích bám trụ trong hệ thống địa đạo giữa những ngày ác liệt nhất.</span>
+            </span>
+            <span class="film__price"><span class="film__from">từ</span> 80.000 ₫</span>
+            <span class="film__status">Đang chiếu</span>
+          </a>
+        </li>
+      </ul>
+      <p class="films__empty" id="films-empty" hidden>Không có phim nào khớp. Thử bỏ bộ lọc thể loại.</p>
+    </section>
+    </main>
+  <footer class="foot">
+    <div class="shell foot__inner">
+      <p class="foot__note">Prototype tĩnh, hướng E “Buổi tối”. Dữ liệu demo lấy từ CatalogSeeder.</p>
+      <a class="foot__link" href="index.html">Giới thiệu hướng này</a>
+    </div>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>

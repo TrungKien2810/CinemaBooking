@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CinemaBooking.Smart — Chỗ ngồi (Biên nhận)</title>
+<meta name="description" content="Hướng G — Biên nhận">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="screens.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="home.html">CinemaBooking.Smart</a>
+  <nav class="topnav">
+    <a href="home.html">Trang chủ</a>
+    <a href="movie.html">Phim</a>
+    <a href="seatmap.html" aria-current="page">Chỗ ngồi</a>
+    <a href="checkout.html">Thanh toán</a>
+  </nav>
+</header>
+
+<main class="main">
+  <h1 class="h1">Chọn chỗ ngồi</h1>
+  <p class="lead">Chỗ ngồi rạp — ghế trống (○), đã bán (×), đang chọn (●).</p>
+
+  <section class="receipt receipt--seatmap">
+    <div class="receipt__row receipt__row--head">
+      <span>Hàng</span><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span>
+    </div>
+    <div class="receipt__row">
+      <span>1</span><span>○</span><span>○</span><span>× </span><span>○</span><span>●</span>
+    </div>
+    <div class="receipt__row">
+      <span>2</span><span>○</span><span>× </span><span>○</span><span>○</span><span>○</span>
+    </div>
+    <div class="receipt__row">
+      <span>3</span><span>× </span><span>○</span><span>○</span><span>○</span><span>○</span>
+    </div>
+    <div class="receipt__row receipt__row--total">
+      <span></span><span colspan="5">Đang chọn: A1 · Tổng 95.000₫</span>
+    </div>
+  </section>
+
+  <div class="actions">
+    <a class="btn btn--primary" href="checkout.html">Tiếp tục thanh toán →</a>
+  </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
